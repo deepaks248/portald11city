@@ -1,0 +1,193 @@
+
+(function (Drupal) {
+  Drupal.behaviors.modalToggle = {
+    attach(context, settings) {
+      console.log("Modal Toggle Behavior Starting");
+
+      // Engage buttons
+      const engageButtons = once('modal-engage', '[engage-button]', context);
+      console.log("engageButtons",engageButtons);
+      engageButtons.forEach((button) => {
+        console.log("clicked");
+        button.addEventListener('click', function () {
+          const modalId = this.getAttribute('data-modal-toggle');
+          const modal = document.getElementById(modalId);
+
+          if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+          } else {
+            console.warn('Modal with ID', modalId, 'not found.');
+          }
+        });
+      });
+
+      // Close buttons
+      const hideButtons = once('modal-hide', '[data-modal-hide]', context);
+      hideButtons.forEach((closeBtn) => {
+        closeBtn.addEventListener('click', function () {
+          console.log("Trial and error");
+          const targetId = this.getAttribute('data-modal-hide');
+          const targetModal = document.getElementById(targetId);
+
+          if (targetModal) {
+            targetModal.classList.add('hidden');
+            targetModal.classList.remove('flex');
+          }
+        });
+      });
+    },
+  };
+})(Drupal);
+
+document.addEventListener("DOMContentLoaded", function () {
+  // Select all engage buttons
+  const engageButtons = document.querySelectorAll("[engage-button]");
+
+  engageButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      const modalId = this.getAttribute("data-modal-toggle");
+      const modal = document.getElementById(modalId);
+
+      if (modal) {
+        // Show the modal (remove hidden, add flex for Tailwind layout)
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+      } else {
+        console.warn("Modal with ID", modalId, "not found.");
+      }
+    });
+  });
+
+   // Handle close buttons with [data-modal-hide]
+  const hideButtons = document.querySelectorAll("[data-modal-hide]");
+  hideButtons.forEach(function (closeBtn) {
+    closeBtn.addEventListener("click", function () {
+      const targetId = this.getAttribute("data-modal-hide");
+      const targetModal = document.getElementById(targetId);
+
+      if (targetModal) {
+        targetModal.classList.add("hidden");
+        targetModal.classList.remove("flex");
+      }
+    });
+  });
+});
+
+(function (Drupal) {
+  Drupal.behaviors.faqToggle = {
+    attach: function (context, settings) {
+      const faqItems = once('faqToggle', '.collapse-arrow', context);
+
+      faqItems.forEach(item => {
+        const title = item.querySelector('.collapse-title');
+        const content = item.querySelector('.collapse-content');
+
+        if (title && content) {
+          // Set initial state
+          content.style.maxHeight = '0px';
+          content.style.overflow = 'hidden';
+          content.style.transition = 'max-height 0.3s ease';
+
+          title.addEventListener('click', () => {
+            const isActive = item.classList.contains('active');
+
+            // Collapse all
+            faqItems.forEach(i => {
+              i.classList.remove('active');
+              const c = i.querySelector('.collapse-content');
+              if (c) c.style.maxHeight = '0px';
+            });
+
+            // Expand clicked one
+            if (!isActive) {
+              item.classList.add('active');
+              content.style.maxHeight = content.scrollHeight + 'px';
+            }
+          });
+        }
+      });
+    }
+  };
+})(Drupal);
+
+(function (Drupal) {
+  Drupal.behaviors.floatingLabels = {
+    attach: function (context, settings) {
+      document.querySelectorAll('.js-form-item input, .js-form-item select').forEach((input) => {
+        const label = input.closest('.js-form-item')?.querySelector('label');
+
+        if (label && !label.classList.contains('no-float-label')) {
+          input.addEventListener('focus', () => {
+            label.classList.add('floating');
+          });
+          input.addEventListener('blur', () => {
+            if (!input.value) {
+              label.classList.remove('floating');
+            }
+          });
+          // Trigger once on load
+          if (input.value) {
+            label.classList.add('floating');
+          }
+        }
+      });
+    }
+  };
+})(Drupal);
+
+(function ($, Drupal) {
+  Drupal.behaviors.scrollBelowBanner = {
+    attach: function (context, settings) {
+      if (window.location.pathname !== '/') {
+        setTimeout(function () {
+          const target = $('#block-engage-theme-homepagesliderbannerblock', context);
+          if (target.length) {
+            const scrollTo = target.offset().top + target.outerHeight();
+            $('html, body').animate({
+              scrollTop: scrollTo
+            }, 800);
+          }
+        }, 500);
+      }
+    }
+  };
+})(jQuery, Drupal);
+
+(function (Drupal) {
+  Drupal.behaviors.mobileMenuToggle = {
+    attach(context) {
+      const toggle = context.querySelector('#menu-toggle');
+      const close = context.querySelector('#menu-close');
+      const mobileMenu = context.querySelector('#mobile-menu');
+      const backdrop = context.querySelector('#backdrop');
+
+      if (!toggle || !close || !mobileMenu || !backdrop) return;
+
+      // Use once() to avoid double-binding on AJAX calls
+      once('mobile-menu-toggle', toggle).forEach((toggleBtn) => {
+        toggleBtn.addEventListener('click', () => {
+          mobileMenu.classList.remove('translate-x-full');
+          mobileMenu.classList.add('translate-x-0');
+          backdrop.classList.remove('hidden');
+        });
+      });
+
+      once('mobile-menu-close', close).forEach((closeBtn) => {
+        closeBtn.addEventListener('click', () => {
+          mobileMenu.classList.add('translate-x-full');
+          mobileMenu.classList.remove('translate-x-0');
+          backdrop.classList.add('hidden');
+        });
+      });
+
+      once('mobile-menu-backdrop', backdrop).forEach((backdropEl) => {
+        backdropEl.addEventListener('click', () => {
+          mobileMenu.classList.add('translate-x-full');
+          mobileMenu.classList.remove('translate-x-0');
+          backdrop.classList.add('hidden');
+        });
+      });
+    }
+  };
+})(Drupal);

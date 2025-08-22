@@ -1,0 +1,53 @@
+{%
+  set classes = [
+    dom_id ? 'js-view-dom-id-' ~ dom_id,
+  ]
+%}
+<div{{attributes.addClass(classes)}}>
+	<div class="faq-page mx-auto max-w-screen-xl bg-white px-4 py-6">
+		{{ title_prefix }}
+		{{ title }}
+		{{ title_suffix }}
+
+		{% if header %}
+			<header class="faq-new">
+				{{ header }}
+			</header>
+		{% endif %}
+
+
+		<div class="box-faq-details form-sec border-inherit	border-2 rounded-xl p-4 lg:p-12 bg-white mb-44 text-center lg:text-start s:mb-14 xs:mb-14">
+
+			{% if exposed %}
+				{{ exposed }}
+			{% endif %}
+			{{ attachment_before }}
+
+			<div class="classgrid">
+				{% if rows -%}
+					<div>
+						{% for row in rows %}
+							<div class="views-row">
+								{{ row }}
+							</div>
+						{% endfor %}
+					</div>
+				{% elseif empty -%}
+					{{ empty }}
+				{% endif %}
+			</div>
+			{{ pager }}
+
+			{{ attachment_after }}
+			{{ more }}
+
+			{% if footer %}
+				<footer>
+					{{ footer }}
+				</footer>
+			{% endif %}
+
+			{{ feed_icons }}
+		</div>
+	</div>
+</div>

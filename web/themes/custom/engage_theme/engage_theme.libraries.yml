@@ -1,0 +1,41 @@
+global-styling:
+  css:
+    theme:
+      assets/dist/css/styles.css: {}
+  js:
+    assets/src/js/engage.js: {}
+
+flexslider:
+  css:
+    theme:
+      "https://cdnjs.cloudflare.com/ajax/libs/flexslider/2.7.2/flexslider.min.css":
+        type: external
+        minified: true
+  js:
+    "https://cdnjs.cloudflare.com/ajax/libs/flexslider/2.7.2/jquery.flexslider-min.js":
+      type: external
+      minified: true
+      attributes:
+        defer: true
+    assets/src/js/flexslider-init.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+
+swiper:
+  css:
+    theme:
+      "https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.css":
+        type: external
+        minified: true
+  js:
+    "https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js":
+      type: external
+      minified: true
+      attributes:
+        defer: true
+    assets/src/js/swiper-init.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/once

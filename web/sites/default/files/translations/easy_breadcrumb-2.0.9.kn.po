@@ -1,0 +1,28 @@
+# Kannada translation of Easy Breadcrumb (2.0.9)
+# Copyright (c) 2024 by the Kannada translation team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Easy Breadcrumb (2.0.9)\n"
+"POT-Creation-Date: 2024-11-28 00:46+0000\n"
+"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\n"
+"Language-Team: Kannada\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+msgid "Home"
+msgstr "ನೆಲೆ"
+msgid "None"
+msgstr "ಯಾವುದೂ ಇಲ್ಲ"
+msgid "Settings"
+msgstr "ಸಿದ್ಧತೆಗಳು"
+msgid "Navigation"
+msgstr "ಸಂಚಾರ"
+msgid "a"
+msgstr "a"
+msgid "of"
+msgstr "ನ"
+msgid "y"
+msgstr "y"

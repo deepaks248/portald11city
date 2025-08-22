@@ -860,3 +860,6 @@ $databases['default']['default'] = array (
   'autoload' => 'core/modules/mysql/src/Driver/Database/mysql/',
 );
 $settings['config_sync_directory'] = 'sites/default/files/config_GlfJ-fAs76m4uy-3ubNpZlGGZylWvUGfgErAoj7atavmS_0OAaa6n4U1RIKHjZxZZF_rhGhpJQ/sync';
+$settings['vault_url']= "http://192.168.20.201:8200/v1/secret/tENGAGECEP/RND/webportal2.2.0_local.json";
+// $settings['vault_url']= "http://tiotvault:8200/v1/secret/Cloud/tENGAGECEP/v2.2.0/webportal.json";
+$settings['vault_token']= "7eb3f197-5d4a-a4d0-ea93-fdac7d3ff1d4";

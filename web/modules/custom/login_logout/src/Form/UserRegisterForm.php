@@ -239,7 +239,7 @@ class UserRegisterForm extends FormBase
 
       // 2. SCIM API call
       try {
-        $this->httpClient->request('POST', 'https://tiotidam-poc:9443/scim2/Users/', [
+        $this->httpClient->request('POST', 'https://tiotidam:9443/scim2/Users/', [
           'headers' => [
             'accept' => 'application/scim+json',
             'Content-Type' => 'application/scim+json',

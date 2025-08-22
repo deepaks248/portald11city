@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (target) {
             event.preventDefault();
             if (typeof drupalSettings.globalVariables.webportalUrl !== 'undefined') {
-                window.location.href = drupalSettings.globalVariables.webportalUrl + '/user/logout';
+                window.location.href = drupalSettings.globalVariables.webportalUrl + '/logout';
             } else {
                 console.error('siteURL is not defined');
             }
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const loading = document.querySelector(".loading");
         if (loading) loading.classList.remove("hidden");
 
-        window.location.href = drupalSettings.globalVariables.webportalUrl + "/user/logout";
+        window.location.href = drupalSettings.globalVariables.webportalUrl + "/logout";
       } else {
         document.querySelector('.deleteModalDiv')?.classList.add('hidden');
         document.querySelector('#deleteAccount')?.classList.remove('hidden');

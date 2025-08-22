@@ -19,6 +19,13 @@ function login_logout_theme($existing, $type, $theme, $path) {
       'render element' => 'form',
       'template' => 'user-register',
     ],
+    'logged_in_details_block' => [
+      'variables' => [
+        'display_name' => NULL,
+        'email' => NULL,
+        'avatar_url' => NULL,
+      ],
+    ],
   ];
 }
 

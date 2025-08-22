@@ -189,7 +189,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
     //   $globalVariables['apiManConfig']['config']['apiVersion'] . 'filterUser',
     //   $payload
     // );
-    $url = 'https://tiotidam-poc:9443/scim2/Users?filter=' . urlencode('emails eq '.$email);
+    $url = 'https://tiotidam:9443/scim2/Users?filter=' . urlencode('emails eq '.$email);
 
 $responseData = \Drupal::service('global_module.global_variables')->curl_get_api($url);
     // dump($responseData);
@@ -215,7 +215,7 @@ $responseData = \Drupal::service('global_module.global_variables')->curl_get_api
       //   $payloadoldPass
       // );
       $resoldpass = \Drupal::service('global_module.global_variables')->curl_post_idam(
-        'https://tiotidam-poc:9443/oauth2/token/' ,$payloadoldPass
+        'https://tiotidam:9443/oauth2/token/' ,$payloadoldPass
       );
     //   dump($resoldpass);exit;
 
@@ -240,7 +240,7 @@ $responseData = \Drupal::service('global_module.global_variables')->curl_get_api
         //   'PATCH'
         // );
         $respass = \Drupal::service('global_module.global_variables')->curl_post_idam_auth(
-          'https://tiotidam-poc:9443/scim2/Users/'.$idamUserId,$payloadPass,'PATCH');
+          'https://tiotidam:9443/scim2/Users/'.$idamUserId,$payloadPass,'PATCH');
 
         \Drupal::logger('change_password')->notice('Update password response: <pre>@res</pre>', [
           '@res' => print_r($respass, TRUE)

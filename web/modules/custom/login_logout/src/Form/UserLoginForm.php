@@ -106,7 +106,7 @@ $form['check_email']['#attributes']['class'][] = 'bg-yellow-500 text-white round
 
       try {
         // Step 1: Get flowId
-        $response = $this->httpClient->request('POST', 'https://tiotidam-poc:9443/oauth2/authorize', [
+        $response = $this->httpClient->request('POST', 'https://tiotidam:9443/oauth2/authorize', [
           'headers' => [
             'Accept' => 'application/json',
             'Content-Type' => 'application/x-www-form-urlencoded',
@@ -140,7 +140,7 @@ $form['check_email']['#attributes']['class'][] = 'bg-yellow-500 text-white round
             ],
           ];
           // dump($payload);
-          $response1 = $this->httpClient->request('POST', 'https://tiotidam-poc:9443/oauth2/authn', [
+          $response1 = $this->httpClient->request('POST', 'https://tiotidam:9443/oauth2/authn', [
             'headers' => [
               'Accept' => 'application/json',
               'Content-Type' => 'application/json',
@@ -157,7 +157,7 @@ $form['check_email']['#attributes']['class'][] = 'bg-yellow-500 text-white round
             $authorizationCode = $authnResult['authData']['code'];
 
             // Step 3: Exchange code for token
-            $response = $this->httpClient->request('POST', 'https://tiotidam-poc:9443/oauth2/token', [
+            $response = $this->httpClient->request('POST', 'https://tiotidam:9443/oauth2/token', [
               'headers' => [
                 'Content-Type' => 'application/x-www-form-urlencoded',
               ],

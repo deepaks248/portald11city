@@ -1,8 +1,8 @@
 report_grievance_form:
   version: 1.x
   js:
-    https://hcsjointstackportal.trinityiot.in/GISClientServices/v4.0.0/appconfig-security.js: {}
-    # http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {} // use it for local testing
+    # https://hcsjointstackportal.trinityiot.in/GISClientServices/v4.0.0/appconfig-security.js: {}
+    http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {} #use it for local testing
     js/report-grievance.js: {}
   dependencies:
     - core/jquery

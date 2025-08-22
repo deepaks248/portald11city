@@ -55,8 +55,8 @@ class UserLoginForm extends FormBase
     }
     $form['email'] = [
       '#type' => 'email',
-      // '#title' => $this->t('Email'),
-      '#attributes'=>[
+      '#title' => $this->t('Email'),
+      '#attributes' => [
         'placeholder' => $this->t('Email'),
       ],
       '#required' => TRUE,
@@ -66,7 +66,7 @@ class UserLoginForm extends FormBase
     if ($form_state->get('email_validated')) {
       $form['password'] = [
         '#type' => 'password',
-        // '#title' => $this->t('Password'),
+        '#title' => $this->t('Password'),
         '#attributes' => [
           'placeholder' => $this->t('Password'),
         ],
@@ -90,10 +90,11 @@ class UserLoginForm extends FormBase
 
     $form['login']['#attributes']['class'][] = 'bg-yellow-500 text-white rounded-xl px-6 py-2 cursor-pointer hover:bg-yellow-600 transition';
     // $form['check_email']['#attributes']['class'][] = 'w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition';
-$form['check_email']['#attributes']['class'][] = 'bg-yellow-500 text-white rounded-xl px-6 py-2 cursor-pointer hover:bg-yellow-600 transition';
+    $form['check_email']['#attributes']['class'][] = 'bg-yellow-500 text-white rounded-xl px-6 py-2 cursor-pointer hover:bg-yellow-600 transition';
     $form['#theme'] = 'user_login';
 
     $form['#attached']['library'][] = 'login_logout/user-login-library';
+    // $form['#attached']['library'][] = 'login_logout/capture_browser_info';
     return $form;
   }
 

@@ -1,50 +1,3 @@
-{# <div class="p-6 bg-white shadow-md rounded-lg max-w-md mx-auto">
-  <h2 class="text-2xl font-semibold mb-4">Login</h2>
-  {{ dump(form) }}
-</div> #}
-{# <div class="p-6 bg-white shadow-md rounded-lg max-w-md w-full mx-auto my-10">
-  <h2 class="text-2xl font-semibold mb-6 text-center">Login</h2> #}
-
-  {# <form{{ attributes.addClass('space-y-5') }} method="post" action="{{ form['#action']|escape }}"> #}
-
-    {# Email Field #}
-    {# <div>
-      {{ form.email }}
-    </div> #}
-
-    {# Check if password field exists (email validated) #}
-    {# {% if form.password['#required'] %}
-      <div class="mt-2">
-        {{ form.password }}
-      </div>
-    {% else %}
-    <div class="mt-2">
-        {{ form.check_email}}
-        </div>
-    {% endif %} #}
-
-    {# Buttons: Show Login or Next based on state #}
-    {# {% if form.login is defined %}
-      <div class="mt-2">
-        {{ form.login }}
-      </div>
-    {% elseif form.check_email is defined %}
-      <div class="mt-2">
-        {{ form.check_email }}
-      </div>
-    {% endif %} #}
-
-    {# Signup Link Markup #}
-    {# {% if form.signup_link is defined %}
-      <div class="text-center">
-        {{ form.signup_link }}
-      </div>
-    {% endif %} #}
-
-    {# Hidden fields and tokens #}
-    {# {{ form|without('email', 'password', 'login', 'check_email', 'signup_link') }}
-  </form>
-</div> #}
 <div class="min-h-screen bg-cover bg-center flex items-center justify-center" style="background-image: url('/modules/custom/profile/images/registeration-bg.png');">
   <div class="p-12 bg-white shadow-md rounded-lg max-w-md w-full mx-4 my-10">
     <h2 class="text-2xl font-semibold mb-6">Welcome</h2>
@@ -66,16 +19,22 @@
 
       {# Email Field #}
       <div>
-        {{ form.email }}
+        {# {{ form.email }} #}
+        {{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+  					field: form.email,
+				}) }}
       </div>
 
       {# Password or Email Verification Field #}
       {% if form.password['#required'] %}
         <div class="mt-2">
-          {{ form.password }}
+          {# {{ form.password }} #}
+          {{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+  					field: form.password,
+				  }) }}
         </div>
       {% else %}
-        <div class="mt-2">
+        <div class="mt-4">
           {{ form.check_email }}
         </div>
       {% endif %}
@@ -86,7 +45,7 @@
           {{ form.login }}
         </div>
       {% elseif form.check_email is defined %}
-        <div class="mt-2">
+        <div class="mt-4">
           {{ form.check_email }}
         </div>
       {% endif %}

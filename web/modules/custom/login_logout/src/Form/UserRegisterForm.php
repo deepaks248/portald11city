@@ -40,92 +40,97 @@ class UserRegisterForm extends FormBase
     $email = $request->query->get('email', '');
     $phase = $form_state->get('phase') ?? 1;
 
+    // Classes reused.
     $input_classes = ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'];
     $select_classes = ['form-select', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'];
-    $button_classes = ['bg-yellow-500', 'hover:bg-yellow-600', 'text-white', 'font-semibold', 'py-2', 'px-4', 'rounded', 'w-full', 'transition-all'];
+    $button_classes = ['bg-yellow-500', 'hover:bg-yellow-600', 'text-white', 'font-semibold', 'py-2', 'px-4', 'rounded-2xl', 'transition-all'];
 
-    if ($phase === 1) {
-      $form['first_name'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('First Name'),
-        '#required' => TRUE,
-        '#attributes' => ['class' => $input_classes],
-      ];
-      $form['last_name'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Last Name'),
-        '#required' => TRUE,
-        '#attributes' => ['class' => $input_classes],
-      ];
-      $form['mail'] = [
-        '#type' => 'email',
-        '#title' => $this->t('Email'),
-        '#default_value' => base64_decode($email),
-        '#required' => TRUE,
-        '#attributes' => ['class' => $input_classes],
-      ];
-      $form['country_code'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Country Code'),
-        '#required' => TRUE,
-        '#options' => [
-          '+91' => '+91 (India)',
-          '+1' => '+1 (USA)',
-          '+44' => '+44 (UK)',
-        ],
-        '#default_value' => '+91',
-        '#attributes' => ['class' => $select_classes],
-      ];
-      $form['mobile'] = [
-        '#type' => 'tel',
-        '#title' => $this->t('Mobile Number'),
-        '#required' => TRUE,
-        '#attributes' => [
-          'maxlength' => 15,
-          'class' => $input_classes,
-        ],
-      ];
-      $form['submit'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Send OTP'),
-        '#attributes' => ['class' => $button_classes],
-      ];
-    } elseif ($phase === 2) {
-      $form['otp'] = [
-        '#type' => 'textfield',
-        '#title' => $this->t('Enter OTP'),
-        '#required' => TRUE,
-        '#attributes' => [
-          'maxlength' => 6,
-          'class' => $input_classes,
-        ],
-      ];
-      $form['submit'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Verify OTP'),
-        '#attributes' => ['class' => $button_classes],
-      ];
-    } elseif ($phase === 3) {
-      $form['password'] = [
-        '#type' => 'password',
-        '#title' => $this->t('Password'),
-        '#required' => TRUE,
-        '#attributes' => ['class' => $input_classes],
-      ];
-      $form['confirm_password'] = [
-        '#type' => 'password',
-        '#title' => $this->t('Confirm Password'),
-        '#required' => TRUE,
-        '#attributes' => ['class' => $input_classes],
-      ];
-      $form['submit'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Register'),
-        '#attributes' => ['class' => $button_classes],
-      ];
+    switch ($phase) {
+      case 1:
+        $form['first_name'] = [
+          '#type' => 'textfield',
+          '#title' => $this->t('First Name'),
+          '#required' => TRUE,
+          '#attributes' => ['class' => $input_classes],
+        ];
+        $form['last_name'] = [
+          '#type' => 'textfield',
+          '#title' => $this->t('Last Name'),
+          '#required' => TRUE,
+          '#attributes' => ['class' => $input_classes],
+        ];
+        $form['mail'] = [
+          '#type' => 'email',
+          '#title' => $this->t('Email'),
+          '#default_value' => base64_decode($email),
+          '#required' => TRUE,
+          '#attributes' => ['class' => $input_classes],
+        ];
+        $form['country_code'] = [
+          '#type' => 'select',
+          '#title' => $this->t('Country Code'),
+          '#required' => TRUE,
+          '#options' => [
+            '+91' => '+91 (India)',
+            '+1' => '+1 (USA)',
+            '+44' => '+44 (UK)',
+          ],
+          '#default_value' => '+91',
+          '#attributes' => ['class' => $select_classes],
+        ];
+        $form['mobile'] = [
+          '#type' => 'tel',
+          '#title' => $this->t('Mobile Number'),
+          '#required' => TRUE,
+          '#attributes' => [
+            'maxlength' => 15,
+            'class' => $input_classes,
+          ],
+        ];
+        $form['submit'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Send OTP'),
+          '#attributes' => ['class' => $button_classes],
+        ];
+        break;
+
+      case 2:
+        $form['otp'] = [
+          '#type' => 'textfield',
+          '#title' => $this->t('Enter OTP'),
+          '#required' => TRUE,
+          '#attributes' => ['maxlength' => 6, 'class' => $input_classes],
+        ];
+        $form['submit'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Verify OTP'),
+          '#attributes' => ['class' => $button_classes],
+        ];
+        break;
+
+      case 3:
+        $form['password'] = [
+          '#type' => 'password',
+          '#title' => $this->t('Password'),
+          '#required' => TRUE,
+          '#attributes' => ['class' => $input_classes],
+        ];
+        $form['confirm_password'] = [
+          '#type' => 'password',
+          '#title' => $this->t('Confirm Password'),
+          '#required' => TRUE,
+          '#attributes' => ['class' => $input_classes],
+        ];
+        $form['submit'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Register'),
+          '#attributes' => ['class' => $button_classes],
+        ];
+        break;
     }
 
     $form['#theme'] = 'user_register';
+    $form['#attached']['library'][] = 'login_logout/user-login-library';
 
     return $form;
   }

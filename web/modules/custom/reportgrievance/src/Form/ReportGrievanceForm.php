@@ -141,11 +141,11 @@ class ReportGrievanceForm extends FormBase
     // Remarks
     $form['remarks'] = [
       '#type' => 'textfield',
-      // '#title' => $this->t('Remarks'),
+      '#title' => $this->t('Remarks'),
       // '#description' => $this->t('Please provide any additional information.'),
       '#maxlength' => 255,
       '#attributes' => [
-        'placeholder' => $this->t('Remarks'),
+        // 'placeholder' => $this->t('Remarks'),
         'class' => [
           'form-input',
           'w-full',
@@ -164,11 +164,11 @@ class ReportGrievanceForm extends FormBase
     // Address
     $form['address'] = [
       '#type' => 'textfield',
-      // '#title' => $this->t('Address'),
+      '#title' => $this->t('Address'),
       '#maxlength' => 255,
       '#required' => TRUE,
       '#attributes' => [
-        'placeholder' => $this->t('Address'),
+        // 'placeholder' => $this->t('Address'),
         'class' => [
           'form-input',
           'w-full',
@@ -213,7 +213,14 @@ class ReportGrievanceForm extends FormBase
       // '#title' => $this->t('I agree to the terms and conditions.'),
       '#required' => TRUE,
       '#attributes' => [
-        'class' => ['checkbox', 'text-yellow-500', 'focus:ring-yellow-500'],
+        'class' => [
+          'w-6',
+          'h-6',
+          'rounded',
+          'cursor-pointer',
+          'border',
+          'border-gray-400',
+        ],
       ],
     ];
 
@@ -244,8 +251,10 @@ class ReportGrievanceForm extends FormBase
       '#button_type' => 'primary',
       '#attributes' => [
         'class' => [
+          'lg:h-14', 'lg:w-44', 's:h-10', 'xs:h-10',
           'bg-yellow-500',
           'text-white',
+          'text-lg',
           'rounded-full',
           'px-6',
           'py-2',

@@ -4,8 +4,7 @@
   w-full rounded-md border border-gray-300 focus:border-yellow-500 focus:ring-yellow-500 text-gray-700 text-base p-2.5
 #}
 
-<section class="container griev mx-auto max-w-screen-xl mt-20 md:pb-12 s:mt-5 xs:mt-5"> 
-  <div class="flex justify-between items-baseline gap-4 flex-wrap md:flex-nowrap">
+	<section class="container griev mx-auto max-w-screen-xl mt-20 md:pb-12 s:mt-5 xs:mt-5"> <div class="flex justify-between items-baseline gap-4 flex-wrap md:flex-nowrap">
 		<div>
 			<a href="/">
 				<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-arrow-left" viewbox="0 0 16 16">
@@ -23,16 +22,22 @@
 		<div class="form-sec border-inherit border-2 rounded-xl p-4 lg:p-9 bg-white mb-44 text-center lg:text-start s:mb-24 xs:mb-20 gri-form">
 			<div class="grievance gap-4 relative">
 				<div id="mapDiv" class="map" style="border:0; width:100%; height: 360px">
-					<img src="/themes/custom/engage_theme/images/location_pin.png" class="get_lat_lang absolute top-3 left-72 bg-white h-6 w-6 p-0.5 z-20 border s:h-7 s:left-64 xs:left-64 xs:h-7" alt="location">
+					<img src="/themes/custom/engage_theme/images/location_pin.png" class="get_lat_lang absolute top-3 left-72 bg-white h-6 w-6 p-0.5 z-20 border s:h-7 s:left-64 xs:left-64 xs:h-7" alt="location" style="left: 20rem;margin: 3px 10px;">
 				</div>
-				<p class="grievance-note">Note :- Place the pointer at your required address</p>
+				<p class="grievance-note font-nevis">Note :- Place the pointer at your required address</p>
 			</div>
 
-			<div class="grievance-fields grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-6 mt-14 s:mt-6 xs:mt-7">
+			<div class="grievance-fields grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-6 mt-14 s:mt-6 xs:mt-7 font-nevis">
 				{{ form.grievance_type }}
 				{{ form.subtype_wrapper }}
-				{{ form.remarks }}
-				{{ form.address }}
+				{# {{ form.remarks }} #}
+				{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+  					field: form.remarks
+				}) }}
+
+				{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+  					field: form.address,
+				}) }}
 			</div>
 
 			<div class="form-control mt-5" id="fileUpoad">
@@ -43,23 +48,16 @@
 						</span>
 					</span>
 				</label>
-				{# <label class="s:block xs:block md:hidden label">
-				          <p class="label-text text-lg text-black text-left">Upload File*</p>
-				        </label> #}
 				{{ form.upload_file }}
-				{# <p class="my-2 s:block xs:block md:hidden label-text font-bold text-medium_dark font-sans text-sm text-left file-details"></p>
-				        <p class="s:block xs:block md:hidden label-text font-medium text-medium_dark font-sans text-xs text-left">
-				          (Supported file types: JPEG, PNG & file size limit is 2MB)
-				        </p> #}
 				<p class="server-error" style="color:red"></p>
 			</div>
 
 			<div class="form-control mt-5" id="checkboxBtn">
 				<label class="label cursor-pointer justify-start gap-4 xs:gap-2 flex">
 					{{ form.agree_terms }}
-					<span class="label-text font-normal text-medium_dark font-nevis text-base xs:text-sm">
+					<span class="label-text font-normal font-sans text-medium_dark text-base xs:text-sm">
 						I agree on
-						<a class="link link-primary" target="_blank" href="/terms-and-condition">Terms and Conditions</a>
+						<a class="link link-primary text-blue-600 underline hover:text-blue-900" target="_blank" href="/">Terms and Conditions</a>
 					</span>
 				</label>
 			</div>

@@ -91,7 +91,8 @@ class ReportGrievanceForm extends FormBase
         'callback' => '::updateSubtype',
         'wrapper' => 'subtype-wrapper',
         'event' => 'change',
-        'progress' => ['type' => 'throbber', 'message' => NULL],
+        // 'progress' => ['type' => 'throbber', 'message' => NULL],
+        'progress' => ['type' => 'none'],
       ],
       '#attributes' => [
         'class' => [
@@ -251,7 +252,10 @@ class ReportGrievanceForm extends FormBase
       '#button_type' => 'primary',
       '#attributes' => [
         'class' => [
-          'lg:h-14', 'lg:w-44', 's:h-10', 'xs:h-10',
+          'lg:h-14',
+          'lg:w-44',
+          's:h-10',
+          'xs:h-10',
           'bg-yellow-500',
           'text-white',
           'text-lg',

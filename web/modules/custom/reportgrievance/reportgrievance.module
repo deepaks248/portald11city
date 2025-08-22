@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Implements hook_theme().
+ */
+function reportgrievance_theme(array $existing, string $type, string $theme, string $path): array {
+  $moduleHandler = \Drupal::service('extension.list.module');
+  $module_path = $moduleHandler->getPath('reportgrievance');
+
+  return [
+    'report_grievance_form' => [
+      'render element' => 'form',
+      'template' => 'report-grievance-form',
+      'path' => $module_path . '/templates',
+    ],
+
+    'grievance_success' => [
+      'variables' => ['response_data' => NULL],
+    ],
+    'grievance_failure' => [],
+  ];
+}

@@ -1,0 +1,25 @@
+<?php
+
+use Drupal\Core\Database;
+use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\Session\Session;
+use \Drupal\Component\Utility\Unicode;
+use \Drupal\contact\Entity\Message;
+use \Drupal\views\Views;
+use \Drupal\views\ViewExecutable;
+// To render template
+function login_logout_theme($existing, $type, $theme, $path) {
+    
+  return [
+    'user_login' => [ // Matches 'user-login.html.twig'
+      'render element' => 'form',
+      'template' => 'user-login',
+    ],
+    'user_register' => [ // Matches 'user-register.html.twig'
+      'render element' => 'form',
+      'template' => 'user-register',
+    ],
+  ];
+}
+
+?>

@@ -1,0 +1,23 @@
+reportgrievance.report:
+  path: '/report-grievances'
+  defaults:
+    _form: '\Drupal\reportgrievance\Form\ReportGrievanceForm'
+    _title: 'Report a Grievance'
+  requirements:
+    _permission: 'access content'
+
+reportgrievance.grievance_success:
+  path: '/success-grievance'
+  defaults:
+    _controller: '\Drupal\reportgrievance\Controller\GrievanceSuccessController::content'
+    _title: 'Grievance Submitted'
+  requirements:
+    _permission: 'access content'
+
+reportgrievance.grievance_failure:
+  path: '/failure-grievance'
+  defaults:
+    _controller: '\Drupal\reportgrievance\Controller\GrievanceFailureController::content'
+    _title: 'Grievance Submission Failed'
+  requirements:
+    _permission: 'access content'

@@ -1,0 +1,8 @@
+ideas.ideas_form:
+  path: "/add-ideas"
+  defaults:
+    _form: '\Drupal\ideas\Form\IdeasForm'
+    _title: ""
+  requirements:
+    _permission: "access content"
+    _role: 'authenticated'

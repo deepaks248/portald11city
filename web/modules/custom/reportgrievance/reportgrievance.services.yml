@@ -1,0 +1,6 @@
+services:
+  reportgrievance.grievance_api:
+    class: Drupal\reportgrievance\Service\GrievanceApiService
+    arguments:
+      - '@http_client'
+      - '@global_module.global_variables'

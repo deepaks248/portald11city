@@ -1,0 +1,122 @@
+
+
+#layers .view-map-pois-category .view-content {
+    display: flex;
+    align-items: center;
+    gap:1.5rem;
+}
+
+#layers .view-map-pois-category .view-content .layer-blocks a img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+}
+#layers .view-map-pois-category .view-content .layer-blocks a{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    gap:0.6rem;
+}
+
+#mapDiv {
+    border: inherit;
+    width: 100%;
+    height: 650px;
+}
+.pois-list{
+    position:absolute;
+    top:50px;
+    left:32px;
+}
+
+/* .pois-list {
+    position: absolute;
+    top: 420px;
+    left: 73px;
+    width: 435px;
+    max-height: 475px;
+    border-radius: 20px;
+    border: 1px solid #cecece;
+    background-color: #fdfcfa;
+} */
+.poi_top {
+    display: flex;
+    justify-content: end;
+    cursor: pointer;
+    align-items: center;
+}
+.poi_text {
+    display: none;
+    font-weight: 600;
+    opacity: 0.7;
+}
+.poi_close {
+    display: flex;
+    justify-content: end;
+    cursor: pointer;
+    padding: 4px 10px;
+}
+.poi_close .bi-x {
+    position: absolute;
+    right: -16px;
+    top: -10px;
+    border-radius: 50%;
+    background: #fff;
+    color: #000;
+    border: 1px solid #d7d5d5;
+    width: 30px;
+    height: 30px;
+    opacity: 0.7;
+}
+#search_field {
+    padding: 0px 25px;
+}
+.first-list {
+    max-height: 305px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    padding: 0px 25px;
+    margin-bottom: 15px;
+}
+#mapDiv .ol-control{
+    left: -10px;
+    position: relative;
+    top: -100px;
+    float: right;
+}
+#mapDiv .ol-control button{
+    border-radius: 5px 5px;
+    cursor: pointer;
+    display: block;
+    margin: 2px !important;
+    padding: 0;
+    color: #cecece !important;
+    font-size: 28px;
+    font-weight: 700 !important;
+    text-decoration: none;
+    text-align: center;
+    height: 35px !important;
+    width: 35px !important;
+    line-height: 0.4em;
+    background-color: white !important;
+    border: 1px solid #cecece !important;
+}
+#mapDiv .ol-control.ol-logo-only{
+    display:none;
+}
+.search-wrapper{
+    top: 50px !important;
+    right: auto !important;
+    left: 40px !important;
+}
+.search-wrapper .close-icon{
+    top:13px !important;
+}
+.search-wrapper .controls1{
+        padding: 10px;
+    height: 50px;
+    /* margin-left: 30px; */
+    /* margin-top: 15px; */
+    border-radius: 10px
+}

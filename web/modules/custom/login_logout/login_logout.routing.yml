@@ -1,0 +1,23 @@
+login_logout.user_register_form:
+  path: '/user-register'
+  defaults:
+    _form: '\Drupal\login_logout\Form\UserRegisterForm'
+    _title: 'Register User'
+  requirements:
+    _permission: 'access content'
+
+login_logout.user_login_form:
+  path: '/user-login'
+  defaults:
+    _form: '\Drupal\login_logout\Form\UserLoginForm'
+    _title: 'Login User'
+  requirements:
+    _permission: 'access content'
+
+login_logout.logout:
+  path: '/logout'
+  defaults:
+    _controller: '\Drupal\login_logout\Controller\LogoutController::logout'
+    _title: 'Logging out'
+  requirements:
+    _permission: 'access content'

@@ -1,0 +1,14 @@
+.add-ideas-user .form-item-files-upload-file{
+    display: flex;
+    flex-direction: column;
+}
+#edit-idea-content{
+    width:100%;
+}
+#ideas-form{
+    background-color: #f8f8f8;
+}
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}

@@ -1,0 +1,16 @@
+services:
+  global_module.global_variables:
+    class: Drupal\global_module\Service\GlobalVariablesService
+    arguments: ['@http_client','@logger.factory','@cache.default']
+
+  global_module.api_redirect_subscriber:
+    class: Drupal\global_module\EventSubscriber\ApiRedirectSubscriber
+    arguments: []
+    tags:
+      - { name: event_subscriber }
+
+  global_module.file_upload_service:
+    class: Drupal\global_module\Service\FileUploadService
+    arguments:
+      - '@uuid'
+      - '@global_module.global_variables'

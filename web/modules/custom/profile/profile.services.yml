@@ -1,0 +1,20 @@
+services:
+  profile.profile_service:
+    class: Drupal\profile\Service\ProfileService
+    arguments:
+      - "@http_client"
+      - "@logger.factory"
+    tags:
+      - { name: "controller.service_arguments" }
+
+  profile.service_request_api:
+    class: Drupal\profile\Service\ServiceRequestApiService
+    arguments: ["@http_client", "@global_module.global_variables"]
+
+  profile.my_services_controller:
+    class: Drupal\profile\Controller\MyServicesController
+    arguments:
+      - "@profile.service_request_api"
+      - "@request_stack"
+    tags:
+      - { name: controller.service_arguments }

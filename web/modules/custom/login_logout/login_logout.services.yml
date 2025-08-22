@@ -1,0 +1,6 @@
+services:
+  login_logout.user_redirect_subscriber:
+    class: Drupal\login_logout\EventSubscriber\UserRedirectSubscriber
+    arguments: ['@current_user', '@path.current']
+    tags:
+      - { name: event_subscriber }

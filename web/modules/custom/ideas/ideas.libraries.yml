@@ -1,0 +1,13 @@
+ideas-library:
+  version: 9.x
+  css:
+    layout:
+      css/ideas.css: {}
+    theme:
+      css/ideas.css: {}
+  js:
+    js/ideas.js: { attributes: { type: module } }
+  dependencies:
+    - core/drupal
+    - core/jquery
+    - core/drupal.ajax

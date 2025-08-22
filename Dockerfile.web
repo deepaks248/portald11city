@@ -1,0 +1,5 @@
+FROM drupal:11-php8.3-fpm
+
+ENV PATH="/opt/drupal/vendor/bin:${PATH}"
+
+WORKDIR /opt/drupal/web

@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    volumes:
+      - ./web:/opt/drupal/web
+      - ./vendor:/opt/drupal/vendor
+    depends_on:
+      - db
+    environment:
+      - DRUPAL_DB_HOST=db
+      - DRUPAL_DB_USER=drupal
+      - DRUPAL_DB_PASSWORD=drupal
+      - DRUPAL_DB_NAME=drupal
+      - MYSQL_USER=drupal
+      - MYSQL_PASSWORD=drupal
+    mem_limit: 2g
+    cpu_shares: 512
+    networks:
+      - drupal_network  # Explicitly add the web container to the custom network
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: drupal_nginx_cityd11
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/opt/drupal/web
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - web
+    mem_limit: 1g
+    cpu_shares: 256
+    networks:
+      - drupal_network  # Add Nginx to the same network
+
+  db:
+    image: mysql:8.0
+    container_name: drupal_db_cityd11
+    command: '--default-authentication-plugin=mysql_native_password'
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: drupal
+      MYSQL_USER: drupal
+      MYSQL_PASSWORD: drupal
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$MYSQL_USER", "-p$MYSQL_PASSWORD"]
+      timeout: 20s
+      retries: 10
+    mem_limit: 2g
+    networks:
+      - drupal_network  # Add DB to the custom network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: drupal_phpmyadmin_cityd11
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+      UPLOAD_LIMIT: 1G
+    depends_on:
+      - db
+    networks:
+      - drupal_network  # Add PHPMyAdmin to the custom network
+
+volumes:
+  db_data:
+
+networks:
+  drupal_network:  # Custom network to ensure all services communicate efficiently
+    driver: bridge

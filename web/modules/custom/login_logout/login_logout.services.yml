@@ -1,6 +1,16 @@
 services:
   login_logout.user_redirect_subscriber:
     class: Drupal\login_logout\EventSubscriber\UserRedirectSubscriber
-    arguments: ['@current_user', '@path.current']
+    arguments:
+      - '@current_user'
+      - '@path.current'
     tags:
       - { name: event_subscriber }
+
+  login_logout.oauth_login_service:
+    class: Drupal\login_logout\Service\OAuthLoginService
+    arguments: ['@http_client', '@logger.channel.login_logout', '@request_stack', '@global_module.global_variables']
+
+  logger.channel.login_logout:
+    parent: logger.channel_base
+    arguments: ['login_logout']

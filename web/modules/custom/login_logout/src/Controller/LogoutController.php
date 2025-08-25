@@ -19,16 +19,12 @@ class LogoutController extends ControllerBase
     protected $currentUser;
     protected $sessionManager;
     protected $requestStack;
-    // protected $oauthLoginService;
-    // protected $sessionService;
 
     public function __construct(AccountProxyInterface $current_user, SessionManagerInterface $session_manager, RequestStack $request_stack)
     {
         $this->currentUser = $current_user;
         $this->sessionManager = $session_manager;
         $this->requestStack = $request_stack;
-        // $this->oauthLoginService = $oauthLoginService;
-        // $this->sessionService = $sessionService;
     }
 
     public static function create(ContainerInterface $container)
@@ -36,9 +32,7 @@ class LogoutController extends ControllerBase
         return new static(
             $container->get('current_user'),
             $container->get('session_manager'),
-            $container->get('request_stack'),
-            // $container->get('login_logout.oauth_login_service'),
-            // $container->get('active_sessions.session_service')
+            $container->get('request_stack')
         );
     }
 

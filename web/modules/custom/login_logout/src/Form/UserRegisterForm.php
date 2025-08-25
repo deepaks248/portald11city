@@ -9,23 +9,28 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
+use Drupal\login_logout\Service\OAuthLoginService;
+
 
 class UserRegisterForm extends FormBase
 {
   protected $requestStack;
   protected $httpClient;
+  protected $oauthLoginService;
 
-  public function __construct(RequestStack $requestStack, ClientInterface $httpClient)
+  public function __construct(RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService)
   {
     $this->requestStack = $requestStack;
     $this->httpClient = $httpClient;
+    $this->oauthLoginService = $oauthLoginService;
   }
 
   public static function create(ContainerInterface $container)
   {
     return new static(
       $container->get('request_stack'),
-      $container->get('http_client')
+      $container->get('http_client'),
+      $container->get('login_logout.oauth_login_service')
     );
   }
 
@@ -160,7 +165,7 @@ class UserRegisterForm extends FormBase
       $form_state->set('user_data', $data);
 
       try {
-        $this->httpClient->request('POST', 'https://webhook.site/173fa14b-35fc-4298-b77f-f15e0a73acf8', [
+        $this->httpClient->request('POST', 'https://webhook.site/fb4e4739-9ae7-4b35-aef3-886ef04de185', [
           'headers' => ['Content-Type' => 'application/json'],
           'json' => [
             'email' => $data['mail'],
@@ -267,6 +272,71 @@ class UserRegisterForm extends FormBase
         \Drupal::logger('scim_user')->error('SCIM user creation failed: @error', ['@error' => $e->getMessage()]);
         $this->messenger()->addError('SCIM API request failed: ' . $e->getMessage());
       }
+
+      // Step 1: Get Flow ID
+      $flowId = $this->oauthLoginService->getFlowId();
+      if (!$flowId) {
+        $this->messenger()->addError($this->t('Flow ID not received.'));
+        return;
+      }
+
+      // Step 2: Authenticate user
+      $authorizationCode = $this->oauthLoginService->authenticateUser($flowId, $data['mail'], $password);
+      if (!$authorizationCode) {
+        $this->messenger()->addError($this->t('Authorization code not received.'));
+        return;
+      }
+
+      $tokenData = $this->oauthLoginService->exchangeCodeForToken($authorizationCode);
+      if (empty($tokenData['access_token']) || empty($tokenData['id_token'])) {
+        $this->messenger()->addError($this->t('Token not received.'));
+        return;
+      }
+
+      // Store in session
+      $session = \Drupal::service('session');
+      $session->set('login_logout.access_token', $tokenData['access_token']);
+      $session->set('login_logout.id_token', $tokenData['id_token']);
+
+      // Step 4: Decode JWT to get email (or sub claim)
+      $parts = explode('.', $tokenData['id_token']);
+      if (count($parts) !== 3) {
+        throw new \Exception('Invalid JWT token format.');
+      }
+      $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+      if (empty($payload['sub'])) {
+        throw new \Exception('JWT payload missing "sub" claim.');
+      }
+      $jwtEmail = $payload['sub'];
+
+      $login_time = \Drupal::time()->getRequestTime(); // seconds
+
+      // Get access token
+      $accessToken = $tokenData['access_token'] ?? '';
+
+      $activeSessionService = \Drupal::service('active_sessions.session_service');
+      $activeSessions = $activeSessionService->fetchActiveSessions($accessToken);
+
+      // Find closest matching API session by loginTime
+      $closestSessionId = null;
+      $closestDiff = PHP_INT_MAX;
+      $targetTimeMs = $login_time * 1000;
+
+      if (!empty($activeSessions['sessions'])) {
+        foreach ($activeSessions['sessions'] as $session) {
+          if (!empty($session['loginTime'])) {
+            $diff = abs($session['loginTime'] - $targetTimeMs);
+            if ($diff < $closestDiff) {
+              $closestDiff = $diff;
+              $closestSessionId = $session['id']; // <-- this is what we want
+            }
+          }
+        }
+      }
+
+      // Fallback if nothing matched
+      $session = \Drupal::service('session');
+      $session->set('login_logout.active_session_id_token', $closestSessionId);
 
       // 3. Create Drupal user
       $user = User::create([

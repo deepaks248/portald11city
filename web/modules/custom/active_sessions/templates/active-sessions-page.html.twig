@@ -17,7 +17,7 @@
 
 	<!-- Current Session -->
 	{% if currentUserSessions[0] %}
-		{{dump(currentUserSessions)}}
+		{# {{dump(currentUserSessions)}} #}
 
 		<div class="mb-8">
 			<h2 class="text-xl font-semibold mb-4">{{ 'Current Session'|t }}</h2>
@@ -52,7 +52,7 @@
 
 	<!-- Other Sessions -->
 	{% if otherUserSessions %}
-		{{dump(otherUserSessions)}}
+		{# {{dump(otherUserSessions)}} #}
 
 		<div>
 			<div class="flex justify-between items-center mb-4">

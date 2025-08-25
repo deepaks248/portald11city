@@ -1,5 +1,5 @@
 active_sessions.activesession:
-  path: '/active-session'
+  path: '/active-sessions'
   defaults:
     _controller: '\Drupal\active_sessions\Controller\ActiveSessionController::activeSession'
     _title: 'Active Sessions'

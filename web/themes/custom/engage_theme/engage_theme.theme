@@ -27,15 +27,15 @@ function engage_theme_preprocess_page(array &$variables)
   //   $pre_render = $block_content;
   //   $variables['idam_integration'] = $block_content;
   // }
-  $request_stack = \Drupal::service('request_stack');
+  // $request_stack = \Drupal::service('request_stack');
 
-  $session = $request_stack->getCurrentRequest()->getSession();
+  // $session = $request_stack->getCurrentRequest()->getSession();
   
-  $account = \Drupal::currentUser();
-  $variables['user'] = [
-    'display_name' => $session->get('api_redirect_result') ? $session->get('api_redirect_result')['firstName'] . ' ' . $session->get('api_redirect_result')['lastName'] : $account->getDisplayName(),
-    'mail' => $session->get('api_redirect_result')['emailId'] ? $session->get('api_redirect_result')['emailId'] : $account->getEmail(),
-  ];
+  // $account = \Drupal::currentUser();
+  // $variables['user'] = [
+  //   'display_name' => $session->get('api_redirect_result') ? $session->get('api_redirect_result')['firstName'] . ' ' . $session->get('api_redirect_result')['lastName'] : $account->getDisplayName(),
+  //   'mail' => $session->get('api_redirect_result')['emailId'] ? $session->get('api_redirect_result')['emailId'] : $account->getEmail(),
+  // ];
 
   //globalVariables
   $variables['#attached']['drupalSettings']['globalVariables']['webportalUrl'] = $globalVariables['applicationConfig']['config']['siteUrl'];

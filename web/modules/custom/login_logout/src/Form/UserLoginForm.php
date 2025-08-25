@@ -9,7 +9,9 @@ use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\user\UserAuthInterface;
 use Drupal\Core\Session\SessionManagerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Drupal\login_logout\Service\OAuthLoginService;
 use GuzzleHttp\ClientInterface;
+use Drupal\Core\Database\Connection;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 
@@ -21,14 +23,18 @@ class UserLoginForm extends FormBase
   protected $sessionManager;
   protected $requestStack;
   protected $httpClient;
+  protected $oauthLoginService;
+  protected $database;
 
-  public function __construct(AccountProxyInterface $currentUser, UserAuthInterface $userAuth, SessionManagerInterface $sessionManager, RequestStack $requestStack, ClientInterface $httpClient)
+  public function __construct(AccountProxyInterface $currentUser, UserAuthInterface $userAuth, SessionManagerInterface $sessionManager, RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService, Connection $database)
   {
+    $this->oauthLoginService = $oauthLoginService;
     $this->currentUser = $currentUser;
     $this->userAuth = $userAuth;
     $this->sessionManager = $sessionManager;
     $this->requestStack = $requestStack;
     $this->httpClient = $httpClient;
+    $this->database = $database;
   }
 
   public static function create(ContainerInterface $container)
@@ -38,7 +44,9 @@ class UserLoginForm extends FormBase
       $container->get('user.auth'),
       $container->get('session_manager'),
       $container->get('request_stack'),
-      $container->get('http_client')
+      $container->get('http_client'),
+      $container->get('login_logout.oauth_login_service'),
+      $container->get('database')
     );
   }
 
@@ -103,164 +111,112 @@ class UserLoginForm extends FormBase
     $email = $form_state->getValue('email');
 
     if ($form_state->get('email_validated')) {
+      // Password entered — proceed with OAuth login.
       $password = $form_state->getValue('password');
 
       try {
-        // Step 1: Get flowId
-        $response = $this->httpClient->request('POST', 'https://tiotidam:9443/oauth2/authorize', [
-          'headers' => [
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/x-www-form-urlencoded',
-          ],
-          'form_params' => [
-            'client_id' => 'hVBu5NSpBJHJ84KF70nfQ8ZMdnQa',
-            'response_type' => 'code',
-            'redirect_uri' => 'https://cityportal.ddev.site/',
-            'scope' => 'openid',
-            'response_mode' => 'direct',
-          ],
-          'verify' => false,
-        ]);
-        // dump("RES!", $response);
-        $authorizeResult = json_decode($response->getBody()->getContents(), TRUE);
-        // dump($authorizeResult);
-        \Drupal::logger('login_logout')->notice('Authorize response: <pre>@data</pre>', ['@data' => print_r($authorizeResult, TRUE)]);
+        // Step 1: Get Flow ID
+        $flowId = $this->oauthLoginService->getFlowId();
+        if (!$flowId) {
+          $this->messenger()->addError($this->t('Flow ID not received.'));
+          return;
+        }
 
-        if (!empty($authorizeResult['flowId'])) {
-          $flowId = $authorizeResult['flowId'];
+        // Step 2: Authenticate user
+        $authorizationCode = $this->oauthLoginService->authenticateUser($flowId, $email, $password);
+        if (!$authorizationCode) {
+          $this->messenger()->addError($this->t('Authorization code not received.'));
+          return;
+        }
 
-          // Step 2: Authenticate user
-          $payload = [
-            "flowId" => $flowId,
-            "selectedAuthenticator" => [
-              "authenticatorId" => "QmFzaWNBdXRoZW50aWNhdG9yOkxPQ0FM",
-              "params" => [
-                "username" => $email,
-                "password" => $password,
-              ],
-            ],
-          ];
-          // dump($payload);
-          $response1 = $this->httpClient->request('POST', 'https://tiotidam:9443/oauth2/authn', [
-            'headers' => [
-              'Accept' => 'application/json',
-              'Content-Type' => 'application/json',
-            ],
-            'json' => $payload,
-            'verify' => false,
-          ]);
-          // dump("RES", $response1);
-          $authnResult = json_decode($response1->getBody()->getContents(), TRUE);
-          // dump("AUth", $authnResult);
-          \Drupal::logger('login_logout')->notice('Authn response: <pre>@data</pre>', ['@data' => print_r($authnResult, TRUE)]);
+        // Step 3: Exchange code for token
+        $tokenData = $this->oauthLoginService->exchangeCodeForToken($authorizationCode);
+        if (empty($tokenData['access_token']) || empty($tokenData['id_token'])) {
+          $this->messenger()->addError($this->t('Token not received.'));
+          return;
+        }
 
-          if (!empty($authnResult['authData']['code'])) {
-            $authorizationCode = $authnResult['authData']['code'];
+        // Store in session
+        $session = \Drupal::service('session');
+        $session->set('login_logout.access_token', $tokenData['access_token']);
+        $session->set('login_logout.id_token', $tokenData['id_token']);
 
-            // Step 3: Exchange code for token
-            $response = $this->httpClient->request('POST', 'https://tiotidam:9443/oauth2/token', [
-              'headers' => [
-                'Content-Type' => 'application/x-www-form-urlencoded',
-              ],
-              'form_params' => [
-                'client_id' => 'hVBu5NSpBJHJ84KF70nfQ8ZMdnQa',
-                'grant_type' => 'authorization_code',
-                'redirect_uri' => 'https://cityportal.ddev.site/',
-                'code' => $authorizationCode,
-              ],
-              'verify' => false,
-            ]);
+        // Step 4: Decode JWT to get email (or sub claim)
+        $parts = explode('.', $tokenData['id_token']);
+        if (count($parts) !== 3) {
+          throw new \Exception('Invalid JWT token format.');
+        }
+        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+        if (empty($payload['sub'])) {
+          throw new \Exception('JWT payload missing "sub" claim.');
+        }
+        $jwtEmail = $payload['sub'];
 
-            $tokenResult = json_decode($response->getBody()->getContents(), TRUE);
-            \Drupal::logger('login_logout')->notice('Token response: <pre>@data</pre>', ['@data' => print_r($tokenResult, TRUE)]);
-            // dump("LastResult", $tokenResult);
-            // ✅ Token received — store or use as needed
-            $accessToken = $tokenResult['access_token'] ?? NULL;
-            $parts = explode('.', $tokenResult['id_token']);
-            if (count($parts) !== 3) {
-              throw new \Exception('Invalid JWT token format.');
+        $login_time = \Drupal::time()->getRequestTime(); // seconds
+
+        // Get access token
+        $accessToken = $tokenData['access_token'] ?? '';
+
+        $activeSessionService = \Drupal::service('active_sessions.session_service');
+        $activeSessions = $activeSessionService->fetchActiveSessions($accessToken);
+
+        // Find closest matching API session by loginTime
+        $closestSessionId = null;
+        $closestDiff = PHP_INT_MAX;
+        $targetTimeMs = $login_time * 1000;
+
+        if (!empty($activeSessions['sessions'])) {
+          foreach ($activeSessions['sessions'] as $session) {
+            if (!empty($session['loginTime'])) {
+              $diff = abs($session['loginTime'] - $targetTimeMs);
+              if ($diff < $closestDiff) {
+                $closestDiff = $diff;
+                $closestSessionId = $session['id']; // <-- this is what we want
+              }
             }
-
-            // Base64-decode the payload (second part)
-            $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-            if (!$payload || !isset($payload['sub'])) {
-              throw new \Exception('JWT payload missing or sub not found.');
-            }
-
-            $email = $payload['sub'];
-            \Drupal::logger('login_logout')->debug('Decoded JWT: <pre>@data</pre>', [
-              '@data' => print_r($payload, TRUE),
-            ]);
-
-            $users = \Drupal::entityTypeManager()
-              ->getStorage('user')
-              ->loadByProperties(['mail' => $email]);
-
-            $user = reset($users);
-            \Drupal::logger('login_logout')->debug('Decoded JWT: <pre>@data</pre>', [
-              '@data' => print_r($user, TRUE),
-            ]);
-
-            if ($user instanceof UserInterface) {
-              user_login_finalize($user);
-              // $this->messenger()->addStatus($this->t('Successfully logged in as @mail', ['@mail' => $email]));
-              $form_state->setRedirect('<front>');
-            } else {
-              $this->messenger()->addError($this->t('No valid user entity found for @mail', ['@mail' => $email]));
-            }
-            if ($accessToken) {
-              // $this->messenger()->addStatus($this->t('Logged in and token received.'));
-              // You can store the token in session, user data, etc.
-              $form_state->setRedirect('<front>');
-            } else {
-              $this->messenger()->addError($this->t('Token not received.'));
-            }
-          } else {
-            $this->messenger()->addError($this->t('Authorization code not received.'));
           }
+        }
+
+        // Fallback if nothing matched
+        $session = \Drupal::service('session');
+        $session->set('login_logout.active_session_id_token', $closestSessionId);
+        
+        // Step 5: Load Drupal user and log in
+        $users = \Drupal::entityTypeManager()
+          ->getStorage('user')
+          ->loadByProperties(['mail' => $jwtEmail]);
+        $user = reset($users);
+
+        if ($user instanceof UserInterface) {
+          user_login_finalize($user);
+          $this->messenger()->addStatus($this->t('Successfully logged in as @mail', ['@mail' => $jwtEmail]));
+          $form_state->setRedirect('<front>');
         } else {
-          $this->messenger()->addError($this->t('Flow ID not received from /authorize endpoint.'));
+          $this->messenger()->addError($this->t('No Drupal user found for @mail', ['@mail' => $jwtEmail]));
         }
       } catch (\Exception $e) {
-        \Drupal::logger('login_logout')->error('OAuth2 flow failed: @message', ['@message' => $e->getMessage()]);
-        $this->messenger()->addError($this->t('OAuth2 login failed. Please try again.'));
+        \Drupal::logger('login_logout')->error('OAuth2 login failed: @msg', ['@msg' => $e->getMessage()]);
+        $this->messenger()->addError($this->t('Login failed: @msg', ['@msg' => $e->getMessage()]));
       }
     } else {
-      // First step: Call external API to check email existence
+      // Step 0: First-time email validation
       try {
-        $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
-        $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
-        \Drupal::logger('login_logout')->debug('Global Variables: <pre>@data</pre>', [
-          '@data' => print_r($globalVariables, true),
-        ]);
-        $baseUrl = $globalVariables['apiManConfig']['config']['apiUrl'] ?? '';
-        $version = $globalVariables['apiManConfig']['config']['apiVersion'] ?? '';
-        $fullUrl = $baseUrl . 'tiotcitizenapp' . $version . 'user/details';
-        if (empty($fullUrl) || !filter_var($fullUrl, FILTER_VALIDATE_URL)) {
-          throw new \InvalidArgumentException('Invalid API URL: ' . print_r($fullUrl, true));
-        }
+        $globalVariablesService = \Drupal::service('global_module.global_variables');
+        $accessToken = $globalVariablesService->getApimanAccessToken();
+        $globals = $globalVariablesService->getGlobalVariables();
 
-        $response = $this->httpClient->request("POST", $fullUrl, [
-          'json' => ['userId' => $email],
-          'headers' => [
-            'Authorization' => 'Bearer ' . $access_token,
-            'Content-Type' => 'application/json',
-          ],
-        ]);
+        $apiUrl = $globals['apiManConfig']['config']['apiUrl'] ?? '';
+        $apiVersion = $globals['apiManConfig']['config']['apiVersion'] ?? '';
 
-
-        $data = json_decode($response->getBody()->getContents(), TRUE);
-        // dump($data);
-        if (!empty($data['data'])) {
-          // Email exists - show password field
-          $form_state->set('email_validated', TRUE);
-          $form_state->setRebuild();
+        if ($this->oauthLoginService->checkEmailExists($email, $accessToken, $apiUrl, $apiVersion)) {
+          $form_state->set('email_validated', TRUE)->setRebuild();
         } else {
-          // Redirect to register form with email
-          $form_state->setRedirect('login_logout.user_register_form', [], ['query' => ['email' => base64_encode($email)]]);
+          $form_state->setRedirect('login_logout.user_register_form', [], [
+            'query' => ['email' => base64_encode($email)]
+          ]);
         }
       } catch (\Exception $e) {
-        $this->messenger()->addError($this->t('Error checking email: @message', ['@message' => $e->getMessage()]));
+        $this->messenger()->addError($this->t('Error checking email: @msg', ['@msg' => $e->getMessage()]));
       }
     }
   }

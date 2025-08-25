@@ -6,7 +6,7 @@ use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\global_module\Service\GlobalVariablesService;
-use Drupal\active_sessions\Service\ActiveSessionService;
+// use Drupal\active_sessions\Service\ActiveSessionService;
 
 class OAuthLoginService
 {
@@ -15,12 +15,17 @@ class OAuthLoginService
     protected $logger;
     protected $requestStack;
     protected $globalVariablesService;
-    protected $activeSessionService;
+    // protected $activeSessionService;
 
-    public function __construct(ClientInterface $http_client, LoggerInterface $logger, RequestStack $requestStack, GlobalVariablesService $globalVariablesService, ActiveSessionService $activeSessionService)
+    public function __construct(
+        ClientInterface $http_client, 
+        LoggerInterface $logger, 
+        RequestStack $requestStack, 
+        GlobalVariablesService $globalVariablesService
+    )
     {
         $this->globalVariablesService = $globalVariablesService;
-        $this->activeSessionService = $activeSessionService;
+        // $this->activeSessionService = $activeSessionService;
         $this->httpClient = $http_client;
         $this->logger = $logger;
         $this->requestStack = $requestStack;
@@ -55,6 +60,8 @@ class OAuthLoginService
 
     public function authenticateUser(string $flow_id, string $email, string $password): ?string
     {
+        $userAgent = $this->requestStack->getCurrentRequest()->headers->get('User-Agent');
+
         try {
             $payload = [
                 "flowId" => $flow_id,
@@ -71,6 +78,7 @@ class OAuthLoginService
                 'headers' => [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
+                    'User-Agent' => $userAgent,
                 ],
                 'json' => $payload,
                 'verify' => false,
@@ -205,26 +213,26 @@ class OAuthLoginService
     /**
      * Find closest matching session by login time.
      */
-    public function findClosestSessionId(string $accessToken, int $login_time): ?string
-    {
-        $activeSessions = $this->activeSessionService->fetchActiveSessions($accessToken);
+    // public function findClosestSessionId(string $accessToken, int $login_time): ?string
+    // {
+    //     $activeSessions = $this->activeSessionService->fetchActiveSessions($accessToken);
 
-        $closestSessionId = null;
-        $closestDiff = PHP_INT_MAX;
-        $targetTimeMs = $login_time * 1000;
+    //     $closestSessionId = null;
+    //     $closestDiff = PHP_INT_MAX;
+    //     $targetTimeMs = $login_time * 1000;
 
-        if (!empty($activeSessions['sessions'])) {
-            foreach ($activeSessions['sessions'] as $session) {
-                if (!empty($session['loginTime'])) {
-                    $diff = abs($session['loginTime'] - $targetTimeMs);
-                    if ($diff < $closestDiff) {
-                        $closestDiff = $diff;
-                        $closestSessionId = $session['id'];
-                    }
-                }
-            }
-        }
+    //     if (!empty($activeSessions['sessions'])) {
+    //         foreach ($activeSessions['sessions'] as $session) {
+    //             if (!empty($session['loginTime'])) {
+    //                 $diff = abs($session['loginTime'] - $targetTimeMs);
+    //                 if ($diff < $closestDiff) {
+    //                     $closestDiff = $diff;
+    //                     $closestSessionId = $session['id'];
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        return $closestSessionId;
-    }
+    //     return $closestSessionId;
+    // }
 }

@@ -1,0 +1,7 @@
+services:
+  active_sessions.session_service:
+    class: Drupal\active_sessions\Service\ActiveSessionService
+    arguments:
+      - '@http_client'
+      - '@request_stack'
+      - '@logger.channel.default'

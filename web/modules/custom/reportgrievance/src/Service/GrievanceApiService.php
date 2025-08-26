@@ -37,7 +37,7 @@ class GrievanceApiService
 
     $incidentTypeUrl = $globalVariables['apiManConfig']['config']['apiUrl'] . 'trinityengage-casemanagementsystem' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'master-data/incident-types';
 
-    $response = $this->httpClient->get($incidentTypeUrl, [
+    $response = $this->httpClient->request('GET', $incidentTypeUrl, [
       'query' => [
         'tenantCode' => $globalVariables['applicationConfig']['config']['ceptenantCode'],
       ],
@@ -72,7 +72,7 @@ class GrievanceApiService
 
     $incidentSubTypeUrl = $globalVariables['apiManConfig']['config']['apiUrl'] . 'trinityengage-casemanagementsystem' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'master-data/incident-sub-types';
 
-    $response = $this->httpClient->get($incidentSubTypeUrl, [
+    $response = $this->httpClient->request('GET', $incidentSubTypeUrl, [
       'query' => [
         'tenantCode' => $globalVariables['applicationConfig']['config']['ceptenantCode'],
         'incidentTypeId' => $incidentTypeId,
@@ -106,7 +106,7 @@ class GrievanceApiService
     $grivanceUrl = $globalVariables['apiManConfig']['config']['apiUrl'] . 'trinityengage-casemanagementsystem' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'grievance-manage/report-grievance';
 
     try {
-      $response = $this->httpClient->post($grivanceUrl, [
+      $response = $this->httpClient->request('POST', $grivanceUrl, [
         'headers' => [
           'Content-Type' => 'application/json',
           'Authorization' => 'Bearer ' . $accessToken,

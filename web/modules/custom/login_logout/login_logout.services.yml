@@ -2,15 +2,42 @@ services:
   login_logout.user_redirect_subscriber:
     class: Drupal\login_logout\EventSubscriber\UserRedirectSubscriber
     arguments:
-      - '@current_user'
-      - '@path.current'
+      - "@current_user"
+      - "@path.current"
     tags:
       - { name: event_subscriber }
 
   login_logout.oauth_login_service:
     class: Drupal\login_logout\Service\OAuthLoginService
-    arguments: ['@http_client', '@logger.channel.login_logout', '@request_stack', '@global_module.global_variables']
+    arguments:
+      [
+        "@http_client",
+        "@logger.channel.login_logout",
+        "@request_stack",
+        "@global_module.global_variables",
+      ]
+
+  login_logout.userinfo_validator:
+    class: Drupal\login_logout\Service\UserInfoValidator
+    arguments: ["@http_client", "@logger.channel.login_logout", "@session"]
+
+  login_logout.userinfo_check_subscriber:
+    class: Drupal\login_logout\EventSubscriber\UserInfoCheckSubscriber
+    arguments:
+      [
+        "@current_user",
+        "@session_manager",
+        "@login_logout.userinfo_validator",
+        "@logger.channel.login_logout",
+      ]
+    tags:
+      - { name: event_subscriber }
+
+  login_logout.userinfo_cron_healthcheck:
+    class: Drupal\login_logout\Service\UserInfoCronHealthCheck
+    arguments:
+      ["@login_logout.userinfo_validator", "@logger.channel.login_logout"]
 
   logger.channel.login_logout:
     parent: logger.channel_base
-    arguments: ['login_logout']
+    arguments: ["login_logout"]

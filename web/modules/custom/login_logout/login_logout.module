@@ -1,15 +1,9 @@
 <?php
 
-use Drupal\Core\Database;
-use Drupal\Core\Url;
-use Symfony\Component\HttpFoundation\Session\Session;
-use \Drupal\Component\Utility\Unicode;
-use \Drupal\contact\Entity\Message;
-use \Drupal\views\Views;
-use \Drupal\views\ViewExecutable;
 // To render template
-function login_logout_theme($existing, $type, $theme, $path) {
-    
+function login_logout_theme($existing, $type, $theme, $path)
+{
+
   return [
     'user_login' => [ // Matches 'user-login.html.twig'
       'render element' => 'form',
@@ -29,4 +23,12 @@ function login_logout_theme($existing, $type, $theme, $path) {
   ];
 }
 
-?>
+/**
+ * Implements hook_cron().
+ */
+function login_logout_cron()
+{
+  // Run our userinfo health check every cron run.
+  \Drupal::logger('login_logout')->info('Executing login_logout cron health check.');
+  \Drupal::service('login_logout.userinfo_cron_healthcheck')->run();
+}

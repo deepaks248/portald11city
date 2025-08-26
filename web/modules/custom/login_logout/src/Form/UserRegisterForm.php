@@ -155,7 +155,11 @@ class UserRegisterForm extends FormBase
         'mobile' => $form_state->getValue('mobile'),
       ];
 
-      if (user_load_by_mail($data['mail'])) {
+      $users = \Drupal::entityTypeManager()
+        ->getStorage('user')
+        ->loadByProperties(['mail' => $data['mail']]);
+
+      if ($users) {
         $this->messenger()->addError($this->t('Email already registered.'));
         return;
       }

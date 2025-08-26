@@ -438,3 +438,7 @@ select {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.grievance-form-container select:focus-visible{
+  outline: none;
+}

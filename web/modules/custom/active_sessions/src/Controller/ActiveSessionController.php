@@ -99,33 +99,31 @@ class ActiveSessionController extends ControllerBase
 
     public function activeSession()
     {
-        $account = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+        // $account = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         $session = \Drupal::service('session');
         $accessToken = $session->get('login_logout.access_token');
+        $active_session_id_token = $session->get('login_logout.active_session_id_token');
 
         // Fetch API sessions
         $sessions = $this->sessionService->fetchActiveSessions($accessToken);
         $apiSessions = $sessions['sessions'] ?? [];
 
-        $drupalLogin = (int) $account->get('login')->value; // seconds
-
         $currentUserSessions = [];
         $otherUserSessions = [];
 
-        foreach ($apiSessions as &$session) {
-            $timestamp = (int) ($session['loginTime'] / 1000); // ms → s
-            $session['accessToken'] = $accessToken;
-            $session['userAgentFormatted'] = $this->formatUserAgent($session['userAgent'] ?? '');
-            $session['loginTimeSeconds'] = $timestamp;
-            $session['formattedLoginTime'] = \Drupal::service('date.formatter')
+        foreach ($apiSessions as &$apiSession) {
+            $timestamp = (int) ($apiSession['loginTime'] / 1000);
+            $apiSession['accessToken'] = $accessToken;
+            $apiSession['userAgentFormatted'] = $this->formatUserAgent($apiSession['userAgent'] ?? '');
+            $apiSession['loginTimeSeconds'] = $timestamp;
+            $apiSession['formattedLoginTime'] = $this->dateFormatter
                 ->format($timestamp, 'custom', 'd-m-Y, h:i:s', 'Asia/Kolkata');
 
-            if (abs($timestamp - $drupalLogin) <= 5) {
-                // Current user’s active session(s)
-                $currentUserSessions[] = $session;
+            // ✅ Compare using the stored active session ID
+            if ($apiSession['id'] == $active_session_id_token) {
+                $currentUserSessions[] = $apiSession;
             } else {
-                // Other sessions
-                $otherUserSessions[] = $session;
+                $otherUserSessions[] = $apiSession;
             }
         }
 

@@ -443,17 +443,21 @@ select {
   outline: none;
 }
 
-.tenders-and-page-exposed input {
+.tenders-and-page-exposed input,
+.tenders-and-page-exposed select {
   padding: 10px 20px;
   border: 2px solid #cecece;
   border-radius: 0.5rem;
 }
 
-.tenders-and-page-exposed select {
-  min-width: 6rem;
-  padding: 10px 20px;
-  border: 2px solid #cecece;
-  border-radius: 0.5rem;
+/* Tablet and below */
+@media (max-width: 768px) {
+  .tenders-and-page-exposed input,
+  .tenders-and-page-exposed select {
+    padding: 8px 12px; /* smaller padding */
+    width: 100%; /* full width */
+    box-sizing: border-box;
+  }
 }
 
 .tenders-and-page-exposed .js-form-type-select label {

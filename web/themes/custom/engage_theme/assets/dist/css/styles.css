@@ -3465,17 +3465,24 @@ select {
   outline: none;
 }
 
-.tenders-and-page-exposed input {
+.tenders-and-page-exposed input,
+.tenders-and-page-exposed select {
   padding: 10px 20px;
   border: 2px solid #cecece;
   border-radius: 0.5rem;
 }
 
-.tenders-and-page-exposed select {
-  min-width: 6rem;
-  padding: 10px 20px;
-  border: 2px solid #cecece;
-  border-radius: 0.5rem;
+/* Tablet and below */
+
+@media (max-width: 768px) {
+  .tenders-and-page-exposed input,
+  .tenders-and-page-exposed select {
+    padding: 8px 12px;
+    /* smaller padding */
+    width: 100%;
+    /* full width */
+    box-sizing: border-box;
+  }
 }
 
 .tenders-and-page-exposed .js-form-type-select label {
@@ -3993,6 +4000,11 @@ select {
     padding-right: 1.5rem;
   }
 
+  .sm\:py-8 {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
   .sm\:pb-4 {
     padding-bottom: 1rem;
   }
@@ -4294,6 +4306,16 @@ select {
   .md\:px-20 {
     padding-left: 5rem;
     padding-right: 5rem;
+  }
+
+  .md\:px-8 {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .md\:py-10 {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
   }
 
   .md\:pb-12 {

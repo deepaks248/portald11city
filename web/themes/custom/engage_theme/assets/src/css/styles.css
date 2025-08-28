@@ -439,6 +439,23 @@ select {
   scrollbar-width: none;
 }
 
-.grievance-form-container select:focus-visible{
+.grievance-form-container select:focus-visible {
   outline: none;
+}
+
+.tenders-and-page-exposed input {
+  padding: 10px 20px;
+  border: 2px solid #cecece;
+  border-radius: 0.5rem;
+}
+
+.tenders-and-page-exposed select {
+  min-width: 6rem;
+  padding: 10px 20px;
+  border: 2px solid #cecece;
+  border-radius: 0.5rem;
+}
+
+.tenders-and-page-exposed .js-form-type-select label {
+  display: none;
 }

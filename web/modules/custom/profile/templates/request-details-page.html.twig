@@ -69,10 +69,10 @@
 					<div class="timelineSteps flex gap-5 {% if not loop.last %}pb-28 xs:pb-5{% endif %}">
 						<div class="time_date">
 							<p class="formatfamily text-base font-nevis uppercase" id="dynamic-text">
-								{{ step.createdDate ? step.createdDate|date('j M') : 'NA' }}
+								{{ step.createdDate ? step.createdDate|date('j M', 'Asia/Kolkata') : 'NA' }}
 							</p>
 							<p class="formatfamilydate text-base" id="dynamic-text">
-								{{ step.createdDate ? step.createdDate|date('h:i:s a') : 'NA' }}
+								{{ step.createdDate ? step.createdDate|date('h:i:s a', 'Asia/Kolkata') : 'NA' }}
 							</p>
 						</div>
 						{% if step.completed == true %}

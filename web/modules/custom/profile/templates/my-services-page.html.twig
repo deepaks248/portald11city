@@ -44,7 +44,7 @@
 							<td class="px-4 py-4">{{ loop.index + ((current_page - 1) * items_per_page) }}</td>
 							<td class="px-4 py-4">{{ item.grievanceId }}</td>
 							<td class="px-4 py-4">{{ item.incidentSubType }}</td>
-							<td class="px-4 py-4">{{ item.receivedTime|date("d/m/Y, h:i:s a") }}</td>
+							<td class="px-4 py-4">{{ item.receivedTime|date("d/m/Y, h:i:s a", "Asia/Kolkata") }}</td>
 							<td class="px-4 py-4 truncate">{{ item.userRemarks }}</td>
 							<td class="px-4 py-4 text-[#5A2525] font-bold text-center">{{ item.status }}</td>
 							<td class="px-4 py-4 text-center">

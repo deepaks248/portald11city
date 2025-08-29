@@ -4282,23 +4282,6 @@ select {
     border-radius: 1.5rem;
   }
 
-  .md\:border-0 {
-    border-width: 0px;
-  }
-
-  .md\:border-b-2 {
-    border-bottom-width: 2px;
-  }
-
-  .md\:border-yellow-500 {
-    --tw-border-opacity: 1;
-    border-color: rgb(234 179 8 / var(--tw-border-opacity, 1));
-  }
-
-  .md\:bg-transparent {
-    background-color: transparent;
-  }
-
   .md\:p-10 {
     padding: 2.5rem;
   }
@@ -4367,22 +4350,6 @@ select {
   .md\:leading-7 {
     line-height: 1.75rem;
   }
-
-  .md\:text-white {
-    --tw-text-opacity: 1;
-    color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-  }
-
-  .md\:shadow-none {
-    --tw-shadow: 0 0 #0000;
-    --tw-shadow-colored: 0 0 #0000;
-    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
-  }
-
-  .md\:hover\:text-yellow-400:hover {
-    --tw-text-opacity: 1;
-    color: rgb(250 204 21 / var(--tw-text-opacity, 1));
-  }
 }
 
 @media (min-width: 1024px) {
@@ -4420,6 +4387,10 @@ select {
 
   .lg\:flex {
     display: flex;
+  }
+
+  .lg\:hidden {
+    display: none;
   }
 
   .lg\:h-14 {

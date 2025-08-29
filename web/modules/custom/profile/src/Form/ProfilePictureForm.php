@@ -5,13 +5,16 @@ namespace Drupal\profile\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
-class ProfilePictureForm extends FormBase {
+class ProfilePictureForm extends FormBase
+{
 
-  public function getFormId() {
+  public function getFormId()
+  {
     return 'profile_picture_form';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state): array {
+  public function buildForm(array $form, FormStateInterface $form_state): array
+  {
     $session = \Drupal::request()->getSession();
     $user_data = $session->get('api_redirect_result') ?? [];
 
@@ -43,10 +46,10 @@ class ProfilePictureForm extends FormBase {
         </div>',
     ];
 
-    $form['user_id'] = [
-      '#type' => 'markup',
-      '#markup' => '<div class="userId_no"><p class="text-[13px] text-[#646262]">User Id :- ' . ($user_data['userId'] ?? '') . '</p></div>',
-    ];
+    // $form['user_id'] = [
+    //   '#type' => 'markup',
+    //   '#markup' => '<div class="userId_no"><p class="text-[13px] text-[#646262]">User Id :- ' . ($user_data['userId'] ?? '') . '</p></div>',
+    // ];
 
     $form['edit_label'] = [
       '#type' => 'html_tag',
@@ -76,29 +79,29 @@ class ProfilePictureForm extends FormBase {
       '#name' => 'profilePic_filename',
     ];
 
-$form['remove'] = [
-  '#type' => 'html_tag',
-  '#tag' => 'button',
-  '#value' => $this->t('Remove'),
-  '#attributes' => [
-    'type' => 'button', // 🚨 Prevents form submission
-    'id' => 'remove-profile-picture',
-    'class' => [
-      'removeImg',
-      'text-sm',
-      'font-bold',
-      'font-[Open_Sans]',
-      'border-2',
-      'px-4',
-      'py-0.5',
-      'cursor-pointer',
-      'translateLabel',
-    ],
-    'data-modal-target' => 'remove-profile-picture-modal',
-    'data-modal-toggle' => 'remove-profile-picture-modal',
-    'engage-button' => 'engage-button-modal',
-  ],
-];
+    $form['remove'] = [
+      '#type' => 'html_tag',
+      '#tag' => 'button',
+      '#value' => $this->t('Remove'),
+      '#attributes' => [
+        'type' => 'button', // 🚨 Prevents form submission
+        'id' => 'remove-profile-picture',
+        'class' => [
+          'removeImg',
+          'text-sm',
+          'font-bold',
+          'font-[Open_Sans]',
+          'border-2',
+          'px-4',
+          'py-0.5',
+          'cursor-pointer',
+          'translateLabel',
+        ],
+        'data-modal-target' => 'remove-profile-picture-modal',
+        'data-modal-toggle' => 'remove-profile-picture-modal',
+        'engage-button' => 'engage-button-modal',
+      ],
+    ];
 
     $form['note'] = [
       '#type' => 'markup',
@@ -108,7 +111,8 @@ $form['remove'] = [
     return $form;
   }
 
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state)
+  {
     // No-op: form uses AJAX-only actions.
   }
 
@@ -132,7 +136,7 @@ $form['remove'] = [
       'tenantCode' => $user_data['tenantCode'],
       'profilePic' => 'null',
       'userId' => $user_id
-    ];  
+    ];
 
     try {
       $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();

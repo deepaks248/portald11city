@@ -463,3 +463,9 @@ select {
 .tenders-and-page-exposed .js-form-type-select label {
   display: none;
 }
+
+.resize-btn.active {
+  color: #f59e0b; /* Tailwind text-yellow-500 */
+  font-weight: 800; /* Tailwind font-extrabold */
+  text-decoration: underline;
+}

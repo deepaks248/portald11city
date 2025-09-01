@@ -7,6 +7,8 @@
           src="{{ file_url(row.content['#row']._entity.field_news_poster.0.entity.uri.value|image_style('latest_blog_image')) }}" 
           alt="{{ row.content['#row']._entity.title.0.value }}" 
           class="blog-page-img rounded-lg"
+          width = {{ row.content['#row']._entity.field_news_poster.0.width }}
+          height = {{ row.content['#row']._entity.field_news_poster.0.height }}
         >
 
         <!-- Card Body -->

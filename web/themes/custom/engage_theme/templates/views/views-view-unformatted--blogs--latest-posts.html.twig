@@ -5,6 +5,8 @@
         src="{{ file_url(row.content['#row']._entity.field_blog_image.0.entity.uri.value|image_style('latest_blog_image')) }}" 
         alt="{{ row.content['#row']._entity.title.value }}" 
         class="blog-img rounded-lg"
+        width = {{ row.content['#row']._entity.field_blog_image.0.width }}
+        height = {{ row.content['#row']._entity.field_blog_image.0.height }}
       >
       <div class="card-body p-0">
         <div class="card-desc text-base font-sans text-[#333333] font-normal my-3 minlines s:text-base xs:text-sm">

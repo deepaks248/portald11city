@@ -1,7 +1,7 @@
 global-styling:
   css:
     theme:
-      assets/dist/css/styles.css: {}
+      assets/dist/css/styles.min.css: {}
   js:
     assets/src/js/engage.js: {}
 

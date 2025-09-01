@@ -172,6 +172,20 @@
   border-radius: 0.5rem;
 }
 
+@media screen and (max-width: 768px) {
+  .news-and-page-exposed input {
+    padding: 8px 12px; /* smaller padding */
+    width: 100%; /* full width */
+    box-sizing: border-box;
+  }
+
+  .news-and-page-exposed select {
+    padding: 8px 12px; /* smaller padding */
+    width: 100%; /* full width */
+    box-sizing: border-box;
+  }
+}
+
 .portal-enquiry-webform input.form-email,
 .portal-enquiry-webform input.form-tel,
 .portal-enquiry-webform select,
@@ -468,4 +482,30 @@ select {
   color: #f59e0b; /* Tailwind text-yellow-500 */
   font-weight: 800; /* Tailwind font-extrabold */
   text-decoration: underline;
+}
+
+/* Apply grid to every webform-flexbox wrapper */
+.webform-flexbox {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* 2 equal columns */
+  gap: 1rem; /* spacing between fields */
+}
+
+/* Make sure form elements take full width */
+.webform-flex {
+  width: 100%;
+}
+
+.webform-flex select,
+.webform-flex input,
+.webform-flex textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Mobile breakpoint: stack all into single column */
+@media (max-width: 767px) {
+  .webform-flexbox {
+    grid-template-columns: 1fr; /* single column */
+  }
 }

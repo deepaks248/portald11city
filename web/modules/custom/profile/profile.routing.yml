@@ -42,12 +42,12 @@ profile.edit_address_form:
       node:
         type: entity:node
 
-profile..delete_address:
+profile.delete_address:
   path: '/delete-address/{nid}'
   defaults:
     _controller: '\Drupal\profile\Controller\DeleteAddressController::delete'
   requirements:
-    _permission: 'delete address'
+    _custom_access: '\Drupal\profile\Controller\DeleteAddressController::access'
     nid: \d+
   methods: [DELETE]
 

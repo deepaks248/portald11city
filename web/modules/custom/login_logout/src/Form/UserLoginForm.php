@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\login_logout\Service\OAuthLoginService;
 use GuzzleHttp\ClientInterface;
 use Drupal\Core\Database\Connection;
+use Drupal\global_module\Service\GlobalVariablesService;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 
@@ -25,8 +26,9 @@ class UserLoginForm extends FormBase
   protected $httpClient;
   protected $oauthLoginService;
   protected $database;
+  protected $globalVariablesService;
 
-  public function __construct(AccountProxyInterface $currentUser, UserAuthInterface $userAuth, SessionManagerInterface $sessionManager, RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService, Connection $database)
+  public function __construct(AccountProxyInterface $currentUser, UserAuthInterface $userAuth, SessionManagerInterface $sessionManager, RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService, Connection $database, GlobalVariablesService $globalVariablesService)
   {
     $this->oauthLoginService = $oauthLoginService;
     $this->currentUser = $currentUser;
@@ -35,6 +37,7 @@ class UserLoginForm extends FormBase
     $this->requestStack = $requestStack;
     $this->httpClient = $httpClient;
     $this->database = $database;
+    $this->globalVariablesService = $globalVariablesService;
   }
 
   public static function create(ContainerInterface $container)
@@ -46,7 +49,8 @@ class UserLoginForm extends FormBase
       $container->get('request_stack'),
       $container->get('http_client'),
       $container->get('login_logout.oauth_login_service'),
-      $container->get('database')
+      $container->get('database'),
+      $container->get('global_module.global_variables')
     );
   }
 
@@ -64,8 +68,15 @@ class UserLoginForm extends FormBase
     $form['email'] = [
       '#type' => 'email',
       '#title' => $this->t('Email'),
+      // '#attributes' => [
+      //   'placeholder' => $this->t('Email'),
+      // ],
       '#attributes' => [
         'placeholder' => $this->t('Email'),
+        'onpaste' => 'return false;',
+        'oncopy' => 'return false;',
+        'oncut' => 'return false;',
+        'autocomplete' => 'off',
       ],
       '#required' => TRUE,
       '#default_value' => $form_state->getValue('email'),
@@ -75,8 +86,15 @@ class UserLoginForm extends FormBase
       $form['password'] = [
         '#type' => 'password',
         '#title' => $this->t('Password'),
+        // '#attributes' => [
+        //   'placeholder' => $this->t('Password'),
+        // ],
         '#attributes' => [
           'placeholder' => $this->t('Password'),
+          'onpaste' => 'return false;',
+          'oncopy' => 'return false;',
+          'oncut' => 'return false;',
+          'autocomplete' => 'new-password',
         ],
         '#required' => TRUE,
       ];
@@ -180,7 +198,7 @@ class UserLoginForm extends FormBase
         // Fallback if nothing matched
         $session = \Drupal::service('session');
         $session->set('login_logout.active_session_id_token', $closestSessionId);
-        
+
         // Step 5: Load Drupal user and log in
         $users = \Drupal::entityTypeManager()
           ->getStorage('user')
@@ -201,9 +219,11 @@ class UserLoginForm extends FormBase
     } else {
       // Step 0: First-time email validation
       try {
-        $globalVariablesService = \Drupal::service('global_module.global_variables');
-        $accessToken = $globalVariablesService->getApimanAccessToken();
-        $globals = $globalVariablesService->getGlobalVariables();
+        // $globalVariablesService = \Drupal::service('global_module.global_variables');
+        $accessToken = $this->globalVariablesService->getApimanAccessToken();
+        // $accessToken = $globalVariablesService->getApimanAccessToken();
+        $globals = $this->globalVariablesService->getGlobalVariables();
+        // $globals = $globalVariablesService->getGlobalVariables();
 
         $apiUrl = $globals['apiManConfig']['config']['apiUrl'] ?? '';
         $apiVersion = $globals['apiManConfig']['config']['apiVersion'] ?? '';
@@ -211,9 +231,12 @@ class UserLoginForm extends FormBase
         if ($this->oauthLoginService->checkEmailExists($email, $accessToken, $apiUrl, $apiVersion)) {
           $form_state->set('email_validated', TRUE)->setRebuild();
         } else {
-          $form_state->setRedirect('login_logout.user_register_form', [], [
-            'query' => ['email' => base64_encode($email)]
-          ]);
+          // Store email in TempStore (scoped per user session)
+          $tempstore = \Drupal::service('tempstore.private')->get('login_logout');
+          $tempstore->set('registration_email', $email);
+
+          // Redirect without query params
+          $form_state->setRedirect('login_logout.user_register_form');
         }
       } catch (\Exception $e) {
         $this->messenger()->addError($this->t('Error checking email: @msg', ['@msg' => $e->getMessage()]));

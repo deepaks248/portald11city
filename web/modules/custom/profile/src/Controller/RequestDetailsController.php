@@ -6,6 +6,8 @@ use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\profile\Service\ServiceRequestApiService;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+// use Symfony\Component\HttpFoundation\Request;
 
 class RequestDetailsController extends ControllerBase
 {
@@ -24,32 +26,22 @@ class RequestDetailsController extends ControllerBase
         );
     }
 
-    //   public function view(string $id, Request $request) {
-    //     // Reconstruct full grievance ID
-    //     $grievanceId = 'GV-' . date('Ymd') . '-' . $id;
-
-    //     // Fetch the requestTypeId via search (if needed) or pass it as a query param
-    //     $requestTypeId = $request->query->get('type', 1);
-
-    //     // Fetch live request details
-    //     $api_response = $this->service->getServiceRequestDetails($grievanceId, $requestTypeId);
-
-    //     if (empty($api_response['data'])) {
-    //       return [
-    //         '#markup' => $this->t('No data found for grievance ID @id.', ['@id' => $grievanceId]),
-    //       ];
-    //     }
-
-    //     return [
-    //       '#theme' => 'request_details_page',
-    //       '#data' => $api_response['data'],
-    //     ];
-    //   }
     public function view(string $grievance_id, Request $request)
     {
         $requestTypeId = $request->query->get('type', 1);
+        $session = \Drupal::service('session');
 
         $api_response = $this->service->getServiceRequestDetails($grievance_id, $requestTypeId);
+
+        // Extract values safely
+        $sessionUserId = $session->get('api_redirect_result')['userId'] ?? null;
+        $responseUserId = $api_response['data']['serviceRequestDetails']['userId'] ?? null;
+
+        // ✅ Check userId match
+        if (!$sessionUserId || !$responseUserId || $sessionUserId !== $responseUserId) {
+            // Redirect if not authorized
+            return new RedirectResponse('/service-request');
+        }
 
         if (empty($api_response['data'])) {
             return [

@@ -17,6 +17,12 @@ services:
         "@global_module.global_variables",
       ]
 
+  login_logout.no_cache_subscriber:
+    class: Drupal\login_logout\EventSubscriber\NoCacheSubscriber
+    arguments: ['@current_user']
+    tags:
+      - { name: event_subscriber }
+
   login_logout.userinfo_validator:
     class: Drupal\login_logout\Service\UserInfoValidator
     arguments: ["@http_client", "@logger.channel.login_logout", "@session"]

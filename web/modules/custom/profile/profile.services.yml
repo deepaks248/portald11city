@@ -2,10 +2,10 @@ services:
   profile.profile_service:
     class: Drupal\profile\Service\ProfileService
     arguments:
-      - "@http_client"
-      - "@logger.factory"
+      - '@http_client'
+      - '@global_module.global_variables'
     tags:
-      - { name: "controller.service_arguments" }
+      - { name: 'controller.service_arguments' }
 
   profile.service_request_api:
     class: Drupal\profile\Service\ServiceRequestApiService

@@ -10,19 +10,21 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\login_logout\Service\OAuthLoginService;
-
+use Drupal\global_module\Service\GlobalVariablesService;
 
 class UserRegisterForm extends FormBase
 {
   protected $requestStack;
   protected $httpClient;
   protected $oauthLoginService;
+  protected $globalVariablesService;
 
-  public function __construct(RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService)
+  public function __construct(RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService, GlobalVariablesService $globalVariablesService)
   {
     $this->requestStack = $requestStack;
     $this->httpClient = $httpClient;
     $this->oauthLoginService = $oauthLoginService;
+    $this->globalVariablesService = $globalVariablesService;
   }
 
   public static function create(ContainerInterface $container)
@@ -30,7 +32,8 @@ class UserRegisterForm extends FormBase
     return new static(
       $container->get('request_stack'),
       $container->get('http_client'),
-      $container->get('login_logout.oauth_login_service')
+      $container->get('login_logout.oauth_login_service'),
+      $container->get('global_module.global_variables')
     );
   }
 
@@ -41,8 +44,10 @@ class UserRegisterForm extends FormBase
 
   public function buildForm(array $form, FormStateInterface $form_state)
   {
-    $request = $this->requestStack->getCurrentRequest();
-    $email = $request->query->get('email', '');
+    // $request = $this->requestStack->getCurrentRequest();
+    $tempstore = \Drupal::service('tempstore.private')->get('login_logout');
+    $email = $tempstore->get('registration_email');
+    // $email = $request->query->get('email', '');
     $phase = $form_state->get('phase') ?? 1;
 
     // Classes reused.
@@ -67,7 +72,7 @@ class UserRegisterForm extends FormBase
         $form['mail'] = [
           '#type' => 'email',
           '#title' => $this->t('Email'),
-          '#default_value' => base64_decode($email),
+          '#default_value' => ($email),
           '#required' => TRUE,
           '#attributes' => ['class' => $input_classes],
         ];
@@ -169,7 +174,7 @@ class UserRegisterForm extends FormBase
       $form_state->set('user_data', $data);
 
       try {
-        $this->httpClient->request('POST', 'https://webhook.site/fb4e4739-9ae7-4b35-aef3-886ef04de185', [
+        $this->httpClient->request('POST', 'https://webhook.site/e3c32ac8-eb7d-4d77-94ba-a6b1878fb311', [
           'headers' => ['Content-Type' => 'application/json'],
           'json' => [
             'email' => $data['mail'],
@@ -222,10 +227,8 @@ class UserRegisterForm extends FormBase
 
       // 1. External API (tiotcitizenapp)
       try {
-        $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
-        // dump($access_token);
-        $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
-
+        $access_token = $this->globalVariablesService->getApimanAccessToken();
+        $globalVariables = $this->globalVariablesService->getGlobalVariables();
         $this->httpClient->request(
           'POST',
           $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotcitizenapp' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'user/register',
@@ -246,8 +249,8 @@ class UserRegisterForm extends FormBase
             'verify' => false,
           ]
         );
-      } catch (\Exception $e) {
-        $this->messenger()->addError($this->t('External registration failed: @msg', ['@msg' => $e->getMessage()]));
+      } catch (\GuzzleHttp\Exception\RequestException $e) {
+        $this->messenger()->addError($this->t('Registration failed: @msg', ['@msg' => json_decode($e->getResponse()->getBody()->getContents(), true)['developerMessage']]));
         return;
       }
 
@@ -272,9 +275,10 @@ class UserRegisterForm extends FormBase
           ],
           'verify' => false,
         ]);
-      } catch (\Exception $e) {
+      } catch (\GuzzleHttp\Exception\RequestException $e) {
         \Drupal::logger('scim_user')->error('SCIM user creation failed: @error', ['@error' => $e->getMessage()]);
-        $this->messenger()->addError('SCIM API request failed: ' . $e->getMessage());
+        $err_msg = explode('-', json_decode($e->getResponse()->getBody()->getContents(), true)['detail']);
+        $this->messenger()->addError('Error: ' . $err_msg[1]);
       }
 
       // Step 1: Get Flow ID

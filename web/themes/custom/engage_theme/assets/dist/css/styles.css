@@ -3455,7 +3455,7 @@ select {
   /* height: 40px; */
   padding: 10px;
   border-radius: 5px;
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
   border: 1px solid #cecece;
   font-size: 16px;
 }
@@ -3593,6 +3593,22 @@ select {
     grid-template-columns: 1fr;
     /* single column */
   }
+}
+
+#views-exposed-form-custom-search-block-1 input {
+  background: white;
+  border: 1px solid #cbcdd1;
+  border-radius: 0.5rem;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-family: open_sans;
+  width: 300px;
+  background-position: 2% center !important;
+  position: relative;
+  padding-left: 25px;
+  background-image: url(/themes/custom/engage_theme/images/search_top.svg) !important;
+  background-repeat: no-repeat !important;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .first\:pt-0:first-child {

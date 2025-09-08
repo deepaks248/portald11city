@@ -16,6 +16,7 @@
     ],
     "require": {
         "composer/installers": "^2.3",
+        "cweagans/composer-patches": "^1.7",
         "drupal/admin_toolbar": "^3.6",
         "drupal/autologout": "^2.0",
         "drupal/better_exposed_filters": "^7.0",
@@ -23,8 +24,8 @@
         "drupal/clientside_validation": "^4.1",
         "drupal/content_access": "^2.1@RC",
         "drupal/core-composer-scaffold": "^11.2",
-        "drupal/core-recipe-unpack": "^11.2",
         "drupal/core-project-message": "^11.2",
+        "drupal/core-recipe-unpack": "^11.2",
         "drupal/core-recommended": "^11.2",
         "drupal/css_editor": "^2.0",
         "drupal/devel": "^5.3",
@@ -44,6 +45,7 @@
         "drupal/paragraphs": "^1.19",
         "drupal/pathauto": "^1.13",
         "drupal/search_api": "^1.38",
+        "drupal/seckit": "^2.0",
         "drupal/session_inspector": "^1.0",
         "drupal/svg_image": "^3.2",
         "drupal/twig_tweak": "^3.4",
@@ -62,17 +64,23 @@
     "config": {
         "allow-plugins": {
             "composer/installers": true,
-            "drupal/core-composer-scaffold": true,
-            "drupal/core-recipe-unpack": true,
-            "drupal/core-project-message": true,
-            "phpstan/extension-installer": true,
+            "cweagans/composer-patches": true,
             "dealerdirect/phpcodesniffer-composer-installer": true,
+            "drupal/core-composer-scaffold": true,
+            "drupal/core-project-message": true,
+            "drupal/core-recipe-unpack": true,
             "php-http/discovery": true,
-            "php-tuf/composer-integration": true
+            "php-tuf/composer-integration": true,
+            "phpstan/extension-installer": true
         },
         "sort-packages": true
     },
     "extra": {
+        "patches": {
+            "drupal/seckit": {
+                "Fix for X-Generator": "https://www.drupal.org/files/issues/2020-09-03/seckit-2.x-2795025-remove_x_generator.patch"
+            }
+        },
         "drupal-scaffold": {
             "locations": {
                 "web-root": "web/"

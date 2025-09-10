@@ -41,7 +41,7 @@ class ActiveSessionService
         $cookies = $request->headers->get('cookie');
 
         try {
-            $response = $this->httpClient->request('GET', 'https://tiotidam:9443/api/users/v1/me/sessions', [
+            $response = $this->httpClient->request('GET', 'https://hcsjointstacknew.trinityiot.in/api/users/v1/me/sessions', [
                 'headers' => [
                     'Accept' => '*/*',
                     'Authorization' => 'Bearer ' . $accessToken,
@@ -60,7 +60,7 @@ class ActiveSessionService
 
     public function terminateSession(string $session_id, string $access_token): bool
     {
-        $url = 'https://tiotidam:9443/api/users/v1/me/sessions/' . $session_id;
+        $url = 'https://hcsjointstacknew.trinityiot.in/api/users/v1/me/sessions/' . $session_id;
 
         try {
             $this->httpClient->request('DELETE', $url, [

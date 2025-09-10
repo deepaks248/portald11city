@@ -11,6 +11,7 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\RedirectCommand;
 use Drupal\user\Entity\User;
 use Drupal\Core\Url;
+
 class ChangePasswordForm extends FormBase
 {
   /**
@@ -155,139 +156,142 @@ class ChangePasswordForm extends FormBase
   }
 
 
-public function submitForm(array &$form, FormStateInterface $form_state) {
-  $oldPass = $form_state->getValue('old_password');
-  $newPass = $form_state->getValue('new_password');
-  $confirmPass = $form_state->getValue('confirm_password');
+  public function submitForm(array &$form, FormStateInterface $form_state)
+  {
+    $oldPass = $form_state->getValue('old_password');
+    $newPass = $form_state->getValue('new_password');
+    $confirmPass = $form_state->getValue('confirm_password');
 
-  \Drupal::logger('change_password')->notice('Submitting change password form for user ID: @uid', [
-    '@uid' => \Drupal::currentUser()->id()
-  ]);
-
-  $resultPassdata = ['status' => false, 'message' => 'Something went wrong'];
-
-  try {
-    $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
-    $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
-
-    $idamClientId = $globalVariables['applicationConfig']['config']['idamClientId'];
-    // $idamClientId = 'Ap1tGcg_RSKEar5ueCH58XJujKUa';
-    $user = User::load(\Drupal::currentUser()->id());
-    $email = $user->get('mail')->value;
-
-    $payload = [
-      "schemas" => ["urn:ietf:params:scim:api:messages:2.0:SearchRequest"],
-      "filter" => "userName eq $email"
-    ];
-
-    \Drupal::logger('change_password')->notice('Sending filterUser payload: <pre>@payload</pre>', [
-      '@payload' => print_r($payload, TRUE)
+    \Drupal::logger('change_password')->notice('Submitting change password form for user ID: @uid', [
+      '@uid' => \Drupal::currentUser()->id()
     ]);
 
-    // $responseData = \Drupal::service('global_module.global_variables')->curl_post_apiman(
-    //   $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotweb' . 
-    //   $globalVariables['apiManConfig']['config']['apiVersion'] . 'filterUser',
-    //   $payload
-    // );
-    $url = 'https://tiotidam:9443/scim2/Users?filter=' . urlencode('emails eq '.$email);
+    $resultPassdata = ['status' => false, 'message' => 'Something went wrong'];
 
-$responseData = \Drupal::service('global_module.global_variables')->curl_get_api($url);
-    // dump($responseData);
+    try {
+      $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
+      $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
 
-    if (!empty($responseData['Resources'][0]['id'])) {
-      $idamUserId = $responseData['Resources'][0]['id'];
-      $payloadoldPass = [
-        // "grantType" => "password",
-        "grant_type" => "password",
-        "password" => $oldPass,
-        "client_id" => "Ap1tGcg_RSKEar5ueCH58XJujKUa",
-        "username" => $email
+      $idamClientId = $globalVariables['applicationConfig']['config']['idamClientId'];
+      // $idamClientId = 'Ap1tGcg_RSKEar5ueCH58XJujKUa';
+      $user = User::load(\Drupal::currentUser()->id());
+      $email = $user->get('mail')->value;
+
+      $payload = [
+        "schemas" => ["urn:ietf:params:scim:api:messages:2.0:SearchRequest"],
+        "filter" => "userName eq $email"
       ];
-      
 
-      \Drupal::logger('change_password')->notice('Verifying old password payload: <pre>@payload</pre>', [
-        '@payload' => print_r($payloadoldPass, TRUE)
+      \Drupal::logger('change_password')->notice('Sending filterUser payload: <pre>@payload</pre>', [
+        '@payload' => print_r($payload, TRUE)
       ]);
 
-      // $resoldpass = \Drupal::service('global_module.global_variables')->curl_post_apiman(
+      // $responseData = \Drupal::service('global_module.global_variables')->curl_post_apiman(
       //   $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotweb' . 
-      //   $globalVariables['apiManConfig']['config']['apiVersion'] . 'verifyPassword',
-      //   $payloadoldPass
+      //   $globalVariables['apiManConfig']['config']['apiVersion'] . 'filterUser',
+      //   $payload
       // );
-      $resoldpass = \Drupal::service('global_module.global_variables')->curl_post_idam(
-        'https://tiotidam:9443/oauth2/token/' ,$payloadoldPass
-      );
-    //   dump($resoldpass);exit;
+      $url = 'https://hcsjointstacknew.trinityiot.in/scim2/Users?filter=' . urlencode('emails eq ' . $email);
 
-      if (!empty($resoldpass['access_token'])) {
-        $payloadPass = [
-          "schemas" => ["urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"],
-          "Operations" => [[
-            "op" => "replace",
-            "path" => "password",
-            "value" => $newPass
-          ]]
+      $responseData = \Drupal::service('global_module.global_variables')->curl_get_api($url);
+      // dump($responseData);
+
+      if (!empty($responseData['Resources'][0]['id'])) {
+        $idamUserId = $responseData['Resources'][0]['id'];
+        $payloadoldPass = [
+          // "grantType" => "password",
+          "grant_type" => "password",
+          "password" => $oldPass,
+          "client_id" => "Ap1tGcg_RSKEar5ueCH58XJujKUa",
+          "username" => $email
         ];
 
-        \Drupal::logger('change_password')->notice('Updating password payload: <pre>@payload</pre>', [
-          '@payload' => print_r($payloadPass, TRUE)
+
+        \Drupal::logger('change_password')->notice('Verifying old password payload: <pre>@payload</pre>', [
+          '@payload' => print_r($payloadoldPass, TRUE)
         ]);
 
-        // $respass = \Drupal::service('global_module.global_variables')->curl_post_apiman(
+        // $resoldpass = \Drupal::service('global_module.global_variables')->curl_post_apiman(
         //   $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotweb' . 
-        //   $globalVariables['apiManConfig']['config']['apiVersion'] . 'UpdatePassword/' . $idamUserId,
-        //   $payloadPass,
-        //   'PATCH'
+        //   $globalVariables['apiManConfig']['config']['apiVersion'] . 'verifyPassword',
+        //   $payloadoldPass
         // );
-        $respass = \Drupal::service('global_module.global_variables')->curl_post_idam_auth(
-          'https://tiotidam:9443/scim2/Users/'.$idamUserId,$payloadPass,'PATCH');
+        $resoldpass = \Drupal::service('global_module.global_variables')->curl_post_idam(
+          'https://hcsjointstacknew.trinityiot.in/oauth2/token/',
+          $payloadoldPass
+        );
+        //   dump($resoldpass);exit;
 
-        \Drupal::logger('change_password')->notice('Update password response: <pre>@res</pre>', [
-          '@res' => print_r($respass, TRUE)
-        ]);
+        if (!empty($resoldpass['access_token'])) {
+          $payloadPass = [
+            "schemas" => ["urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"],
+            "Operations" => [[
+              "op" => "replace",
+              "path" => "password",
+              "value" => $newPass
+            ]]
+          ];
 
-        if (!empty($respass['emails'][0]) && $respass['emails'][0] === $email) {
-          $resultPassdata = ['status' => true, 'message' => 'Password updated successfully!'];
-        } elseif (!empty($respass['detail'])) {
-          $resultPassdata = ['status' => false, 'message' => $respass['detail']];
+          \Drupal::logger('change_password')->notice('Updating password payload: <pre>@payload</pre>', [
+            '@payload' => print_r($payloadPass, TRUE)
+          ]);
+
+          // $respass = \Drupal::service('global_module.global_variables')->curl_post_apiman(
+          //   $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotweb' . 
+          //   $globalVariables['apiManConfig']['config']['apiVersion'] . 'UpdatePassword/' . $idamUserId,
+          //   $payloadPass,
+          //   'PATCH'
+          // );
+          $respass = \Drupal::service('global_module.global_variables')->curl_post_idam_auth(
+            'https://hcsjointstacknew.trinityiot.in/scim2/Users/' . $idamUserId,
+            $payloadPass,
+            'PATCH'
+          );
+
+          \Drupal::logger('change_password')->notice('Update password response: <pre>@res</pre>', [
+            '@res' => print_r($respass, TRUE)
+          ]);
+
+          if (!empty($respass['emails'][0]) && $respass['emails'][0] === $email) {
+            $resultPassdata = ['status' => true, 'message' => 'Password updated successfully!'];
+          } elseif (!empty($respass['detail'])) {
+            $resultPassdata = ['status' => false, 'message' => $respass['detail']];
+          } else {
+            $resultPassdata = ['status' => false, 'message' => 'Password not updated!'];
+          }
         } else {
-          $resultPassdata = ['status' => false, 'message' => 'Password not updated!'];
+          $resultPassdata = ['status' => false, 'message' => 'Old password not matching!'];
         }
       } else {
-        $resultPassdata = ['status' => false, 'message' => 'Old password not matching!'];
+        \Drupal::logger('change_password')->error('User ID not found in SCIM filter response.');
+        $resultPassdata = ['status' => false, 'message' => 'User not found in SCIM.'];
       }
-
-    } else {
-      \Drupal::logger('change_password')->error('User ID not found in SCIM filter response.');
-      $resultPassdata = ['status' => false, 'message' => 'User not found in SCIM.'];
+    } catch (\Exception $e) {
+      \Drupal::logger('change_password')->error('Exception: @msg', ['@msg' => $e->getMessage()]);
+      $resultPassdata = ['status' => false, 'message' => 'Unexpected error occurred.'];
     }
 
-  } catch (\Exception $e) {
-    \Drupal::logger('change_password')->error('Exception: @msg', ['@msg' => $e->getMessage()]);
-    $resultPassdata = ['status' => false, 'message' => 'Unexpected error occurred.'];
+    // Final logging
+    \Drupal::logger('change_password')->notice('Final result: <pre>@result</pre>', [
+      '@result' => print_r($resultPassdata, TRUE)
+    ]);
+
+    // Redirect to /response-status with query string
+    $status = !empty($resultPassdata['status']) ? 1 : 0;
+    $message = $resultPassdata['message'] ?? 'Something went wrong.';
+    $redirect = 'change-password';
+
+    $form_state->setRedirect('global_module.status', [], [
+      'query' => [
+        'status' => $status,
+        'message' => $message,
+        'formData' => $redirect,
+      ],
+    ]);;
+    // $response = new AjaxResponse();
+    // $response->addCommand(new RedirectCommand($url));
+    // return $response;
   }
-
-  // Final logging
-  \Drupal::logger('change_password')->notice('Final result: <pre>@result</pre>', [
-    '@result' => print_r($resultPassdata, TRUE)
-  ]);
-
-  // Redirect to /response-status with query string
-$status = !empty($resultPassdata['status']) ? 1 : 0;
-$message = $resultPassdata['message'] ?? 'Something went wrong.';
-$redirect = 'change-password';
-
-$form_state->setRedirect('global_module.status', [], [
-    'query' => [
-      'status' => $status,
-      'message' => $message,
-      'formData' => $redirect,
-    ],
-  ]);;
-// $response = new AjaxResponse();
-// $response->addCommand(new RedirectCommand($url));
-// return $response;
-}
 
 
 
@@ -303,10 +307,9 @@ $form_state->setRedirect('global_module.status', [], [
   public function ajaxCallback(array &$form, FormStateInterface $form_state)
   {
     if ($form_state->hasAnyErrors()) {
-    // Return the entire form to show errors, but do NOT process submit
+      // Return the entire form to show errors, but do NOT process submit
+      return $form;
+    }
     return $form;
   }
-   return $form;
-  }
-
 }

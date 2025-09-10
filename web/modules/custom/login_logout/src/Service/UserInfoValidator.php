@@ -33,7 +33,7 @@ class UserInfoValidator {
     }
 
     try {
-      $response = $this->httpClient->request('POST', 'https://tiotidam:9443/oauth2/userinfo', [
+      $response = $this->httpClient->request('POST', 'https://hcsjointstacknew.trinityiot.in/oauth2/userinfo', [
         'headers' => [
           'Content-Type'  => 'application/x-www-form-urlencoded',
           'Authorization' => 'Bearer ' . $accessToken,

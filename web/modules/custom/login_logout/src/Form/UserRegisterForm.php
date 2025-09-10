@@ -86,8 +86,12 @@ class UserRegisterForm extends FormBase
             '+44' => '+44 (UK)',
           ],
           '#default_value' => '+91',
-          '#attributes' => ['class' => $select_classes],
+          '#attributes' => [
+            'class' => $select_classes,
+            'autocomplete' => 'off',
+          ],
         ];
+
         $form['mobile'] = [
           '#type' => 'tel',
           '#title' => $this->t('Mobile Number'),
@@ -95,8 +99,12 @@ class UserRegisterForm extends FormBase
           '#attributes' => [
             'maxlength' => 15,
             'class' => $input_classes,
+            'autocomplete' => 'tel', // use 'off' if you want no browser suggestions
+            'inputmode' => 'numeric',
+            'pattern' => '[0-9]{10,15}',
           ],
         ];
+
         $form['submit'] = [
           '#type' => 'submit',
           '#value' => $this->t('Send OTP'),
@@ -109,7 +117,16 @@ class UserRegisterForm extends FormBase
           '#type' => 'textfield',
           '#title' => $this->t('Enter OTP'),
           '#required' => TRUE,
-          '#attributes' => ['maxlength' => 6, 'class' => $input_classes],
+          '#attributes' => [
+            'maxlength' => 6,
+            'class' => $input_classes,
+            'onpaste' => 'return false;',
+            'oncopy' => 'return false;',
+            'oncut' => 'return false;',
+            'autocomplete' => 'off',
+            'inputmode' => 'numeric',
+            'pattern' => '[0-9]*',
+          ],
         ];
         $form['submit'] = [
           '#type' => 'submit',
@@ -123,13 +140,25 @@ class UserRegisterForm extends FormBase
           '#type' => 'password',
           '#title' => $this->t('Password'),
           '#required' => TRUE,
-          '#attributes' => ['class' => $input_classes],
+          '#attributes' => [
+            'class' => $input_classes,
+            'onpaste' => 'return false;',
+            'oncopy' => 'return false;',
+            'oncut' => 'return false;',
+            'autocomplete' => 'new-password',
+          ],
         ];
         $form['confirm_password'] = [
           '#type' => 'password',
           '#title' => $this->t('Confirm Password'),
           '#required' => TRUE,
-          '#attributes' => ['class' => $input_classes],
+          '#attributes' => [
+            'class' => $input_classes,
+            'onpaste' => 'return false;',
+            'oncopy' => 'return false;',
+            'oncut' => 'return false;',
+            'autocomplete' => 'new-password',
+          ],
         ];
         $form['submit'] = [
           '#type' => 'submit',
@@ -256,7 +285,7 @@ class UserRegisterForm extends FormBase
 
       // 2. SCIM API call
       try {
-        $this->httpClient->request('POST', 'https://tiotidam:9443/scim2/Users/', [
+        $this->httpClient->request('POST', 'https://hcsjointstacknew.trinityiot.in/scim2/Users/', [
           'headers' => [
             'accept' => 'application/scim+json',
             'Content-Type' => 'application/scim+json',

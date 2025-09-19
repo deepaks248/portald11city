@@ -142,13 +142,13 @@ class UserLoginForm extends FormBase
 
         // Step 2: Authenticate user
         $authorizationCode = $this->oauthLoginService->authenticateUser($flowId, $email, $password);
-        if (!$authorizationCode) {
-          $this->messenger()->addError($this->t('Authorization code not received.'));
+        if (!$authorizationCode['code']) {
+          $this->messenger()->addError($this->t($authorizationCode['message']));
           return;
         }
 
         // Step 3: Exchange code for token
-        $tokenData = $this->oauthLoginService->exchangeCodeForToken($authorizationCode);
+        $tokenData = $this->oauthLoginService->exchangeCodeForToken($authorizationCode['code']);
         if (empty($tokenData['access_token']) || empty($tokenData['id_token'])) {
           $this->messenger()->addError($this->t('Token not received.'));
           return;

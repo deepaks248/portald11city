@@ -178,6 +178,8 @@ class UserRegisterForm extends FormBase
   public function submitForm(array &$form, FormStateInterface $form_state)
   {
     $phase = $form_state->get('phase') ?? 1;
+    $key_value = \Drupal::service('keyvalue')->get('otp_rate_limit');
+    $current_time = \Drupal::time()->getCurrentTime();
 
     if ($phase === 1) {
       // Step 1: Collect data and send OTP
@@ -198,6 +200,43 @@ class UserRegisterForm extends FormBase
         return;
       }
 
+      // Unique identifier (email or mobile)
+      $identifier = $data['mail'] ?? $data['mobile'];
+
+      // --- Cooldown check (60s) ---
+      $last_time = $key_value->get($identifier . '_last') ?? 0;
+      if (($current_time - $last_time) < 60) {
+        $this->messenger()->addError($this->t('Please wait @seconds seconds before requesting a new OTP.', [
+          '@seconds' => 60 - ($current_time - $last_time),
+        ]));
+        $form_state->setRedirect('login_logout.user_login_form');
+        return;
+      }
+
+      // --- Rate limiting (max 5 in 15 min) ---
+      $history = $key_value->get($identifier . '_history') ?? [];
+      $history = array_filter($history, fn($t) => ($current_time - $t) <= 900);
+      if (count($history) >= 5) {
+        $this->messenger()->addError($this->t('Too many OTP requests. Try again after 15 minutes.'));
+        $form_state->setRedirect('login_logout.user_login_form');
+        return;
+      }
+
+      // // Save request time
+      // $history[] = $current_time;
+      // $key_value->set($identifier . '_history', $history);
+      // $key_value->set($identifier . '_last', $current_time);
+
+      // --- CAPTCHA after 3rd request ---
+      // if (count($history) >= 3) {
+      //   if (empty($form_state->getValue('captcha_response'))) {
+      //     $this->messenger()->addError($this->t('Please complete the CAPTCHA challenge.'));
+      //     $form_state->setRebuild();
+      //     return;
+      //   }
+      // }
+
+      // ✅ Generate OTP
       $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
       $form_state->set('otp_code', $otp);
       $form_state->set('user_data', $data);
@@ -229,12 +268,30 @@ class UserRegisterForm extends FormBase
       // Step 2: Verify OTP
       $submitted_otp = $form_state->getValue('otp');
       $expected_otp = $form_state->get('otp_code');
+      $data = $form_state->get('user_data');
+      $identifier = $data['mail'] ?? $data['mobile'];
+
+      // Track OTP failures
+      $failures = $key_value->get($identifier . '_fails') ?? [];
+      $failures = array_filter($failures, fn($t) => ($current_time - $t) <= 900);
 
       if ($submitted_otp !== $expected_otp) {
+        $failures[] = $current_time;
+        $key_value->set($identifier . '_fails', $failures);
+
+        if (count($failures) >= 5) {
+          $this->messenger()->addError($this->t('Too many failed attempts. Please try again later.'));
+          $form_state->setRedirect('login_logout.user_login_form');
+          return;
+        }
+
         $this->messenger()->addError($this->t('Invalid OTP. Please try again.'));
         $form_state->setRebuild();
         return;
       }
+
+      // Reset failure count on success
+      $key_value->delete($identifier . '_fails');
 
       $form_state->set('phase', 3);
       $form_state->setRebuild();

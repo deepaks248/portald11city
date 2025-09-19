@@ -4,7 +4,7 @@ login_logout.user_register_form:
     _form: '\Drupal\login_logout\Form\UserRegisterForm'
     _title: 'Register User'
   requirements:
-    _permission: 'access content'
+    _custom_access: '\Drupal\login_logout\Access\UserRegisterAccessCheck::access'
 
 login_logout.user_login_form:
   path: '/user-login'
@@ -12,7 +12,7 @@ login_logout.user_login_form:
     _form: '\Drupal\login_logout\Form\UserLoginForm'
     _title: 'Login User'
   requirements:
-    _permission: 'access content'
+    _custom_access: '\Drupal\login_logout\Access\UserLoginAccessCheck::access'
 
 login_logout.logout:
   path: '/logout'

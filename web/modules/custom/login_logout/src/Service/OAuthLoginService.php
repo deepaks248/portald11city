@@ -18,12 +18,11 @@ class OAuthLoginService
     // protected $activeSessionService;
 
     public function __construct(
-        ClientInterface $http_client, 
-        LoggerInterface $logger, 
-        RequestStack $requestStack, 
+        ClientInterface $http_client,
+        LoggerInterface $logger,
+        RequestStack $requestStack,
         GlobalVariablesService $globalVariablesService
-    )
-    {
+    ) {
         $this->globalVariablesService = $globalVariablesService;
         // $this->activeSessionService = $activeSessionService;
         $this->httpClient = $http_client;
@@ -58,7 +57,7 @@ class OAuthLoginService
         }
     }
 
-    public function authenticateUser(string $flow_id, string $email, string $password): ?string
+    public function authenticateUser(string $flow_id, string $email, string $password): ?array
     {
         $userAgent = $this->requestStack->getCurrentRequest()->headers->get('User-Agent');
 
@@ -86,7 +85,31 @@ class OAuthLoginService
 
             $result = json_decode($response->getBody()->getContents(), TRUE);
             $this->logger->notice('Authn response: <pre>@data</pre>', ['@data' => print_r($result, TRUE)]);
-            return $result['authData']['code'] ?? NULL;
+            // return $result['authData']['code'] ?? NULL;
+            // If success
+            if (!empty($result['authData']['code'])) {
+                return [
+                    'success' => TRUE,
+                    'code' => $result['authData']['code'],
+                    'message' => NULL,
+                ];
+            }
+
+            // If there are error messages
+            if (!empty($result['nextStep']['messages'][0]['message'])) {
+                return [
+                    'success' => FALSE,
+                    'code' => NULL,
+                    'message' => $result['nextStep']['messages'][0]['message'],
+                ];
+            }
+
+            // Generic failure
+            return [
+                'success' => FALSE,
+                'code' => NULL,
+                'message' => 'Authentication failed. Please try again.',
+            ];
         } catch (\Exception $e) {
             $this->logger->error('Error authenticating user: @msg', ['@msg' => $e->getMessage()]);
             return NULL;
@@ -183,7 +206,7 @@ class OAuthLoginService
             throw new \Exception('Authorization code not received.');
         }
 
-        return $this->exchangeCodeForToken($authorizationCode);
+        return $this->exchangeCodeForToken($authorizationCode['code']);
     }
 
     public function extractEmailFromJwt(string $idToken): ?string

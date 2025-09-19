@@ -42,7 +42,7 @@ class ChangePasswordForm extends FormBase
     $form['#prefix'] = '<div id="change-password-form-wrapper">';
     $form['#suffix'] = '</div>';
 
-    $form['#attributes']['class'][] = 'form-sec p-4 lg:px-10 lg:py-12 text-center lg:text-start s:mb-24 xs:mb-20';
+    $form['#attributes']['class'][] = 'form-sec lg:px-10 text-center lg:text-start s:mb-24 xs:mb-20';
 
     $form['old_password'] = [
       '#type' => 'password',
@@ -172,8 +172,8 @@ class ChangePasswordForm extends FormBase
       $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
       $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
 
-      $idamClientId = $globalVariables['applicationConfig']['config']['idamClientId'];
-      // $idamClientId = 'Ap1tGcg_RSKEar5ueCH58XJujKUa';
+      // $idamClientId = $globalVariables['applicationConfig']['config']['idamClientId'];
+      $idamClientId = 'Ap1tGcg_RSKEar5ueCH58XJujKUa';
       $user = User::load(\Drupal::currentUser()->id());
       $email = $user->get('mail')->value;
 
@@ -191,7 +191,7 @@ class ChangePasswordForm extends FormBase
       //   $globalVariables['apiManConfig']['config']['apiVersion'] . 'filterUser',
       //   $payload
       // );
-      $url = 'https://hcsjointstacknew.trinityiot.in/scim2/Users?filter=' . urlencode('emails eq ' . $email);
+      $url = 'https://hcsjointstacknew.trinityiot.in/scim2/Users?filter=' . urlencode("emails eq \"$email\"");
 
       $responseData = \Drupal::service('global_module.global_variables')->curl_get_api($url);
       // dump($responseData);
@@ -202,7 +202,7 @@ class ChangePasswordForm extends FormBase
           // "grantType" => "password",
           "grant_type" => "password",
           "password" => $oldPass,
-          "client_id" => "Ap1tGcg_RSKEar5ueCH58XJujKUa",
+          "client_id" => "hVBu5NSpBJHJ84KF70nfQ8ZMdnQa",
           "username" => $email
         ];
 

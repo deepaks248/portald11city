@@ -85,8 +85,8 @@ class OAuthLoginService
 
             $result = json_decode($response->getBody()->getContents(), TRUE);
             $this->logger->notice('Authn response: <pre>@data</pre>', ['@data' => print_r($result, TRUE)]);
-            // return $result['authData']['code'] ?? NULL;
-            // If success
+
+            // Success: return code
             if (!empty($result['authData']['code'])) {
                 return [
                     'success' => TRUE,
@@ -95,7 +95,31 @@ class OAuthLoginService
                 ];
             }
 
-            // If there are error messages
+            // Active session limit reached
+            if (
+                !empty($result['nextStep']['authenticators'][0]['authenticator']) &&
+                $result['nextStep']['authenticators'][0]['authenticator'] === 'Active Sessions Limit'
+            ) {
+                $maxSessions = $result['nextStep']['authenticators'][0]['metadata']['additionalData']['MaxSessionCount'] ?? 'unknown';
+                $sessions = $result['nextStep']['authenticators'][0]['metadata']['additionalData']['sessions'] ?? '[]';
+                $sessions = json_decode($sessions, TRUE);
+
+                $sessionList = '';
+                foreach ($sessions as $s) {
+                    $sessionList .= "- Browser: {$s['browser']}, Device: {$s['device']}, Last Active: " .
+                        date('Y-m-d H:i:s', $s['lastAccessTime'] / 1000) . "\n";
+                }
+
+                $message = "You have reached the maximum active sessions ($maxSessions).";
+
+                return [
+                    'success' => FALSE,
+                    'code' => NULL,
+                    'message' => $message,
+                ];
+            }
+
+            // Generic error message from nextStep messages
             if (!empty($result['nextStep']['messages'][0]['message'])) {
                 return [
                     'success' => FALSE,
@@ -112,7 +136,11 @@ class OAuthLoginService
             ];
         } catch (\Exception $e) {
             $this->logger->error('Error authenticating user: @msg', ['@msg' => $e->getMessage()]);
-            return NULL;
+            return [
+                'success' => FALSE,
+                'code' => NULL,
+                'message' => 'An error occurred during authentication. Please try again later.',
+            ];
         }
     }
 

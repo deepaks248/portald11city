@@ -488,7 +488,7 @@ class GlobalVariablesService
       $body = $response->getBody()->getContents();
       return json_decode($body, true);
     } catch (RequestException $e) {
-      \Drupal::logger('global_module')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
+      \Drupal::logger('global_module post idam')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
       return ['error' => 'Request failed'];
     }
   }
@@ -496,35 +496,49 @@ class GlobalVariablesService
   {
     try {
       $client = \Drupal::httpClient();
-      $method = strtoupper($method); // Ensure method is uppercase (POST/PATCH)
+      $method = strtoupper($method);
+
       $options = [
         'headers' => [
           'Accept' => 'application/json',
+          'Content-Type' => 'application/json',
           'Authorization' => 'Basic ' . base64_encode('trinity:trinity@123'),
         ],
         'json' => $payload,
         'verify' => false,
       ];
 
-      // Call dynamically based on method (POST by default)
       switch ($method) {
         case 'PATCH':
           $response = $client->patch($url, $options);
           break;
-
         case 'PUT':
           $response = $client->put($url, $options);
           break;
-
-        default: // Default to POST
+        default:
           $response = $client->post($url, $options);
       }
 
       $body = $response->getBody()->getContents();
       return json_decode($body, true);
-    } catch (RequestException $e) {
-      \Drupal::logger('global_module')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
-      return ['error' => 'Request failed'];
+    } catch (\GuzzleHttp\Exception\RequestException $e) {
+      $errorBody = null;
+      if ($e->hasResponse()) {
+        $errorBody = (string) $e->getResponse()->getBody();
+      }
+
+      \Drupal::logger('global_module idam auth')->error(
+        'HTTP request failed: @message | Response: @response',
+        [
+          '@message' => $e->getMessage(),
+          '@response' => $errorBody,
+        ]
+      );
+
+      return [
+        'error' => 'Request failed',
+        'details' => $errorBody ? json_decode($errorBody, true) : $e->getMessage(),
+      ];
     }
   }
 
@@ -649,7 +663,7 @@ class GlobalVariablesService
     }
   }
 
-   public function detailsUpdate()
+  public function detailsUpdate()
   {
     \Drupal::logger('profile_picture_form')->debug('AJAX Remove callback triggered.');
 
@@ -669,7 +683,7 @@ class GlobalVariablesService
       'tenantCode' => $user_data['tenantCode'],
       'profilePic' => 'null',
       'userId' => $user_id
-    ];  
+    ];
     // dump($payload);exit;
     try {
       $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
@@ -688,21 +702,20 @@ class GlobalVariablesService
       );
 
       $data = json_decode($response->getBody(), true);
-      
+
       if (!empty($data['status']) && ($data['status'] === true || $data['status'] === 'true')) {
-          $session->remove('api_redirect_result');
-          \Drupal::logger('profile')->notice('Profile removed successfully.');
-          return new JsonResponse([
-            'status' => true,
-            'message' => 'Profile removed successfully',
-          ]);
-        }
-        else {
-          \Drupal::logger('profile')->notice('Failed to remove profile');
-          return new JsonResponse([
-            'status' => false,
-            'message' => 'Failed to remove profile',
-          ]);
+        $session->remove('api_redirect_result');
+        \Drupal::logger('profile')->notice('Profile removed successfully.');
+        return new JsonResponse([
+          'status' => true,
+          'message' => 'Profile removed successfully',
+        ]);
+      } else {
+        \Drupal::logger('profile')->notice('Failed to remove profile');
+        return new JsonResponse([
+          'status' => false,
+          'message' => 'Failed to remove profile',
+        ]);
       }
     } catch (\Exception $e) {
       \Drupal::logger('profile_form')->error('API Error: @message', ['@message' => $e->getMessage()]);

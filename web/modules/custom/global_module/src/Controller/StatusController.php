@@ -7,25 +7,19 @@ use Symfony\Component\HttpFoundation\Request;
 
 class StatusController extends ControllerBase {
 
- public function statusPage() {
-  $request = \Drupal::request();
-  $status = $request->query->get('status');
-  $message = $request->query->get('message');
-  $formData = $request->query->get('formData');
-  // Example rendering
-   return [
+  public function statusPage(Request $request) {
+    $status = $request->query->get('status', 0);
+    $message = $request->query->get('message', 'No message provided.');
+    $formData = $request->query->get('formData', 'unknown');
+
+    return [
       '#theme' => 'status',
       '#status' => $status,
       '#message' => $message,
       '#form_data' => $formData,
-      '#attached' => [
-        'library' => [
-          // Optional: add CSS/JS if needed
-          // 'global_module/status-page',
-        ],
+      '#cache' => [
+        'max-age' => 0,
       ],
     ];
-}
-
-
+  }
 }

@@ -35,6 +35,7 @@ services:
         "@session_manager",
         "@login_logout.userinfo_validator",
         "@logger.channel.login_logout",
+        "@path.current",
       ]
     tags:
       - { name: event_subscriber }

@@ -18,3 +18,11 @@ services:
       - "@request_stack"
     tags:
       - { name: controller.service_arguments }
+
+  profile.password_change:
+    class: Drupal\profile\Service\PasswordChangeService
+    arguments:
+      - '@global_module.global_variables'
+      - '@logger.factory'
+      - '@current_user'
+      - '@session'

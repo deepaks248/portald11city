@@ -8,28 +8,30 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Session\SessionManagerInterface;
 use Drupal\Core\Routing\TrustedRedirectResponse;
-use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Drupal\login_logout\Service\UserInfoValidator;
+use Drupal\Core\Path\CurrentPathStack;
 
 class UserInfoCheckSubscriber implements EventSubscriberInterface
 {
-
     protected $currentUser;
     protected $sessionManager;
     protected $validator;
     protected $logger;
+    protected $currentPath;
 
     public function __construct(
         AccountProxyInterface $current_user,
         SessionManagerInterface $session_manager,
         UserInfoValidator $validator,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        CurrentPathStack $current_path
     ) {
         $this->currentUser = $current_user;
         $this->sessionManager = $session_manager;
         $this->validator = $validator;
         $this->logger = $logger;
+        $this->currentPath = $current_path;
     }
 
     public static function getSubscribedEvents()
@@ -45,6 +47,20 @@ class UserInfoCheckSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $current_path = $this->currentPath->getPath();
+
+        // Skip validation for certain paths
+        $skip_paths = [
+            '/response-status', // status page
+            '/user-login',      // login page
+            '/logout',          // logout page
+        ];
+
+        if (in_array($current_path, $skip_paths)) {
+            return;
+        }
+
+        // Skip for anonymous or admin users
         if ($this->currentUser->isAnonymous() || $this->currentUser->hasPermission('administer site configuration')) {
             return;
         }

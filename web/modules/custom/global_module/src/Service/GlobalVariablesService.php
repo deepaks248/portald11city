@@ -719,7 +719,7 @@ class GlobalVariablesService
       }
     } catch (\Exception $e) {
       \Drupal::logger('profile_form')->error('API Error: @message', ['@message' => $e->getMessage()]);
-      \Drupal::logger('profile_form')->error($this->t('API Error. Please try again later.'));
+      \Drupal::logger('profile_form')->error('API Error. Please try again later.');
     }
   }
 }

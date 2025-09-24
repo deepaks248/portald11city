@@ -255,7 +255,7 @@ class AddAddressForm extends FormBase
     {
         $value = $element['#value'];
         if (!preg_match('/^\d{6}$/', $value)) {
-            $form_state->setError($element, t('Postal code must be 6 digits'));
+            $form_state->setError($element, \Drupal::translation()->translate('Postal code must be 6 digits'));
         }
     }
 

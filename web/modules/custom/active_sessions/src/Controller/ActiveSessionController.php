@@ -99,17 +99,39 @@ class ActiveSessionController extends ControllerBase
 
     public function activeSession()
     {
-        // $account = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         $session = \Drupal::service('session');
         $accessToken = $session->get('login_logout.access_token');
-        $active_session_id_token = $session->get('login_logout.active_session_id_token');
+        $storedLoginTime = $session->get('login_logout.login_time');
 
-        // Fetch API sessions
+        // Fetch sessions from API
         $sessions = $this->sessionService->fetchActiveSessions($accessToken);
         $apiSessions = $sessions['sessions'] ?? [];
 
         $currentUserSessions = [];
         $otherUserSessions = [];
+
+        $closestSessionId = null;
+        if (!empty($storedLoginTime) && !empty($apiSessions)) {
+            $targetTimeMs = $storedLoginTime * 1000;
+            $closestDiff = PHP_INT_MAX;
+
+            foreach ($apiSessions as $apiSession) {
+                if (!empty($apiSession['loginTime'])) {
+                    $diff = abs($apiSession['loginTime'] - $targetTimeMs);
+
+                    // short-circuit if exact match
+                    if ($diff === 0) {
+                        $closestSessionId = $apiSession['id'];
+                        break;
+                    }
+
+                    if ($diff < $closestDiff) {
+                        $closestDiff = $diff;
+                        $closestSessionId = $apiSession['id'];
+                    }
+                }
+            }
+        }
 
         foreach ($apiSessions as &$apiSession) {
             $timestamp = (int) ($apiSession['loginTime'] / 1000);
@@ -119,8 +141,7 @@ class ActiveSessionController extends ControllerBase
             $apiSession['formattedLoginTime'] = $this->dateFormatter
                 ->format($timestamp, 'custom', 'd-m-Y, h:i:s', 'Asia/Kolkata');
 
-            // ✅ Compare using the stored active session ID
-            if ($apiSession['id'] == $active_session_id_token) {
+            if ($apiSession['id'] === $closestSessionId) {
                 $currentUserSessions[] = $apiSession;
             } else {
                 $otherUserSessions[] = $apiSession;

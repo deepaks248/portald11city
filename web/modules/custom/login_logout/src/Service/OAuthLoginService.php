@@ -57,6 +57,34 @@ class OAuthLoginService
         }
     }
 
+    /**
+     * Decode a JWT token payload.
+     *
+     * @param string $jwt
+     *   The JWT token (e.g., id_token).
+     *
+     * @return array|null
+     *   Returns the payload as an associative array, or NULL if invalid.
+     */
+    public function decodeJwt(string $jwt): ?array
+    {
+        $parts = explode('.', $jwt);
+        if (count($parts) !== 3) {
+            return null; // Invalid token format
+        }
+
+        $payload = $parts[1];
+
+        // Decode Base64Url (replace -_ with +/ and pad with =)
+        $payload = strtr($payload, '-_', '+/');
+        $mod4 = strlen($payload) % 4;
+        if ($mod4) {
+            $payload .= str_repeat('=', 4 - $mod4);
+        }
+
+        $decoded = json_decode(base64_decode($payload), true);
+        return is_array($decoded) ? $decoded : null;
+    }
     public function authenticateUser(string $flow_id, string $email, string $password): ?array
     {
         $userAgent = $this->requestStack->getCurrentRequest()->headers->get('User-Agent');

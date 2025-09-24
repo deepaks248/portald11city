@@ -11,6 +11,7 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\login_logout\Service\OAuthLoginService;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class UserRegisterForm extends FormBase
 {
@@ -96,12 +97,12 @@ class UserRegisterForm extends FormBase
           '#type' => 'tel',
           '#title' => $this->t('Mobile Number'),
           '#required' => TRUE,
+          '#maxlength' => 10, // <-- works in Drupal
           '#attributes' => [
-            'maxlength' => 15,
             'class' => $input_classes,
-            'autocomplete' => 'tel', // use 'off' if you want no browser suggestions
-            'inputmode' => 'numeric',
-            'pattern' => '[0-9]{10,15}',
+            'pattern' => '[0-9]{10}', // exactly 10 digits
+            'title' => $this->t('Enter a valid mobile number'),
+            'oninput' => 'this.value = this.value.replace(/[^0-9]/g, "").slice(0,10)', // enforce JS side
           ],
         ];
 
@@ -178,8 +179,6 @@ class UserRegisterForm extends FormBase
   public function submitForm(array &$form, FormStateInterface $form_state)
   {
     $phase = $form_state->get('phase') ?? 1;
-    $key_value = \Drupal::service('keyvalue')->get('otp_rate_limit');
-    $current_time = \Drupal::time()->getCurrentTime();
 
     if ($phase === 1) {
       // Step 1: Collect data and send OTP
@@ -200,63 +199,118 @@ class UserRegisterForm extends FormBase
         return;
       }
 
-      // Unique identifier (email or mobile)
-      $identifier = $data['mail'] ?? $data['mobile'];
-
-      // --- Cooldown check (60s) ---
-      $last_time = $key_value->get($identifier . '_last') ?? 0;
-      if (($current_time - $last_time) < 60) {
-        $this->messenger()->addError($this->t('Please wait @seconds seconds before requesting a new OTP.', [
-          '@seconds' => 60 - ($current_time - $last_time),
-        ]));
-        $form_state->setRedirect('login_logout.user_login_form');
-        return;
-      }
-
-      // --- Rate limiting (max 5 in 15 min) ---
-      $history = $key_value->get($identifier . '_history') ?? [];
-      $history = array_filter($history, fn($t) => ($current_time - $t) <= 900);
-      if (count($history) >= 5) {
-        $this->messenger()->addError($this->t('Too many OTP requests. Try again after 15 minutes.'));
-        $form_state->setRedirect('login_logout.user_login_form');
-        return;
-      }
-
-      // // Save request time
-      // $history[] = $current_time;
-      // $key_value->set($identifier . '_history', $history);
-      // $key_value->set($identifier . '_last', $current_time);
-
-      // --- CAPTCHA after 3rd request ---
-      // if (count($history) >= 3) {
-      //   if (empty($form_state->getValue('captcha_response'))) {
-      //     $this->messenger()->addError($this->t('Please complete the CAPTCHA challenge.'));
-      //     $form_state->setRebuild();
-      //     return;
-      //   }
-      // }
-
-      // ✅ Generate OTP
+      // Generate a 6-digit OTP with leading zeros if necessary
       $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
       $form_state->set('otp_code', $otp);
       $form_state->set('user_data', $data);
 
       try {
-        $this->httpClient->request('POST', 'https://webhook.site/943d7c73-2faa-45eb-a8e0-3d09dda94560', [
-          'headers' => ['Content-Type' => 'application/json'],
-          'json' => [
-            'email' => $data['mail'],
-            'mobile' => $data['mobile'],
-            'otp' => $otp,
-            'name' => $data['first_name'] . ' ' . $data['last_name'],
-          ],
-          'verify' => false,
-        ]);
-        $this->messenger()->addStatus($this->t('OTP sent to your mobile/email.'));
+        $flood = \Drupal::service('flood');
+        // Enhanced Rate Limiting: Use combination of IP, session, and email for rate limiting
+        $session_id = \Drupal::service('session')->getId();  // User session ID
+        $identifier = 'otp:' . $data['mail'] . ':' . $session_id;  // Combined identifier
+        $limit = 1;
+        $window = 120;  // 2-minute window for OTP request
+
+        // Check if the user has exceeded the rate limit
+        if (!$flood->isAllowed('get_users_limit', $limit, $window, $identifier)) {
+          // Calculate remaining wait time
+          $last_event = \Drupal::database()->select('flood', 'f')
+            ->fields('f', ['timestamp'])
+            ->condition('event', 'get_users_limit')
+            ->condition('identifier', $identifier)
+            ->orderBy('timestamp', 'DESC')
+            ->range(0, 1)
+            ->execute()
+            ->fetchField();
+
+          $remaining = $window;
+          if ($last_event) {
+            $elapsed = \Drupal::time()->getCurrentTime() - $last_event;
+            $remaining = max($window - $elapsed, 0);
+          }
+
+          // Show rate limit exceeded message to the user
+          \Drupal::messenger()->addError($this->t(
+            '<span class="rate-limit-message" data-wait="@time">@msg</span>',
+            [
+              '@time' => $remaining,
+              '@msg' => "Rate limit exceeded. Please wait {$remaining} seconds...",
+            ]
+          ));
+
+          // Return a JSON response with the rate limit message
+          return new JsonResponse([
+            "status" => false,
+            "message" => "Rate limit exceeded. Please wait {$remaining} seconds.",
+          ], 429);
+        }
+
+        // Lock mechanism to prevent parallel requests
+        $lock_key = 'otp_lock:' . $data['mail']; // Unique lock for the user/email
+
+        // Acquire a lock to prevent parallel submissions
+        $lock_service = \Drupal::service('lock');
+        if ($lock_service->acquire($lock_key)) {
+          // Generate the OTP
+          $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+          $form_state->set('otp_code', $otp);
+          $form_state->set('user_data', $data);
+
+          try {
+            // Send OTP via secure API (ensure HTTPS and valid provider)
+            $this->httpClient->request('POST', 'https://webhook.site/c73235a1-1ccf-411f-9d4f-dcf4855e0077', [
+              'headers' => ['Content-Type' => 'application/json'],
+              'json' => [
+                'email' => $data['mail'],
+                'mobile' => $data['mobile'],
+                'otp' => $otp,
+                'name' => $data['first_name'] . ' ' . $data['last_name'],
+              ],
+              'verify' => false, // Set to true for SSL verification in production
+            ]);
+
+            // Notify the user that OTP has been sent
+            $this->messenger()->addStatus($this->t('OTP sent to your mobile/email.'));
+
+            // Register the flood event for rate limiting
+            $flood->register('get_users_limit', $window, $identifier);
+
+            // Release the lock
+            $lock_service->release($lock_key);
+          } catch (\Exception $e) {
+            // Log the error
+            \Drupal::logger('register_api')->error('OTP webhook failed: @msg', ['@msg' => $e->getMessage()]);
+
+            // Show a generic error message
+            $this->messenger()->addError($this->t('Failed to send OTP. Please try again later.'));
+
+            // Release the lock even if sending OTP fails
+            $lock_service->release($lock_key);
+
+            return new JsonResponse([
+              "status" => false,
+              "message" => "An error occurred while processing your request. Please try again later.",
+            ], 500);
+          }
+        } else {
+          // Handle failure to acquire lock (i.e., too many parallel requests)
+          $this->messenger()->addError($this->t('Unable to process OTP request. Please try again.'));
+          return new JsonResponse([
+            "status" => false,
+            "message" => "Unable to process your request at the moment. Please try again later.",
+          ], 503);
+        }
       } catch (\Exception $e) {
-        \Drupal::logger('register_api')->error('OTP webhook failed: @msg', ['@msg' => $e->getMessage()]);
-        $this->messenger()->addError($this->t('Failed to send OTP.'));
-        return;
+        // Log the error in case of an unexpected failure
+        \Drupal::logger('register_api')->error('OTP rate limit or lock error: @msg', ['@msg' => $e->getMessage()]);
+
+        // Show a generic error message
+        $this->messenger()->addError($this->t('An unexpected error occurred. Please try again later.'));
+        return new JsonResponse([
+          "status" => false,
+          "message" => "An unexpected error occurred. Please try again later.",
+        ], 500);
       }
 
       $form_state->set('phase', 2);
@@ -268,30 +322,12 @@ class UserRegisterForm extends FormBase
       // Step 2: Verify OTP
       $submitted_otp = $form_state->getValue('otp');
       $expected_otp = $form_state->get('otp_code');
-      $data = $form_state->get('user_data');
-      $identifier = $data['mail'] ?? $data['mobile'];
-
-      // Track OTP failures
-      $failures = $key_value->get($identifier . '_fails') ?? [];
-      $failures = array_filter($failures, fn($t) => ($current_time - $t) <= 900);
 
       if ($submitted_otp !== $expected_otp) {
-        $failures[] = $current_time;
-        $key_value->set($identifier . '_fails', $failures);
-
-        if (count($failures) >= 5) {
-          $this->messenger()->addError($this->t('Too many failed attempts. Please try again later.'));
-          $form_state->setRedirect('login_logout.user_login_form');
-          return;
-        }
-
         $this->messenger()->addError($this->t('Invalid OTP. Please try again.'));
         $form_state->setRebuild();
         return;
       }
-
-      // Reset failure count on success
-      $key_value->delete($identifier . '_fails');
 
       $form_state->set('phase', 3);
       $form_state->setRebuild();
@@ -342,7 +378,7 @@ class UserRegisterForm extends FormBase
 
       // 2. SCIM API call
       try {
-        $this->httpClient->request('POST', 'https://hcsjointstacknew.trinityiot.in/scim2/Users/', [
+        $this->httpClient->request('POST', 'https://tiotidam-poc:9443/scim2/Users/', [
           'headers' => [
             'accept' => 'application/scim+json',
             'Content-Type' => 'application/scim+json',
@@ -376,12 +412,12 @@ class UserRegisterForm extends FormBase
 
       // Step 2: Authenticate user
       $authorizationCode = $this->oauthLoginService->authenticateUser($flowId, $data['mail'], $password);
-      if (!$authorizationCode) {
-        $this->messenger()->addError($this->t('Authorization code not received.'));
+      if (!$authorizationCode['code']) {
+        $this->messenger()->addError($this->t($authorizationCode['message']));
         return;
       }
 
-      $tokenData = $this->oauthLoginService->exchangeCodeForToken($authorizationCode);
+      $tokenData = $this->oauthLoginService->exchangeCodeForToken($authorizationCode['code']);
       if (empty($tokenData['access_token']) || empty($tokenData['id_token'])) {
         $this->messenger()->addError($this->t('Token not received.'));
         return;

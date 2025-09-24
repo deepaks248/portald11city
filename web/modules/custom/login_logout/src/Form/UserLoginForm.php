@@ -142,7 +142,7 @@ class UserLoginForm extends FormBase
 
         // Step 2: Authenticate user
         $authorizationCode = $this->oauthLoginService->authenticateUser($flowId, $email, $password);
-        if (!$authorizationCode['code']) {
+        if (empty($authorizationCode['code'])) {
           $this->messenger()->addError($this->t($authorizationCode['message']));
           return;
         }
@@ -154,50 +154,21 @@ class UserLoginForm extends FormBase
           return;
         }
 
-        // Store in session
+        // Store in session (only what is needed now)
         $session = \Drupal::service('session');
         $session->set('login_logout.access_token', $tokenData['access_token']);
         $session->set('login_logout.id_token', $tokenData['id_token']);
 
-        // Step 4: Decode JWT to get email (or sub claim)
-        $parts = explode('.', $tokenData['id_token']);
-        if (count($parts) !== 3) {
-          throw new \Exception('Invalid JWT token format.');
-        }
-        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+        // Decode JWT safely
+        $payload = $this->oauthLoginService->decodeJwt($tokenData['id_token']);
         if (empty($payload['sub'])) {
           throw new \Exception('JWT payload missing "sub" claim.');
         }
         $jwtEmail = $payload['sub'];
 
+        // Save login timestamp (used later for matching active session)
         $login_time = \Drupal::time()->getRequestTime(); // seconds
-
-        // Get access token
-        $accessToken = $tokenData['access_token'] ?? '';
-
-        $activeSessionService = \Drupal::service('active_sessions.session_service');
-        $activeSessions = $activeSessionService->fetchActiveSessions($accessToken);
-
-        // Find closest matching API session by loginTime
-        $closestSessionId = null;
-        $closestDiff = PHP_INT_MAX;
-        $targetTimeMs = $login_time * 1000;
-
-        if (!empty($activeSessions['sessions'])) {
-          foreach ($activeSessions['sessions'] as $session) {
-            if (!empty($session['loginTime'])) {
-              $diff = abs($session['loginTime'] - $targetTimeMs);
-              if ($diff < $closestDiff) {
-                $closestDiff = $diff;
-                $closestSessionId = $session['id']; // <-- this is what we want
-              }
-            }
-          }
-        }
-
-        // Fallback if nothing matched
-        $session = \Drupal::service('session');
-        $session->set('login_logout.active_session_id_token', $closestSessionId);
+        $session->set('login_logout.login_time', $login_time);
 
         // Step 5: Load Drupal user and log in
         $users = \Drupal::entityTypeManager()
@@ -219,11 +190,8 @@ class UserLoginForm extends FormBase
     } else {
       // Step 0: First-time email validation
       try {
-        // $globalVariablesService = \Drupal::service('global_module.global_variables');
         $accessToken = $this->globalVariablesService->getApimanAccessToken();
-        // $accessToken = $globalVariablesService->getApimanAccessToken();
         $globals = $this->globalVariablesService->getGlobalVariables();
-        // $globals = $globalVariablesService->getGlobalVariables();
 
         $apiUrl = $globals['apiManConfig']['config']['apiUrl'] ?? '';
         $apiVersion = $globals['apiManConfig']['config']['apiVersion'] ?? '';
@@ -231,11 +199,8 @@ class UserLoginForm extends FormBase
         if ($this->oauthLoginService->checkEmailExists($email, $accessToken, $apiUrl, $apiVersion)) {
           $form_state->set('email_validated', TRUE)->setRebuild();
         } else {
-          // Store email in TempStore (scoped per user session)
           $tempstore = \Drupal::service('tempstore.private')->get('login_logout');
           $tempstore->set('registration_email', $email);
-
-          // Redirect without query params
           $form_state->setRedirect('login_logout.user_register_form');
         }
       } catch (\Exception $e) {

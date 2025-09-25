@@ -49,6 +49,7 @@
         "drupal/session_inspector": "^1.0",
         "drupal/svg_image": "^3.2",
         "drupal/twig_tweak": "^3.4",
+        "drupal/ultimate_cron": "^2.0@beta",
         "drupal/visitors": "^2.29",
         "drupal/votingapi": "4.0.x-dev@dev",
         "drupal/webform": "^6.3@beta",

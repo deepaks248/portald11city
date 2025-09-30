@@ -1,0 +1,7 @@
+grievance.grievance_report:
+  path: '/grievance-report'
+  defaults:
+    _form: '\Drupal\grievance\Form\GrievanceForm'
+    _title: 'Grievance Report Form'
+  requirements:     
+    _permission: 'access content'

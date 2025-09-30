@@ -3619,7 +3619,41 @@ select {
   padding-left: 25px;
   background-image: url(/themes/custom/engage_theme/images/search_top.svg) !important;
   background-repeat: no-repeat !important;
-  font-family: 'Open Sans', sans-serif;
+  font-family: "Open Sans", sans-serif;
+}
+
+/* Reset native styles */
+
+#terms {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 24px;
+  height: 24px;
+  /* border: 2px solid #000; */
+  border-radius: 4px;
+  cursor: pointer;
+  position: relative;
+  background-color: #fff;
+}
+
+/* Checked state */
+
+#terms:checked {
+  background-color: #000;
+  border-color: #000;
+}
+
+#terms:checked::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 2px;
+  width: 6px;
+  height: 12px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .first\:pt-0:first-child {

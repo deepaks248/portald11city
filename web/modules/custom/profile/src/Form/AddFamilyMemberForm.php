@@ -246,8 +246,8 @@ class AddFamilyMemberForm extends FormBase
 
     $form['upload_file'] = [
       '#type' => 'file',
-      '#title' => $this->t('Upload Picture'),
-      '#description' => $this->t('(Supported file types: JPG, JPEG & PNG, 2MB max)'),
+      '#title' => $this->t('<span class="font-nevis">Upload Picture</span>'),
+      '#description' => $this->t('<span class="text-xs">(Supported file types: JPG, JPEG & PNG, 2MB max)</span>'),
       '#required' => TRUE,
       '#required_error' => $this->t('Please upload a file'),
       '#upload_validators' => [
@@ -260,8 +260,8 @@ class AddFamilyMemberForm extends FormBase
           'w-1/2',
           'lg:max-w-lg',
           'px-2.5',
-          'pb-2.5',
-          'pt-4',
+          'py-2.5',
+          // 'pt-4',
           'text-sm',
           'text-medium_dark',
           'bg-transparent',
@@ -282,11 +282,11 @@ class AddFamilyMemberForm extends FormBase
 
    $form['terms'] = [
   '#type' => 'checkbox',
-  '#title' => $this->t('I agree to the Terms and Conditions'),
+  '#title' => $this->t('<span>I agree to the <a href="" class="link link-primary text-blue-600 underline hover:text-blue-900" target="_blank">Terms and Conditions</a></span>'),
   '#required' => TRUE,
   '#required_error' => $this->t('You must agree to the Terms and Conditions'),
   '#attributes' => [
-    'class' => ['checkbox'],  
+    'class' => ['checkbox','w-6', 'h-6', 'rounded', 'cursor-pointer', 'border', 'border-gray-400'],  
     'id' => 'terms',
   ],
   '#prefix' => '<div class="terms-container flex items-center space-x-2 no-float-label relative">',

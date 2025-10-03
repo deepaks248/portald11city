@@ -44,6 +44,7 @@
         "drupal/openid_connect": "^3.0@alpha",
         "drupal/paragraphs": "^1.19",
         "drupal/pathauto": "^1.13",
+        "drupal/phone_international": "^4.0",
         "drupal/search_api": "^1.38",
         "drupal/seckit": "^2.0",
         "drupal/session_inspector": "^1.0",

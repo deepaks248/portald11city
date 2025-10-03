@@ -3,7 +3,7 @@
 namespace Drupal\page_visit_counter\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
-use Drupal\Core\State\StateInterface;
+use Drupal\Core\Database\Connection;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 
@@ -18,12 +18,12 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 class PageVisitCounterBlock extends BlockBase implements ContainerFactoryPluginInterface
 {
 
-    protected StateInterface $state;
+    protected Connection $database;
 
-    public function __construct(array $configuration, $plugin_id, $plugin_definition, StateInterface $state)
+    public function __construct(array $configuration, $plugin_id, $plugin_definition, Connection $database)
     {
         parent::__construct($configuration, $plugin_id, $plugin_definition);
-        $this->state = $state;
+        $this->database = $database;
     }
 
     public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
@@ -32,13 +32,22 @@ class PageVisitCounterBlock extends BlockBase implements ContainerFactoryPluginI
             $configuration,
             $plugin_id,
             $plugin_definition,
-            $container->get('state')
+            $container->get('database')
         );
     }
 
     public function build(): array
     {
-        $count = $this->state->get('page_visit_counter.count', 0);
+        $query = $this->database->select('visitors', 'v');
+        $query->addExpression('COUNT(*)', 'total_visits');
+
+        // Exclude error routes
+        $query->condition('route', ['system.404', 'system.403', 'system.500'], 'NOT IN');
+
+        // Exclude refreshes: current URL = referer
+        $query->where('v.visitors_url != v.visitors_referer');
+
+        $count = $query->execute()->fetchField();
 
         return [
             '#theme' => 'page_visit_counter_block',

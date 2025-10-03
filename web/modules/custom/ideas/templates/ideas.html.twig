@@ -21,24 +21,24 @@
 	<!-- ✅ Ensure form is wrapped inside this div -->
 	<div class="add-ideas-user border-[2px] border-inherit rounded-lg p-12 bg-white" id="engage_form_input">
 		<div id="ideas-flex" class="flex gap-[2rem]">
-			<div class="w-[50%]">
+			<div class="w-[50%] font-nevis">
 				{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
                     				field: form.first_name
-                				}) }}
+                }) }}
 			</div>
-			<div class="w-[50%]">
+			<div class="w-[50%] font-nevis">
 				{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
                     				field: form.author
-                				}) }}
+                }) }}
 			</div>
 
 		</div>
-		<div class="mt-4">
+		<div class="mt-4 font-nevis">
 			{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
                     				field: form.category_idea
-                				}) }}
+            }) }}
 		</div>
-		<div>
+		<div class="font-nevis">
 			{# {{ include('@engage_theme/components/form/field--floating-text.html.twig', {
 					                    				field: form.idea_content
 					                				}) }} #}

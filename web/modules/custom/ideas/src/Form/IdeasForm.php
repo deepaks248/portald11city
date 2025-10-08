@@ -48,9 +48,9 @@ class IdeasForm extends FormBase
     $form['#prefix'] = '<div id="ideas-form-wrapper">';
     $form['#suffix'] = '</div>';
 
-    $floatLabelClass = explode(' ', 'absolute text-sm text-medium_dark dark:text-white duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-amber-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-1');
+    $floatLabelClass = explode(' ', 'absolute text-sm text-medium_dark duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-amber-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-1');
 
-    $inputFieldClass = explode(' ', 'px-2.5 pb-2.5 pt-4 text-sm text-medium_dark bg-transparent rounded-lg bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:!border-yellow-500 ');
+    $inputFieldClass = explode(' ', 'px-2.5 pb-2.5 pt-4 text-sm text-medium_dark bg-transparent rounded-lg border border-1 border-gray-300 appearance-none dark:border-gray-600 dark:focus:border-blue-500 focus:focus:border-amber-300 focus:outline-none focus:ring-0 focus:border-yellow-600 peer');
 
     $form['#attributes']['class'][] = 'form-sec p-4 lg:px-10 lg:py-12 bg-white text-center lg:text-start s:mb-24 xs:mb-20';
 
@@ -98,21 +98,21 @@ class IdeasForm extends FormBase
 
     $form['idea_content'] = [
       '#type' => 'textarea',
-      '#title' => $this->t('Idea Content'),
+      '#title' => $this->t('<div class="font-nevis text-gray-500">Idea Content</div>'),
       '#required' => TRUE,
       '#attributes' => [
-        'class' => $inputFieldClass,
+        'class' => ['peer', 'w-full', 'px-2.5', 'pb-2.5', 'pt-4', 'text-sm', 'text-gray-700', 'bg-transparent', 'rounded-lg', 'border', 'border-gray-300', 'appearance-none', 'focus:outline-none', 'focus:ring-0', 'focus:!border-yellow-500'],
         'autocomplete' => 'off',
         'rows' => 5,
         'placeholder' => '',
       ],
-      '#prefix' => '<div class="relative mt-4">',
+      '#prefix' => '<div class="relative mt-4 flex flex-col text-left">',
       '#suffix' => '</div>'
     ];
 
     $form['upload_file'] = [
       '#type' => 'file',
-      '#title' => $this->t('<span class="font-nevis">Upload Picture</span>'),
+      '#title' => $this->t('<span class="font-nevis text-gray-500">Upload Picture</span>'),
       '#description' => $this->t('<span class="text-xs">Supported file types: JPG, JPEG, PNG, max size 2MB.</span>'),
       '#required' => TRUE,
       '#upload_validators' => [
@@ -125,8 +125,8 @@ class IdeasForm extends FormBase
           'w-1/2',
           'lg:max-w-lg',
           'px-2.5',
-          'py-2.5',
-          // 'pt-4',
+          'pb-2.5',
+          'pt-4',
           'text-sm',
           'text-medium_dark',
           'bg-transparent',
@@ -139,37 +139,25 @@ class IdeasForm extends FormBase
           'border-gray-300 '
         ]
       ],
-      '#prefix' => '<div class="relative mb-4">',
+      '#prefix' => '<div class="relative mb-4 flex flex-col text-left">',
       '#suffix' => '</div>'
     ];
 
-    // $form['terms'] = [
-    //   '#type' => 'checkbox',
-    //   '#title' => $this->t('I agree on <a href="/" class="link link-primary text-blue-600 underline hover:text-blue-900" target="_blank">Terms and Conditions</a>'),
-    //   '#required' => TRUE,
-    //   '#prefix' => '<div class="form-control flex items-center space-x-2 no-float-label relative" id="checkboxBtn">',
-    //   '#suffix' => '</div>',
-    //   '#attributes' => [
-    //     'class' => ['checkbox', 'just-validate-success-field', 'w-6', 'h-6', 'rounded', 'cursor-pointer', 'border', 'border-gray-400'],
-    //   ],
-    // ];
+    $form['upload_file_hidden'] = [
+      '#type' => 'hidden',
+      '#attributes' => ['id' => 'uploaded_file_url'],
+    ];
+
 
     $form['terms'] = [
       '#type' => 'checkbox',
-      '#title' => $this->t('I agree to the <a href="" class="text-blue-600 underline hover:text-blue-900" target="_blank">Terms and Conditions</a>'),
-      '#title_display' => 'after', // checkbox first, label after
+      // '#title' => $this->t('I agree on <a href="@url" target="_blank">Terms and Conditions</a>', ['@url' => 'https://www.trinitymobility.com/']),
       '#required' => TRUE,
-      '#required_error' => $this->t('You must agree to the Terms and Conditions'),
-      // Styles for the checkbox itself
+      // '#prefix' => '<div class="form-control mt-5 flex" id="checkboxBtn">',
+      // '#suffix' => '</div>',
       '#attributes' => [
-        'class' => ['w-5', 'h-5', 'rounded', 'cursor-pointer', 'border', 'border-gray-400'],
+        'class' => ['checkbox', 'just-validate-success-field', 's:w-6', 's:h-6', 'xs:w-4', 'xs:h-4', 'border', 'border-2'],
       ],
-      // Make the Drupal wrapper div flex so label sits inline
-      '#wrapper_attributes' => [
-        'class' => ['flex', 'items-center', 'space-x-2'],
-      ],
-      // Optional: wrap error messages separately
-      '#suffix' => '<div class="text-red-600 text-sm mt-1 error-message-wrapper"></div>',
     ];
 
     $form['actions'] = [
@@ -226,8 +214,10 @@ class IdeasForm extends FormBase
       ],
     ];
     $form['#theme'] = 'ideas';
+    // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
     $form['#attached']['library'][] = 'ideas/ideas-library';
     $form['#attached']['library'][] = 'global_module/ajax_loader';
+    $form['#attached']['library'][] = 'core/jquery.once';
     $form['#attributes']['enctype'] = 'multipart/form-data';
     return $form;
   }
@@ -239,24 +229,29 @@ class IdeasForm extends FormBase
     $response_data = [];
 
     // Upload file using custom file upload service
-    if (
-      isset($_FILES['files']['full_path']['upload_file']) &&
-      is_uploaded_file($_FILES['files']['tmp_name']['upload_file'])
-    ) {
-      $upload_response = $this->fileUploadService->uploadFile($this->request);
+    // if (
+    //   isset($_FILES['files']['full_path']['upload_file']) &&
+    //   is_uploaded_file($_FILES['files']['tmp_name']['upload_file'])
+    // ) {
+    //   $upload_response = $this->fileUploadService->uploadFile($this->request);
 
-      if ($upload_response instanceof JsonResponse) {
-        $response_data = json_decode($upload_response->getContent(), true);
+    //   if ($upload_response instanceof JsonResponse) {
+    //     $response_data = json_decode($upload_response->getContent(), true);
 
-        if (!empty($response_data['fileName'])) {
-          $image_url = $response_data['fileName'];
-        } elseif (!empty($response_data['error'])) {
-          $this->messenger()->addError($this->t('File upload error: @error', [
-            '@error' => $response_data['error'],
-          ]));
-          return;
-        }
-      }
+    //     if (!empty($response_data['fileName'])) {
+    //       $image_url = $response_data['fileName'];
+    //     } elseif (!empty($response_data['error'])) {
+    //       $this->messenger()->addError($this->t('File upload error: @error', [
+    //         '@error' => $response_data['error'],
+    //       ]));
+    //       return;
+    //     }
+    //   }
+    // }
+    $image_url = $form_state->getValue('upload_file_hidden');
+    if (empty($image_url)) {
+      $this->messenger()->addError($this->t('Please upload a file before submitting.'));
+      return;
     }
 
     // Get form values

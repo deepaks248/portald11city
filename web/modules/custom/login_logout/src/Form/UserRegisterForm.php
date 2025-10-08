@@ -256,10 +256,11 @@ class UserRegisterForm extends FormBase
           $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
           $form_state->set('otp_code', $otp);
           $form_state->set('user_data', $data);
+          $webhook_url = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['otpWebhookUrl'];
 
           try {
             // Send OTP via secure API (ensure HTTPS and valid provider)
-            $this->httpClient->request('POST', 'https://webhook.site/c73235a1-1ccf-411f-9d4f-dcf4855e0077', [
+            $this->httpClient->request('POST', $webhook_url, [
               'headers' => ['Content-Type' => 'application/json'],
               'json' => [
                 'email' => $data['mail'],

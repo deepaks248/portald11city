@@ -8,7 +8,7 @@
 				src="themes/custom/engage_theme/images/Profile/reverse-arrow.svg" alt="Back Arrow" class="w-5 sm:w-7 cursor-pointer object-contain" onclick="history.go(-1)"/>
 
 				<!-- Heading -->
-				<h1 class="text-xl sm:text-2xl md:text-5xl font-bold text-center mt-8 md:mt-12 mb-8 md:mb-20 translateLabel search_field" label-alias="la_my_profile">
+				<h1 class="text-xl sm:text-2xl md:text-5xl font-nevis text-center mt-8 md:mt-12 mb-8 md:mb-20 translateLabel search_field" label-alias="la_my_profile">
 					Add New Idea
 				</h1>
 				<!-- Placeholder for symmetry -->
@@ -38,18 +38,24 @@
                     				field: form.category_idea
             }) }}
 		</div>
-		<div class="font-nevis">
+		<div
+			class="">
 			{# {{ include('@engage_theme/components/form/field--floating-text.html.twig', {
-					                    				field: form.idea_content
-					                				}) }} #}
+											                    				field: form.idea_content
+											                				}) }} #}
 			{{ form.idea_content }}
 		</div>
 		<div class="w-[50%] mt-4">
 			{{ form.upload_file }}
+			{{ form.upload_file_hidden }}
 		</div>
 		<div class="mb-4 relative">
-
-			{{ form.terms }}
+			<label class="label cursor-pointer justify-start gap-4 xs:gap-2 flex">
+				{{ form.terms }}
+				<span class="terms-conditions">I agree on
+					<a href="https://www.trinitymobility.com/" target="_blank" class="text-blue-600 underline hover:text-blue-900">Terms and Conditions</a>
+				</span>
+			</label>
 		</div>
 		<div class="flex gap-2 mt-8">
 			{{ form.actions.submit }}

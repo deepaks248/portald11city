@@ -11,3 +11,5 @@ ideas-library:
     - core/drupal
     - core/jquery
     - core/drupal.ajax
+    - core/drupalSettings
+    - core/once

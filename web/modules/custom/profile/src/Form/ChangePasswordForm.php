@@ -38,7 +38,7 @@ class ChangePasswordForm extends FormBase
   {
     $form['#prefix'] = '<div id="change-password-form-wrapper">';
     $form['#suffix'] = '</div>';
-    $form['#attributes']['class'][] = 'form-sec lg:px-10 text-center lg:text-start s:mb-24 xs:mb-20';
+    // $form['#attributes']['class'][] = '';
 
     // Old password.
     $form['old_password'] = [
@@ -90,7 +90,7 @@ class ChangePasswordForm extends FormBase
       '#type' => 'submit',
       '#value' => $this->t('Continue'),
       '#attributes' => [
-        'class' => ['btn', 'btn-warning', 'lg:h-14', 'lg:w-44', 'xs:h-10', 'text-white', 'capitalize', 'text-lg', 'submitBtn', 'engage-btn'],
+        'class' => ['bg-yellow-500', 'text-white', 'rounded-xl', 'px-6', 'py-2', 'cursor-pointer', 'hover:bg-yellow-600', 'transition'],
       ],
     ];
 

@@ -5,13 +5,18 @@ namespace Drupal\reportgrievance\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\reportgrievance\Service\GrievanceApiService;
 use Drupal\global_module\Service\FileUploadService;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Drupal\Core\Cache\CacheBackendInterface;
 
 class ReportGrievanceForm extends FormBase
 {
+
+  /**
+   * @var \Drupal\Core\Cache\CacheBackendInterface
+   */
+  protected $cache;
 
   /**
    * @var \Drupal\reportgrievance\Service\GrievanceApiService
@@ -24,21 +29,16 @@ class ReportGrievanceForm extends FormBase
   protected $fileUploadService;
 
   /**
-   * @var \Symfony\Component\HttpFoundation\Request
-   */
-  protected $request;
-
-  /**
    * Constructor.
    */
   public function __construct(
     GrievanceApiService $apiService,
     FileUploadService $fileUploadService,
-    RequestStack $request_stack
+    CacheBackendInterface $cache
   ) {
     $this->apiService = $apiService;
     $this->fileUploadService = $fileUploadService;
-    $this->request = $request_stack->getCurrentRequest();
+    $this->cache = $cache;
   }
 
   /**
@@ -49,7 +49,7 @@ class ReportGrievanceForm extends FormBase
     return new static(
       $container->get('reportgrievance.grievance_api'),
       $container->get('global_module.file_upload_service'),
-      $container->get('request_stack')
+      $container->get('cache.default')
     );
   }
 
@@ -66,7 +66,26 @@ class ReportGrievanceForm extends FormBase
    */
   public function buildForm(array $form, FormStateInterface $form_state)
   {
-    $grievance_types = $this->apiService->getIncidentTypes();
+    // $grievance_types = $this->apiService->getIncidentTypes();
+    // if (empty($grievance_types)) {
+    //   $this->messenger()->addError($this->t('No grievance types available.'));
+    //   return $form;
+    // }
+
+    // $selected_type = $form_state->getValue('grievance_type');
+    // $subtype_options = [];
+
+    // if (!empty($selected_type)) {
+
+    //   $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
+    // }
+
+    if ($cache = $this->cache->get('grievance_types')) {
+      $grievance_types = $cache->data;
+    } else {
+      $grievance_types = $this->apiService->getIncidentTypes();
+      $this->cache->set('grievance_types', $grievance_types, time() + 1800);
+    }
     if (empty($grievance_types)) {
       $this->messenger()->addError($this->t('No grievance types available.'));
       return $form;
@@ -75,10 +94,20 @@ class ReportGrievanceForm extends FormBase
     $selected_type = $form_state->getValue('grievance_type');
     $subtype_options = [];
 
+    // if (!empty($selected_type)) {
+    //   $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
+    // }
     if (!empty($selected_type)) {
-      $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
+      $cache_key = 'grievance_subtypes_' . $selected_type;
+      if ($subtype_cache = $this->cache->get($cache_key)) {
+        $subtype_options = $subtype_cache->data;
+      } else {
+        $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
+        $this->cache->set($cache_key, $subtype_options, time() + 1800);
+      }
     }
 
+    $form['subtype_wrapper']['#attributes']['data-cv-exclude'] = '1';
     // Grievance Type
     $form['grievance_type'] = [
       '#type' => 'select',
@@ -87,6 +116,7 @@ class ReportGrievanceForm extends FormBase
       '#empty_option' => $this->t('Select a Category'),
       '#default_value' => $selected_type,
       '#required' => TRUE,
+      '#required_error' => $this->t('Please Select Category'),
       '#ajax' => [
         'callback' => '::updateSubtype',
         'wrapper' => 'subtype-wrapper',
@@ -123,6 +153,7 @@ class ReportGrievanceForm extends FormBase
       '#empty_option' => $this->t('Select Sub Category'),
       '#default_value' => $form_state->getValue(['subtype_wrapper', 'grievance_subtype']) ?? '',
       '#required' => TRUE,
+      '#required_error' => $this->t('Please Select Sub Category'),
       '#attributes' => [
         'class' => [
           'form-select',
@@ -144,9 +175,11 @@ class ReportGrievanceForm extends FormBase
       '#type' => 'textfield',
       '#title' => $this->t('Remarks'),
       // '#description' => $this->t('Please provide any additional information.'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('Remarks is required.'),
       '#maxlength' => 255,
       '#attributes' => [
-        // 'placeholder' => $this->t('Remarks'),
+        'placeholder' => $this->t('Remarks'),
         'class' => [
           'form-input',
           'w-full',
@@ -168,8 +201,9 @@ class ReportGrievanceForm extends FormBase
       '#title' => $this->t('Address'),
       '#maxlength' => 255,
       '#required' => TRUE,
+      '#required_error' => $this->t('Address is required.'),
       '#attributes' => [
-        // 'placeholder' => $this->t('Address'),
+        'placeholder' => $this->t('Address'),
         'class' => [
           'form-input',
           'w-full',
@@ -184,6 +218,7 @@ class ReportGrievanceForm extends FormBase
         ],
       ],
     ];
+    $form['address']['#attributes']['readonly'] = 'readonly';
 
     // File Upload
     $form['upload_file'] = [
@@ -268,9 +303,10 @@ class ReportGrievanceForm extends FormBase
       ],
     ];
 
-    $form['#cache'] = ['max-age' => 0];
+    // $form['#cache'] = ['max-age' => 0];
     // Attach theme and Tailwind-based styling
     $form['#theme'] = 'report_grievance_form';
+    // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
     $form['#attached']['library'][] = 'reportgrievance/report_grievance_form';
     $form['#attributes']['enctype'] = 'multipart/form-data';
 
@@ -283,8 +319,13 @@ class ReportGrievanceForm extends FormBase
    */
   public function updateSubtype(array &$form, FormStateInterface $form_state)
   {
+    $selected_type = $form_state->getValue('grievance_type') ?? '';
+    if (empty($selected_type)) {
+      $form['subtype_wrapper']['grievance_subtype']['#options'] = [];
+    }
     return $form['subtype_wrapper'];
   }
+
 
   /**
    * Submit handler.
@@ -294,23 +335,35 @@ class ReportGrievanceForm extends FormBase
     $values = $form_state->getValues();
     $image_url = NULL;
     $response_data = [];
+    $request = \Drupal::request();
 
+    // Handle file upload
     if (isset($_FILES['files']['full_path']['upload_file']) && is_uploaded_file($_FILES['files']['tmp_name']['upload_file'])) {
-      $upload_response = $this->fileUploadService->uploadFile($this->request);
+      $upload_response = $this->fileUploadService->uploadFile($request);
       if ($upload_response instanceof JsonResponse) {
         $response_data = json_decode($upload_response->getContent(), true);
+        \Drupal::logger('file_upload')->info(
+          'Upload response decoded: @response',
+          ['@response' => print_r($response_data, TRUE)]
+        );
         if (!empty($response_data['fileName'])) {
           $image_url = $response_data['fileName'];
-        } elseif (!empty($response_data['error'])) {
-          $this->messenger()->addError($this->t('File upload error: @error', ['@error' => $response_data['error']]));
+          \Drupal::logger('file_upload')->info('File uploaded successfully. URL: @url', [
+            '@url' => $image_url,
+          ]);
+        } else {
+          \Drupal::logger('file_upload')->warning('Upload response had no fileName and no error.');
+          $this->messenger()->addError($this->t('File upload failed.'));
           return;
         }
       }
     }
 
-    $session = $session = $this->request->getSession();
-    $userId = ($session->get('api_redirect_result')['userId']);
+    // Get user ID from session
+    $session = $request->getSession();
+    $userId = $session->get('api_redirect_result')['userId'] ?? 0;
 
+    // Prepare payload
     $payload = [
       'address' => $values['address'],
       'remarks' => $values['remarks'] ?? '',
@@ -321,7 +374,6 @@ class ReportGrievanceForm extends FormBase
       'grievanceSubTypeId' => (int)$values['grievance_subtype'],
       'tenantCode' => 'fireppr',
       'userId' => (int)$userId,
-      // 'userId' => '2506101251005301',
       'files' => [
         [
           'isFileAttached' => !empty($image_url),
@@ -336,15 +388,22 @@ class ReportGrievanceForm extends FormBase
       'requestTypeId' => 1,
     ];
 
-    $response = $this->apiService->sendGrievance($payload);
-    \Drupal::logger('report_grievance')->debug('Grievance submission response: @response', ['@response' => print_r($response, TRUE)]);
+    \Drupal::logger('grievance')->debug('Payload sent for grievanceTypeId: @type', [
+      '@type' => $values['grievance_type']
+    ]);
 
-    // Save to TempStore
+    // Send grievance to API
+    $response = $this->apiService->sendGrievance($payload);
+    \Drupal::logger('report_grievance')->debug('Grievance submission response: @response', [
+      '@response' => print_r($response, TRUE)
+    ]);
+
+    // Save to TempStore using a fixed key
     $tempstore = \Drupal::service('tempstore.private')->get('reportgrievance');
     $tempstore->set('grievance_response', $response);
 
-    // Redirect
-    if (!empty($response['success']) && $response['data']['status'] == true) {
+    // Redirect based on response
+    if (!empty($response['success']) && !empty($response['data']['status'])) {
       $this->messenger()->addStatus($this->t('Grievance submitted successfully.'));
       $form_state->setRedirect('reportgrievance.grievance_success');
     } else {

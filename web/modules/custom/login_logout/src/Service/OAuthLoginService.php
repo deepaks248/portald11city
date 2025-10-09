@@ -6,7 +6,6 @@ use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\global_module\Service\GlobalVariablesService;
-// use Drupal\active_sessions\Service\ActiveSessionService;
 
 class OAuthLoginService
 {
@@ -15,7 +14,6 @@ class OAuthLoginService
     protected $logger;
     protected $requestStack;
     protected $globalVariablesService;
-    // protected $activeSessionService;
 
     public function __construct(
         ClientInterface $http_client,
@@ -247,22 +245,60 @@ class OAuthLoginService
         }
     }
 
+    // /**
+    //  * Full OAuth login flow (FlowId → Auth → Token).
+    //  */
+    // public function performOAuthLogin(string $email, string $password): ?array
+    // {
+    //     $flowId = $this->getFlowId();
+    //     if (!$flowId) {
+    //         throw new \Exception('Flow ID not received.');
+    //     }
+
+    //     $authorizationCode = $this->authenticateUser($flowId, $email, $password);
+    //     if (!$authorizationCode) {
+    //         throw new \Exception('Authorization code not received.');
+    //     }
+
+    //     return $this->exchangeCodeForToken($authorizationCode['code']);
+    // }
+
     /**
-     * Full OAuth login flow (FlowId → Auth → Token).
+     * Perform the full OAuth login flow: get flow ID, authenticate user, exchange code for token.
+     *
+     * @param string $email
+     *   User email.
+     * @param string $password
+     *   User password.
+     *
+     * @return array|null
+     *   Returns token data array on success, or NULL on failure.
+     *
+     * @throws \Exception
+     *   Throws exception if flow ID or authorization code is not received.
      */
     public function performOAuthLogin(string $email, string $password): ?array
     {
+        // Step 1: Get Flow ID
         $flowId = $this->getFlowId();
         if (!$flowId) {
-            throw new \Exception('Flow ID not received.');
+            throw new \Exception('Flow ID not received from OAuth server.');
         }
 
-        $authorizationCode = $this->authenticateUser($flowId, $email, $password);
-        if (!$authorizationCode) {
-            throw new \Exception('Authorization code not received.');
+        // Step 2: Authenticate user with email & password
+        $authResponse = $this->authenticateUser($flowId, $email, $password);
+        if (empty($authResponse['success']) || empty($authResponse['code'])) {
+            $msg = $authResponse['message'] ?? 'Authorization code not received.';
+            throw new \Exception($msg);
         }
 
-        return $this->exchangeCodeForToken($authorizationCode['code']);
+        // Step 3: Exchange authorization code for token
+        $tokenData = $this->exchangeCodeForToken($authResponse['code']);
+        if (empty($tokenData['access_token']) || empty($tokenData['id_token'])) {
+            throw new \Exception('Failed to receive access or ID token.');
+        }
+
+        return $tokenData;
     }
 
     public function extractEmailFromJwt(string $idToken): ?string
@@ -288,30 +324,4 @@ class OAuthLoginService
 
         return $this->checkEmailExists($email, $accessToken, $apiUrl, $apiVersion);
     }
-
-    /**
-     * Find closest matching session by login time.
-     */
-    // public function findClosestSessionId(string $accessToken, int $login_time): ?string
-    // {
-    //     $activeSessions = $this->activeSessionService->fetchActiveSessions($accessToken);
-
-    //     $closestSessionId = null;
-    //     $closestDiff = PHP_INT_MAX;
-    //     $targetTimeMs = $login_time * 1000;
-
-    //     if (!empty($activeSessions['sessions'])) {
-    //         foreach ($activeSessions['sessions'] as $session) {
-    //             if (!empty($session['loginTime'])) {
-    //                 $diff = abs($session['loginTime'] - $targetTimeMs);
-    //                 if ($diff < $closestDiff) {
-    //                     $closestDiff = $diff;
-    //                     $closestSessionId = $session['id'];
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     return $closestSessionId;
-    // }
 }

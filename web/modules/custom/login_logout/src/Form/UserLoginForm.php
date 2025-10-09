@@ -127,76 +127,12 @@ class UserLoginForm extends FormBase
   public function submitForm(array &$form, FormStateInterface $form_state)
   {
     $email = $form_state->getValue('email');
+    $session = \Drupal::service('session');
+    $user_storage = \Drupal::entityTypeManager()->getStorage('user');
 
-    if ($form_state->get('email_validated')) {
-      // Password entered — proceed with OAuth login.
-      $password = $form_state->getValue('password');
-
+    if (!$form_state->get('email_validated')) {
       try {
-        // Step 1: Get Flow ID
-        $flowId = $this->oauthLoginService->getFlowId();
-        if (!$flowId) {
-          $this->messenger()->addError($this->t('Flow ID not received.'));
-          return;
-        }
-
-        // Step 2: Authenticate user
-        $authorizationCode = $this->oauthLoginService->authenticateUser($flowId, $email, $password);
-        if (empty($authorizationCode['code'])) {
-          $this->messenger()->addError($this->t($authorizationCode['message']));
-          return;
-        }
-
-        // Step 3: Exchange code for token
-        $tokenData = $this->oauthLoginService->exchangeCodeForToken($authorizationCode['code']);
-        if (empty($tokenData['access_token']) || empty($tokenData['id_token'])) {
-          $this->messenger()->addError($this->t('Token not received.'));
-          return;
-        }
-
-        // Store in session (only what is needed now)
-        $session = \Drupal::service('session');
-        $session->set('login_logout.access_token', $tokenData['access_token']);
-        $session->set('login_logout.id_token', $tokenData['id_token']);
-
-        // Decode JWT safely
-        $payload = $this->oauthLoginService->decodeJwt($tokenData['id_token']);
-        if (empty($payload['sub'])) {
-          throw new \Exception('JWT payload missing "sub" claim.');
-        }
-        $jwtEmail = $payload['sub'];
-
-        // Save login timestamp (used later for matching active session)
-        $login_time = \Drupal::time()->getRequestTime(); // seconds
-        $session->set('login_logout.login_time', $login_time);
-
-        // Step 5: Load Drupal user and log in
-        $users = \Drupal::entityTypeManager()
-          ->getStorage('user')
-          ->loadByProperties(['mail' => $jwtEmail]);
-        $user = reset($users);
-
-        if ($user instanceof UserInterface) {
-          user_login_finalize($user);
-          $this->messenger()->addStatus($this->t('Successfully logged in as @mail', ['@mail' => $jwtEmail]));
-          $form_state->setRedirect('<front>');
-        } else {
-          $this->messenger()->addError($this->t('No Drupal user found for @mail', ['@mail' => $jwtEmail]));
-        }
-      } catch (\Exception $e) {
-        \Drupal::logger('login_logout')->error('OAuth2 login failed: @msg', ['@msg' => $e->getMessage()]);
-        $this->messenger()->addError($this->t('Login failed: @msg', ['@msg' => $e->getMessage()]));
-      }
-    } else {
-      // Step 0: First-time email validation
-      try {
-        $accessToken = $this->globalVariablesService->getApimanAccessToken();
-        $globals = $this->globalVariablesService->getGlobalVariables();
-
-        $apiUrl = $globals['apiManConfig']['config']['apiUrl'] ?? '';
-        $apiVersion = $globals['apiManConfig']['config']['apiVersion'] ?? '';
-
-        if ($this->oauthLoginService->checkEmailExists($email, $accessToken, $apiUrl, $apiVersion)) {
+        if ($this->oauthLoginService->validateEmail($email)) {
           $form_state->set('email_validated', TRUE)->setRebuild();
         } else {
           $tempstore = \Drupal::service('tempstore.private')->get('login_logout');
@@ -206,6 +142,34 @@ class UserLoginForm extends FormBase
       } catch (\Exception $e) {
         $this->messenger()->addError($this->t('Error checking email: @msg', ['@msg' => $e->getMessage()]));
       }
+      return;
+    }
+
+    $password = $form_state->getValue('password');
+    try {
+      $tokenData = $this->oauthLoginService->performOAuthLogin($email, $password);
+
+      $session->set('login_logout.access_token', $tokenData['access_token']);
+      $session->set('login_logout.id_token', $tokenData['id_token']);
+      $session->set('login_logout.login_time', \Drupal::time()->getRequestTime());
+
+      $jwtEmail = $this->oauthLoginService->extractEmailFromJwt($tokenData['id_token']);
+      if (!$jwtEmail) {
+        throw new \Exception('JWT payload missing "sub" claim.');
+      }
+
+      $user = reset($user_storage->loadByProperties(['mail' => $jwtEmail]));
+
+      if ($user instanceof UserInterface) {
+        user_login_finalize($user);
+        $this->messenger()->addStatus($this->t('Successfully logged in as @mail', ['@mail' => $jwtEmail]));
+        $form_state->setRedirect('<front>');
+      } else {
+        $this->messenger()->addError($this->t('No Drupal user found for @mail', ['@mail' => $jwtEmail]));
+      }
+    } catch (\Exception $e) {
+      \Drupal::logger('login_logout')->error('OAuth2 login failed: @msg', ['@msg' => $e->getMessage()]);
+      $this->messenger()->addError($this->t('Login failed: @msg', ['@msg' => $e->getMessage()]));
     }
   }
 }

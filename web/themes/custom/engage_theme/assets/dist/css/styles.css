@@ -1332,10 +1332,6 @@ video {
   width: 45px;
 }
 
-.w-\[50\%\] {
-  width: 50%;
-}
-
 .w-\[90\%\] {
   width: 90%;
 }
@@ -1634,10 +1630,6 @@ video {
 
 .gap-\[27\%\] {
   gap: 27%;
-}
-
-.gap-\[2rem\] {
-  gap: 2rem;
 }
 
 .gap-x-4 {
@@ -4366,6 +4358,10 @@ select {
     height: 500px;
   }
 
+  .md\:w-1\/2 {
+    width: 50%;
+  }
+
   .md\:w-1\/4 {
     width: 25%;
   }
@@ -4440,6 +4436,10 @@ select {
 
   .md\:items-center {
     align-items: center;
+  }
+
+  .md\:justify-start {
+    justify-content: flex-start;
   }
 
   .md\:justify-between {
@@ -4732,6 +4732,10 @@ select {
 
   .xl\:gap-20 {
     gap: 5rem;
+  }
+
+  .xl\:p-16 {
+    padding: 4rem;
   }
 
   .xl\:pt-6 {

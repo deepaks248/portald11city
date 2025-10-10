@@ -340,26 +340,17 @@ class ReportGrievanceForm extends FormBase
     // Handle file upload
     if (isset($_FILES['files']['full_path']['upload_file']) && is_uploaded_file($_FILES['files']['tmp_name']['upload_file'])) {
       $upload_response = $this->fileUploadService->uploadFile($request);
-      if ($upload_response instanceof JsonResponse) {
+      if ($upload_response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
         $response_data = json_decode($upload_response->getContent(), true);
-        \Drupal::logger('file_upload')->info(
-          'Upload response decoded: @response',
-          ['@response' => print_r($response_data, TRUE)]
-        );
         if (!empty($response_data['fileName'])) {
           $image_url = $response_data['fileName'];
-          \Drupal::logger('file_upload')->info('File uploaded successfully. URL: @url', [
-            '@url' => $image_url,
-          ]);
         } else {
-          \Drupal::logger('file_upload')->warning('Upload response had no fileName and no error.');
           $this->messenger()->addError($this->t('File upload failed.'));
           return;
         }
       }
     }
 
-    // Get user ID from session
     $session = $request->getSession();
     $userId = $session->get('api_redirect_result')['userId'] ?? 0;
 
@@ -388,27 +379,23 @@ class ReportGrievanceForm extends FormBase
       'requestTypeId' => 1,
     ];
 
-    \Drupal::logger('grievance')->debug('Payload sent for grievanceTypeId: @type', [
-      '@type' => $values['grievance_type']
-    ]);
-
-    // Send grievance to API
     $response = $this->apiService->sendGrievance($payload);
-    \Drupal::logger('report_grievance')->debug('Grievance submission response: @response', [
-      '@response' => print_r($response, TRUE)
-    ]);
 
-    // Save to TempStore using a fixed key
-    $tempstore = \Drupal::service('tempstore.private')->get('reportgrievance');
-    $tempstore->set('grievance_response', $response);
-
-    // Redirect based on response
     if (!empty($response['success']) && !empty($response['data']['status'])) {
+      $grievance_id = $response['data']['data']; // GV-20251009-371833
+      $secret = "my_secret_key";
+      $token = hash_hmac('sha256', $grievance_id, $secret);
+
+      // Store token => grievance_id mapping in key-value storage
+      \Drupal::keyValue('reportgrievance.token_map')->set($token, $grievance_id);
+
+      // Redirect with token only
+      $url = '/success-grievance/' . $token;
+      $form_state->setRedirectUrl(\Drupal\Core\Url::fromUri('internal:' . $url));
       $this->messenger()->addStatus($this->t('Grievance submitted successfully.'));
-      $form_state->setRedirect('reportgrievance.grievance_success');
     } else {
-      $this->messenger()->addError($this->t('Submission failed. Please try again later.'));
       $form_state->setRedirect('reportgrievance.grievance_failure');
+      $this->messenger()->addError($this->t('Submission failed. Please try again later.'));
     }
   }
 }

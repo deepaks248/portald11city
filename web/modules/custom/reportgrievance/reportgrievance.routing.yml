@@ -7,7 +7,7 @@ reportgrievance.report:
     _permission: 'access content'
 
 reportgrievance.grievance_success:
-  path: '/success-grievance'
+  path: '/success-grievance/{token}'
   defaults:
     _controller: '\Drupal\reportgrievance\Controller\GrievanceSuccessController::content'
     _title: 'Grievance Submitted'

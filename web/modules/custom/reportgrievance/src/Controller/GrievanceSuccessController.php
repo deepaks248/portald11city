@@ -3,29 +3,34 @@
 namespace Drupal\reportgrievance\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\TempStore\PrivateTempStoreFactory;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class GrievanceSuccessController extends ControllerBase {
 
-  protected $tempStore;
+    protected $secret = 'my_secret_key';
 
-  public function __construct(PrivateTempStoreFactory $tempStoreFactory) {
-    $this->tempStore = $tempStoreFactory->get('reportgrievance');
-  }
+    /**
+     * Display grievance success page.
+     */
+    public function content($token) {
+        if (!$token) {
+            throw new AccessDeniedHttpException('Invalid request.');
+        }
 
-  public static function create(ContainerInterface $container) {
-    return new static(
-      $container->get('tempstore.private')
-    );
-  }
+        // Retrieve grievance_id from key-value storage
+        $grievance_id = \Drupal::keyValue('reportgrievance.token_map')->get($token);
+        if (!$grievance_id) {
+            throw new AccessDeniedHttpException('Invalid token.');
+        }
 
-  public function content() {
-    $response = $this->tempStore->get('grievance_response');
+        // Optional: Delete token after first use if you want one-time access
+        // \Drupal::keyValue('reportgrievance.token_map')->delete($token);
 
-    return [
-      '#theme' => 'grievance_success',
-      '#response_data' => $response,
-    ];
-  }
+        return [
+            '#theme' => 'grievance_success',
+            '#response_data' => [
+                'grievance_id' => $grievance_id,
+            ],
+        ];
+    }
 }

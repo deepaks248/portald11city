@@ -117,7 +117,7 @@
 	{# {% if page.footer %} #}
 	<footer class="page-footer bg-black px-4 py-8 sm:px-6 lg:px-10">
 		<div
-			class="mx-auto max-w-screen-xl">
+			class="mx-auto max-w-screen-xl pb-10">
 			<!-- Top row: logo or other footer blocks -->
 			<div class="flex flex-col sm:flex-row justify-between items-center sm:items-start gap-6 pb-10">
 				{{ page.footer }}
@@ -151,6 +151,26 @@
 					</div>
 				{% endif %}
 			</div>
+		</div>
+		<div class="h-px opacity-80 border-t border-white bg-transparent box-border mx-auto max-w-screen-xl"></div>
+		<div
+			class="flex items-center justify-between pt-6 font-sans text-white mx-auto max-w-screen-xl">
+
+			<!-- Invisible element to balance right-aligned version -->
+			<div class="opacity-0">V3.2.0</div>
+
+			<!-- Centered copyright -->
+			<div class="text-center opacity-70">
+				Copyright ©
+				{{ "now"|date("Y") }}
+				- All Rights Reserved
+			</div>
+
+			<!-- Right-aligned version -->
+			<div class="text-sm text-gray-300">
+				V3.2.0
+			</div>
+
 		</div>
 	</footer>
 

@@ -38,7 +38,7 @@ class UserRegisterForm extends FormBase
       $container->get('http_client'),
       $container->get('login_logout.oauth_login_service'),
       $container->get('global_module.global_variables'),
-      $container->get('active_sessions.active_session_service')
+      $container->get('active_sessions.session_service')
     );
   }
 

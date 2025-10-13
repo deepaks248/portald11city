@@ -192,4 +192,24 @@ class ActiveSessionController extends ControllerBase
             return new RedirectResponse('/my-account');
         }
     }
+
+    public function endAllSessions()
+    {
+        $session = \Drupal::service('session');
+        $accessToken = $session->get('login_logout.access_token');
+        // $active_session_id_token = $session->get('login_logout.active_session_id_token');
+
+        if ($accessToken === null) {
+            $this->messenger()->addError($this->t('Failed to retrieve access token.'));
+            return new RedirectResponse('/my-account');
+        }
+
+        try {
+            $this->sessionService->terminateAllOtherSessions($accessToken);
+            return new RedirectResponse('/logout');
+        } catch (\Exception $e) {
+            $this->messenger()->addError($this->t('An error occurred while ending all sessions: @message', ['@message' => $e->getMessage()]));
+            return new RedirectResponse('/my-account');
+        }
+    }
 }

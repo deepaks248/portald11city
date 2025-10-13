@@ -13,3 +13,11 @@ active_sessions.end_session:
     _title: 'End Session'
   requirements:
     _permission: 'access content'
+
+active_sessions.end_all_sessions:
+  path: '/end-all-sessions'
+  defaults:
+    _controller: '\Drupal\active_sessions\Controller\ActiveSessionController::endAllSessions'
+    _title: 'End All Sessions'
+  requirements:
+    _permission: 'access content'

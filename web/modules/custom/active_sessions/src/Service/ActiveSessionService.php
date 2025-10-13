@@ -77,4 +77,24 @@ class ActiveSessionService
             return false;
         }
     }
+
+    public function terminateAllOtherSessions(string $access_token): bool
+    {
+        $url = 'https://hcsjointstacknew.trinityiot.in/api/users/v1/me/sessions';
+
+        try {
+            $this->httpClient->request('DELETE', $url, [
+                'headers' => [
+                    'Accept' => '*/*',
+                    'Authorization' => 'Bearer ' . $access_token,
+                ],
+                'verify' => false, // if SSL cert is self-signed
+            ]);
+
+            return true;
+        } catch (RequestException $e) {
+            $this->logger->error('Failed to terminate all other sessions: @message', ['@message' => $e->getMessage()]);
+            return false;
+        }
+    }
 }

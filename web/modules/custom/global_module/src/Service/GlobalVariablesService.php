@@ -686,8 +686,10 @@ class GlobalVariablesService
     ];
     // dump($payload);exit;
     try {
-      $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
-      $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
+      // $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
+      $access_token = $this->getApimanAccessToken();
+      // $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
+      $globalVariables = $this->getGlobalVariables();
       $client = \Drupal::httpClient();
 
       $response = $client->post(

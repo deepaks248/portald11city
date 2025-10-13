@@ -6,9 +6,24 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
+use Drupal\global_module\Service\GlobalVariablesService;
 
 class ProfileForm extends FormBase
 {
+
+  protected $globalVariablesService;
+
+  public function __construct(GlobalVariablesService $globalVariablesService)
+  {
+    $this->globalVariablesService = $globalVariablesService;
+  }
+
+  public static function create($container)
+  {
+    return new static(
+      $container->get('global_module.global_variables')
+    );
+  }
 
   public function getFormId()
   {
@@ -156,7 +171,8 @@ $form['address'] = [
       ],
     ];
 
-    $form['#attributes']['class'][] = 'cv-validate-before-ajax';
+    // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
+    $form['#attached']['library'][] = 'profile/profile_assets';
     $form['#attached']['library'][] = 'profile/profile_form_popup';
     return $form;
   }
@@ -234,8 +250,10 @@ $form['address'] = [
     ];
 
     try {
-      $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
-      $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
+      // $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
+      $access_token = $this->globalVariablesService->getApimanAccessToken();
+      // $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
+      $globalVariables = $this->globalVariablesService->getGlobalVariables();
       $client = \Drupal::httpClient();
 
       $response = $client->post(

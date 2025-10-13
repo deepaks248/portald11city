@@ -11,6 +11,8 @@ use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\RedirectCommand;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\global_module\Service\FileUploadService;
+use Drupal\global_module\Service\GlobalVariablesService;
+
 class AddFamilyMemberForm extends FormBase
 {
   /**
@@ -21,13 +23,15 @@ class AddFamilyMemberForm extends FormBase
   protected $httpClient;
   protected $fileUploadService;
   protected $request;
+  protected $globalVariableService;
 
 
-  public function __construct(FileUploadService $fileUploadService,ClientInterface $http_client,RequestStack $request_stack)
+  public function __construct(FileUploadService $fileUploadService, ClientInterface $http_client, RequestStack $request_stack, GlobalVariablesService $globalVariableService)
   {
     $this->httpClient = $http_client;
     $this->fileUploadService = $fileUploadService;
     $this->request = $request_stack->getCurrentRequest();
+    $this->globalVariableService = $globalVariableService;
   }
 
   public static function create(ContainerInterface $container)
@@ -35,8 +39,8 @@ class AddFamilyMemberForm extends FormBase
     return new static(
       $container->get('global_module.file_upload_service'),
       $container->get('http_client'),
-      $container->get('request_stack')
-
+      $container->get('request_stack'),
+      $container->get('global_module.global_variables')
     );
   }
   public function getFormId()
@@ -151,43 +155,43 @@ class AddFamilyMemberForm extends FormBase
       '#suffix' => '</div></div>',
     ];
 
-      $form['relations'] = [
-        '#type' => 'select',
-        '#title' => $this->t('Relationship'),
-        '#required' => TRUE,
-        '#options' => [
-          '' => $this->t('Relationship*'),
-          "Mother" => $this->t('Mother'),
-          "Father" => $this->t('Father'),
-          "Sister" => $this->t('Sister'),
-          "Brother" => $this->t('Brother'),
-          "Wife" => $this->t('Wife'),
-          "Husband" => $this->t('Husband'),
-          "Daughter" => $this->t('Daughter'),
-          "Son" => $this->t('Son'),
+    $form['relations'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Relationship'),
+      '#required' => TRUE,
+      '#options' => [
+        '' => $this->t('Relationship*'),
+        "Mother" => $this->t('Mother'),
+        "Father" => $this->t('Father'),
+        "Sister" => $this->t('Sister'),
+        "Brother" => $this->t('Brother'),
+        "Wife" => $this->t('Wife'),
+        "Husband" => $this->t('Husband'),
+        "Daughter" => $this->t('Daughter'),
+        "Son" => $this->t('Son'),
+      ],
+      '#attributes' => [
+        'class' => [
+          'peer',
+          'w-full',
+          'lg:max-w-lg',
+          'text-base',
+          's:text-sm',
+          'xs:text-sm',
+          'font-medium',
+          'select',
+          'rounded-lg',
+          'border',
+          'border-gray-300',
+          'px-2.5',
+          'pb-2.5',
+          'pt-4'
         ],
-        '#attributes' => [
-          'class' => [
-            'peer',
-            'w-full',
-            'lg:max-w-lg',
-            'text-base',
-            's:text-sm',
-            'xs:text-sm',
-            'font-medium',
-            'select',
-            'rounded-lg',
-            'border',
-            'border-gray-300',
-            'px-2.5',
-            'pb-2.5',
-            'pt-4'
-          ],
-          'id' => 'relations',
-        ],
-        '#prefix' => '<div class="errors-relations"><div class="relative">',
-        '#suffix' => '</div></div>',
-      ];
+        'id' => 'relations',
+      ],
+      '#prefix' => '<div class="errors-relations"><div class="relative">',
+      '#suffix' => '</div></div>',
+    ];
 
     $form['phone_number'] = [
       '#type' => 'textfield',
@@ -260,8 +264,8 @@ class AddFamilyMemberForm extends FormBase
           'w-1/2',
           'lg:max-w-lg',
           'px-2.5',
-          'py-2.5',
-          // 'pt-4',
+          'pb-2.5',
+          'pt-4',
           'text-sm',
           'text-medium_dark',
           'bg-transparent',
@@ -277,21 +281,21 @@ class AddFamilyMemberForm extends FormBase
       '#prefix' => '<div class="file-upload-wrapper file-upload-container no-float-label">',
       '#suffix' => '<div class="upload-file-error"></div></div>',
     ];
-    
 
 
-   $form['terms'] = [
-  '#type' => 'checkbox',
-  '#title' => $this->t('<span>I agree to the <a href="" class="link link-primary text-blue-600 underline hover:text-blue-900" target="_blank">Terms and Conditions</a></span>'),
-  '#required' => TRUE,
-  '#required_error' => $this->t('You must agree to the Terms and Conditions'),
-  '#attributes' => [
-    'class' => ['checkbox','w-6', 'h-6', 'rounded', 'cursor-pointer', 'border', 'border-gray-400'],  
-    'id' => 'terms',
-  ],
-  '#prefix' => '<div class="terms-container flex items-center space-x-2 no-float-label relative">',
-  '#suffix' => '</div><div class="error-message-wrapper"></div>',
-];
+
+    $form['terms'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('<span>I agree to the <a href="" class="link link-primary text-blue-600 underline hover:text-blue-900" target="_blank">Terms and Conditions</a></span>'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('You must agree to the Terms and Conditions'),
+      '#attributes' => [
+        'class' => ['checkbox','w-6', 'h-6', 'rounded', 'cursor-pointer', 'border', 'border-gray-400'],
+        'id' => 'terms',
+      ],
+      '#prefix' => '<div class="terms-container flex items-center space-x-2 no-float-label relative">',
+      '#suffix' => '</div><div class="error-message-wrapper"></div>',
+    ];
 
 
 
@@ -300,7 +304,7 @@ class AddFamilyMemberForm extends FormBase
       '#type' => 'submit',
       '#value' => $this->t('Submit'),
       '#attributes' => [
-       'class' => [
+        'class' => [
           'btn',
           'btn-warning',
           'lg:h-14',        // height ~56px (close to 50px you had)
@@ -360,92 +364,94 @@ class AddFamilyMemberForm extends FormBase
       ],
     ];
     $form['#theme'] = 'add-family-member';
-    $form['#attributes']['class'][] = 'cv-validate-before-ajax';
+    // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
     $form['#attached']['library'][] = 'profile/add-family-member-library';
     $form['#attached']['library'][] = 'global_module/ajax_loader';
     return $form;
   }
 
-public function submitForm(array &$form, FormStateInterface $form_state) {
-  $values = $form_state->getValues();
-  $session = \Drupal::request()->getSession();
-  $user_data = $session->get('api_redirect_result') ?? [];
+  public function submitForm(array &$form, FormStateInterface $form_state)
+  {
+    $values = $form_state->getValues();
+    $session = \Drupal::request()->getSession();
+    $user_data = $session->get('api_redirect_result') ?? [];
 
- $image_url = NULL;
-  $response_data = [];
+    $image_url = NULL;
+    $response_data = [];
 
-  // Upload file using custom file upload service
+    // Upload file using custom file upload service
 
-  if (
-    isset($_FILES['files']['full_path']['upload_file']) &&
-    is_uploaded_file($_FILES['files']['tmp_name']['upload_file'])
-  ) {
-    $upload_response = $this->fileUploadService->uploadFile($this->request);
-    if ($upload_response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
+    if (
+      isset($_FILES['files']['full_path']['upload_file']) &&
+      is_uploaded_file($_FILES['files']['tmp_name']['upload_file'])
+    ) {
+      $upload_response = $this->fileUploadService->uploadFile($this->request);
+      if ($upload_response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
 
-  // Debug what we really have
-      $response_data = json_decode($upload_response->getContent(), true);
-      if (!empty($response_data['fileName'])) {
-        $image_url = $response_data['fileName'];
-      } elseif (!empty($response_data['error'])) {
-        $this->messenger()->addError($this->t('File upload error: @error', [
-          '@error' => $response_data['error'],
-        ]));
-        return;
+        // Debug what we really have
+        $response_data = json_decode($upload_response->getContent(), true);
+        if (!empty($response_data['fileName'])) {
+          $image_url = $response_data['fileName'];
+        } elseif (!empty($response_data['error'])) {
+          $this->messenger()->addError($this->t('File upload error: @error', [
+            '@error' => $response_data['error'],
+          ]));
+          return;
+        }
       }
     }
-  }
 
 
-  $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
-  $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
+    // $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
+    $access_token = $this->globalVariableService->getApimanAccessToken();
+    // $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
+    $globalVariables = $this->globalVariableService->getGlobalVariables();
 
-  $payload = [
-    'name'         => $values['first_name'],
-    'dateOfBirth'  => $values['calendar'],
-    'gender'       => $values['gender'],
-    'relationship' => $values['relations'],
-    'phone'        => $values['phone_number'],
-    'emailId'      => $values['email'],
-    'userId'       => $user_data['userId'] ?? '',
-    'imageUrl'     => $image_url,
-  ];
-// dump($payload);
-  \Drupal::logger('profile')->info('Submitting family member: <pre>@payload</pre>', [
-    '@payload' => print_r($payload, TRUE),
-  ]);
-
-  $endpoint = $globalVariables['apiManConfig']['config']['apiUrl'] .
-              'tiotcitizenapp' .
-              $globalVariables['apiManConfig']['config']['apiVersion'] .
-              'family-members/add-family-member';
-
-  try {
-    $response = $this->httpClient->post($endpoint, [
-      'json'    => $payload,
-      'headers' => [
-        'Content-Type'  => 'application/json',
-        'Authorization' => 'Bearer ' . $access_token,
-      ],
-    ]);
-    $data = json_decode($response->getBody()->getContents(), true);
-    \Drupal::logger('profile')->info('API response: <pre>@response</pre>', [
-      '@response' => print_r($data, TRUE),
+    $payload = [
+      'name'         => $values['first_name'],
+      'dateOfBirth'  => $values['calendar'],
+      'gender'       => $values['gender'],
+      'relationship' => $values['relations'],
+      'phone'        => $values['phone_number'],
+      'emailId'      => $values['email'],
+      'userId'       => $user_data['userId'] ?? '',
+      'imageUrl'     => $image_url,
+    ];
+    // dump($payload);
+    \Drupal::logger('profile')->info('Submitting family member: <pre>@payload</pre>', [
+      '@payload' => print_r($payload, TRUE),
     ]);
 
-   if ($data['status'] && $data['status'] === true) {
-  \Drupal::logger('profile')->info('Redirecting to success route.');
-  $form_state->setRedirect('profile.family_success');
-} else {
-  \Drupal::logger('profile')->info('Redirecting to failure route.');
-  $form_state->setRedirect('profile.family_failure');
-}
+    $endpoint = $globalVariables['apiManConfig']['config']['apiUrl'] .
+      'tiotcitizenapp' .
+      $globalVariables['apiManConfig']['config']['apiVersion'] .
+      'family-members/add-family-member';
+
+    try {
+      $response = $this->httpClient->request('POST', $endpoint, [
+        'json'    => $payload,
+        'headers' => [
+          'Content-Type'  => 'application/json',
+          'Authorization' => 'Bearer ' . $access_token,
+        ],
+      ]);
+      $data = json_decode($response->getBody()->getContents(), true);
+      \Drupal::logger('profile')->info('API response: <pre>@response</pre>', [
+        '@response' => print_r($data, TRUE),
+      ]);
+
+      if ($data['status'] && $data['status'] === true) {
+        \Drupal::logger('profile')->info('Redirecting to success route.');
+        $form_state->setRedirect('profile.family_success');
+      } else {
+        \Drupal::logger('profile')->info('Redirecting to failure route.');
+        $form_state->setRedirect('profile.family_failure');
+      }
+    } catch (\Exception $e) {
+      \Drupal::logger('profile')->error('API error: @message', ['@message' => $e->getMessage()]);
+      $form_state->setRedirect('profile.family_failure');
+    }
   }
-  catch (\Exception $e) {
-    \Drupal::logger('profile')->error('API error: @message', ['@message' => $e->getMessage()]);
-    $form_state->setRedirect('profile.family_failure');
-  }
-}
 
 
   private function getDateErrorMarkup(FormStateInterface $form_state, $field_name)
@@ -459,10 +465,9 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
   public function ajaxCallback(array &$form, FormStateInterface $form_state)
   {
     if ($form_state->hasAnyErrors()) {
-    // Return the entire form to show errors, but do NOT process submit
+      // Return the entire form to show errors, but do NOT process submit
+      return $form;
+    }
     return $form;
   }
-   return $form;
-  }
-
 }

@@ -12,6 +12,7 @@ use GuzzleHttp\Exception\RequestException;
 use Drupal\login_logout\Service\OAuthLoginService;
 use Drupal\global_module\Service\GlobalVariablesService;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Drupal\active_sessions\Service\ActiveSessionService;
 
 class UserRegisterForm extends FormBase
 {
@@ -19,13 +20,15 @@ class UserRegisterForm extends FormBase
   protected $httpClient;
   protected $oauthLoginService;
   protected $globalVariablesService;
+  protected $activeSessionService;
 
-  public function __construct(RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService, GlobalVariablesService $globalVariablesService)
+  public function __construct(RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService, GlobalVariablesService $globalVariablesService, ActiveSessionService $activeSessionService)
   {
     $this->requestStack = $requestStack;
     $this->httpClient = $httpClient;
     $this->oauthLoginService = $oauthLoginService;
     $this->globalVariablesService = $globalVariablesService;
+    $this->activeSessionService = $activeSessionService;
   }
 
   public static function create(ContainerInterface $container)
@@ -34,7 +37,8 @@ class UserRegisterForm extends FormBase
       $container->get('request_stack'),
       $container->get('http_client'),
       $container->get('login_logout.oauth_login_service'),
-      $container->get('global_module.global_variables')
+      $container->get('global_module.global_variables'),
+      $container->get('active_sessions.active_session_service')
     );
   }
 
@@ -445,8 +449,9 @@ class UserRegisterForm extends FormBase
       // Get access token
       $accessToken = $tokenData['access_token'] ?? '';
 
-      $activeSessionService = \Drupal::service('active_sessions.session_service');
-      $activeSessions = $activeSessionService->fetchActiveSessions($accessToken);
+      // $activeSessionService = \Drupal::service('active_sessions.session_service');
+      // $activeSessions = $activeSessionService->fetchActiveSessions($accessToken);
+      $activeSessions = $this->activeSessionService->fetchActiveSessions($accessToken);
 
       // Find closest matching API session by loginTime
       $closestSessionId = null;

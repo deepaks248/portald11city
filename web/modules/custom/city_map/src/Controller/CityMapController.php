@@ -3,40 +3,52 @@
 namespace Drupal\city_map\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\File\FileUrlGeneratorInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 
-class CityMapController extends ControllerBase
-{
+class CityMapController extends ControllerBase {
 
-  public function cityMap()
-  {
+  protected $entityTypeManager;
+  protected $fileUrlGenerator;
+
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, FileUrlGeneratorInterface $fileUrlGenerator) {
+    $this->entityTypeManager = $entityTypeManager;
+    $this->fileUrlGenerator = $fileUrlGenerator;
+  }
+
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity_type.manager'),
+      $container->get('file_url_generator')
+    );
+  }
+
+  public function cityMap() {
     return [
       '#theme' => 'city_map',
       '#attached' => [
         'library' => [
           'city_map/city-map-library',
         ],
-      ]
+      ],
     ];
   }
 
-  public function getContentByTerm($tid)
-  {
-    $file_url_generator = \Drupal::service('file_url_generator');
-    $nodes = \Drupal::entityTypeManager()
+  public function getContentByTerm($tid) {
+    $nodes = $this->entityTypeManager
       ->getStorage('node')
       ->loadByProperties(['field_pois_category' => $tid]);
 
     $data = [];
 
     foreach ($nodes as $node) {
-
-      // Get Image URL (safe check).
       $image_url = NULL;
+
       if (!$node->get('field_image_1')->isEmpty()) {
         $file_uri = $node->get('field_image_1')->entity->getFileUri();
-        $image_url = $file_url_generator->generateAbsoluteString($file_uri);
+        $image_url = $this->fileUrlGenerator->generateAbsoluteString($file_uri);
       }
 
       $data[] = [

@@ -5,17 +5,22 @@ namespace Drupal\login_logout\Service;
 use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Drupal\global_module\Service\GlobalVariablesService;
 
-class UserInfoValidator {
+class UserInfoValidator
+{
 
   protected $httpClient;
   protected $logger;
   protected $session;
+  protected $globalVariablesService;
 
-  public function __construct(ClientInterface $http_client, LoggerInterface $logger, SessionInterface $session) {
+  public function __construct(ClientInterface $http_client, LoggerInterface $logger, SessionInterface $session, GlobalVariablesService $globalVariablesService)
+  {
     $this->httpClient = $http_client;
     $this->logger = $logger;
     $this->session = $session;
+    $this->globalVariablesService = $globalVariablesService;
   }
 
   /**
@@ -24,7 +29,8 @@ class UserInfoValidator {
    * @return array|null
    *   Returns decoded user info if valid, or NULL if invalid.
    */
-  public function validate() {
+  public function validate()
+  {
     $accessToken = $this->session->get('login_logout.access_token');
 
     if (!$accessToken) {
@@ -33,7 +39,8 @@ class UserInfoValidator {
     }
 
     try {
-      $response = $this->httpClient->request('POST', 'https://hcsjointstacknew.trinityiot.in/oauth2/userinfo', [
+      $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+      $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oauth2/userinfo', [
         'headers' => [
           'Content-Type'  => 'application/x-www-form-urlencoded',
           'Authorization' => 'Bearer ' . $accessToken,
@@ -45,16 +52,13 @@ class UserInfoValidator {
 
       if (!empty($data['sub'])) {
         return $data;
-      }
-      else {
+      } else {
         $this->logger->warning('UserInfo check failed: no sub returned.');
         return NULL;
       }
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->logger->error('UserInfo validation error: @msg', ['@msg' => $e->getMessage()]);
       return NULL;
     }
   }
-
 }

@@ -6,6 +6,7 @@ use GuzzleHttp\ClientInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Psr\Log\LoggerInterface;
 use GuzzleHttp\Exception\RequestException;
+use Drupal\global_module\Service\GlobalVariablesService;
 
 class ActiveSessionService
 {
@@ -13,15 +14,18 @@ class ActiveSessionService
     protected ClientInterface $httpClient;
     protected RequestStack $requestStack;
     protected LoggerInterface $logger;
+    protected GlobalVariablesService $globalVariablesService;
 
     public function __construct(
         ClientInterface $httpClient,
         RequestStack $requestStack,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        GlobalVariablesService $globalVariablesService
     ) {
         $this->httpClient = $httpClient;
         $this->requestStack = $requestStack;
         $this->logger = $logger;
+        $this->globalVariablesService = $globalVariablesService;
     }
 
     /**
@@ -41,7 +45,8 @@ class ActiveSessionService
         $cookies = $request->headers->get('cookie');
 
         try {
-            $response = $this->httpClient->request('GET', 'https://hcsjointstacknew.trinityiot.in/api/users/v1/me/sessions', [
+            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+            $response = $this->httpClient->request('GET', 'https://' . $idamconfig . '/api/users/v1/me/sessions', [
                 'headers' => [
                     'Accept' => '*/*',
                     'Authorization' => 'Bearer ' . $accessToken,
@@ -60,7 +65,8 @@ class ActiveSessionService
 
     public function terminateSession(string $session_id, string $access_token): bool
     {
-        $url = 'https://hcsjointstacknew.trinityiot.in/api/users/v1/me/sessions/' . $session_id;
+        $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        $url = 'https://' . $idamconfig . '/api/users/v1/me/sessions/' . $session_id;
 
         try {
             $this->httpClient->request('DELETE', $url, [
@@ -80,7 +86,8 @@ class ActiveSessionService
 
     public function terminateAllOtherSessions(string $access_token): bool
     {
-        $url = 'https://hcsjointstacknew.trinityiot.in/api/users/v1/me/sessions';
+        $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        $url = 'https://' . $idamconfig . '/api/users/v1/me/sessions';
 
         try {
             $this->httpClient->request('DELETE', $url, [

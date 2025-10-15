@@ -25,7 +25,7 @@ services:
 
   login_logout.userinfo_validator:
     class: Drupal\login_logout\Service\UserInfoValidator
-    arguments: ["@http_client", "@logger.channel.login_logout", "@session"]
+    arguments: ["@http_client", "@logger.channel.login_logout", "@session", "@global_module.global_variables"]
 
   login_logout.userinfo_check_subscriber:
     class: Drupal\login_logout\EventSubscriber\UserInfoCheckSubscriber

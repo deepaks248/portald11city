@@ -383,7 +383,8 @@ class UserRegisterForm extends FormBase
 
       // 2. SCIM API call
       try {
-        $this->httpClient->request('POST', 'https://tiotidam-poc:9443/scim2/Users/', [
+        $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        $this->httpClient->request('POST', 'https://' . $idamconfig . '/scim2/Users/', [
           'headers' => [
             'accept' => 'application/scim+json',
             'Content-Type' => 'application/scim+json',
@@ -473,6 +474,7 @@ class UserRegisterForm extends FormBase
       // Fallback if nothing matched
       $session = \Drupal::service('session');
       $session->set('login_logout.active_session_id_token', $closestSessionId);
+      $session->set('login_logout.login_time', \Drupal::time()->getRequestTime());
 
       // 3. Create Drupal user
       $user = User::create([

@@ -379,9 +379,9 @@ class PasswordChangeService
             }
 
             $email = $this->currentUser->getEmail();
-
+            $idamconfig = $this->globalVariables->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
             // Step 1: Lookup in SCIM
-            $url = 'https://hcsjointstacknew.trinityiot.in/scim2/Users?filter=' . urlencode("emails eq \"$email\"");
+            $url = 'https://' . $idamconfig . '/scim2/Users?filter=' . urlencode("emails eq \"$email\"");
             $responseData = $this->globalVariables->curl_get_api($url);
 
             if (empty($responseData['Resources'][0]['id'])) {
@@ -399,7 +399,7 @@ class PasswordChangeService
                 "username" => $email,
             ];
             $resOld = $this->globalVariables->curl_post_idam(
-                'https://hcsjointstacknew.trinityiot.in/oauth2/token/',
+                'https://' . $idamconfig . '/oauth2/token/',
                 $payloadOld
             );
             if (empty($resOld['access_token'])) {
@@ -416,7 +416,7 @@ class PasswordChangeService
                 ]],
             ];
             $resPass = $this->globalVariables->curl_post_idam_auth(
-                'https://hcsjointstacknew.trinityiot.in/scim2/Users/' . $idamUserId,
+                'https://' . $idamconfig . '/scim2/Users/' . $idamUserId,
                 $payloadPass,
                 'PATCH'
             );

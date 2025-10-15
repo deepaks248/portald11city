@@ -5,3 +5,4 @@ services:
       - '@http_client'
       - '@request_stack'
       - '@logger.channel.default'
+      - '@global_module.global_variables'

@@ -31,7 +31,8 @@ class OAuthLoginService
     public function getFlowId(): ?string
     {
         try {
-            $response = $this->httpClient->request('POST', 'https://hcsjointstacknew.trinityiot.in/oauth2/authorize', [
+            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+            $response = $this->httpClient->request('POST', 'https://'.$idamconfig.'/oauth2/authorize', [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/x-www-form-urlencoded',
@@ -98,8 +99,8 @@ class OAuthLoginService
                     ],
                 ],
             ];
-
-            $response = $this->httpClient->request('POST', 'https://hcsjointstacknew.trinityiot.in/oauth2/authn', [
+            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+            $response = $this->httpClient->request('POST', 'https://'.$idamconfig.'/oauth2/authn', [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
@@ -173,7 +174,8 @@ class OAuthLoginService
     public function exchangeCodeForToken(string $code): ?array
     {
         try {
-            $response = $this->httpClient->request('POST', 'https://hcsjointstacknew.trinityiot.in/oauth2/token', [
+            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+            $response = $this->httpClient->request('POST', 'https://'.$idamconfig.'/oauth2/token', [
                 'headers' => [
                     'Content-Type' => 'application/x-www-form-urlencoded',
                 ],
@@ -220,7 +222,8 @@ class OAuthLoginService
         $cookies = $request->headers->get('cookie');
 
         try {
-            $response = $this->httpClient->request('POST', 'https://hcsjointstacknew.trinityiot.in/oidc/logout', [
+            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+            $response = $this->httpClient->request('POST', 'https://'.$idamconfig.'/oidc/logout', [
                 'headers' => [
                     'Content-Type' => 'application/x-www-form-urlencoded',
                     'Cookie' => $cookies,

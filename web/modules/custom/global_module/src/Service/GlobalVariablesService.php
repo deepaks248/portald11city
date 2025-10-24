@@ -11,6 +11,7 @@ use GuzzleHttp\ClientInterface;
 use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class GlobalVariablesService
 {
@@ -40,39 +41,97 @@ class GlobalVariablesService
   /**
    * Fetches and returns global variables from Vault.
    */
+  // public function getGlobalVariables(): ?array
+  // {
+  //   try {
+  //     $vaultAPI = Settings::get('vault_url');
+  //     $vaultToken = Settings::get('vault_token');
+
+  //     $response = \Drupal::httpClient()->get($vaultAPI, [
+  //       'headers' => [
+  //         'Content-Type' => 'application/json',
+  //         'X-Vault-Token' => $vaultToken,
+  //       ],
+  //     ]);
+
+  //     $data = $response->getBody()->getContents();
+
+  //     if ($data) {
+  //       $vaultData = json_decode($data)->data ?? [];
+  //       $vaultData = json_decode(json_encode($vaultData), true);
+
+  //       $vaultData = array_merge(
+  //         ['webportalUrl' => $vaultData['applicationConfig']['config']['webportalUrl'] ?? ''],
+  //         $vaultData
+  //       );
+  //       $vaultData = array_merge(
+  //         ['siteUrl' => $vaultData['applicationConfig']['config']['siteUrl'] ?? ''],
+  //         $vaultData
+  //       );
+
+  //       return $vaultData;
+  //     }
+  //   } catch (GuzzleException $e) {
+  //     $this->logger->error('Vault fetch failed: ' . $e->getMessage());
+  //     \Drupal::messenger()->addError('Our service is currently down, please try again later.');
+  //   }
+
+  //   return NULL;
+  // }
+
   public function getGlobalVariables(): ?array
   {
-    try {
-      $vaultAPI = Settings::get('vault_url');
-      $vaultToken = Settings::get('vault_token');
+    $cid = 'globalvariables_data';
 
-      $response = \Drupal::httpClient()->get($vaultAPI, [
-        'headers' => [
-          'Content-Type' => 'application/json',
-          'X-Vault-Token' => $vaultToken,
-        ],
-      ]);
+    // Try to get cached value first
+    if ($cache = $this->cache->get($cid)) {
+      return $cache->data;
+    }
 
-      $data = $response->getBody()->getContents();
+    // Optional: prevent multiple concurrent refreshes
+    $lock = \Drupal::service('lock');
+    if ($lock->acquire($cid)) {
+      try {
+        $vaultAPI = Settings::get('vault_url');
+        $vaultToken = Settings::get('vault_token');
 
-      if ($data) {
-        $vaultData = json_decode($data)->data ?? [];
-        $vaultData = json_decode(json_encode($vaultData), true);
+        $response = \Drupal::httpClient()->get($vaultAPI, [
+          'headers' => [
+            'Content-Type' => 'application/json',
+            'X-Vault-Token' => $vaultToken,
+          ],
+        ]);
 
-        $vaultData = array_merge(
-          ['webportalUrl' => $vaultData['applicationConfig']['config']['webportalUrl'] ?? ''],
-          $vaultData
-        );
-        $vaultData = array_merge(
-          ['siteUrl' => $vaultData['applicationConfig']['config']['siteUrl'] ?? ''],
-          $vaultData
-        );
+        $data = $response->getBody()->getContents();
+        if ($data) {
+          $vaultData = json_decode($data)->data ?? [];
+          $vaultData = json_decode(json_encode($vaultData), true);
 
-        return $vaultData;
+          $vaultData = array_merge(
+            ['webportalUrl' => $vaultData['applicationConfig']['config']['webportalUrl'] ?? ''],
+            $vaultData
+          );
+          $vaultData = array_merge(
+            ['siteUrl' => $vaultData['applicationConfig']['config']['siteUrl'] ?? ''],
+            $vaultData
+          );
+
+          // Cache for 1 hour
+          $this->cache->set($cid, $vaultData, time() + 3600);
+
+          return $vaultData;
+        }
+      } catch (\Exception $e) {
+        $this->logger->error('Vault fetch failed: ' . $e->getMessage());
+      } finally {
+        $lock->release($cid);
       }
-    } catch (GuzzleException $e) {
-      $this->logger->error('Vault fetch failed: ' . $e->getMessage());
-      \Drupal::messenger()->addError('Our service is currently down, please try again later.');
+    } else {
+      // If another request is refreshing, wait a bit and retry
+      usleep(100000); // 0.1s
+      if ($cache = $this->cache->get($cid)) {
+        return $cache->data;
+      }
     }
 
     return NULL;
@@ -93,6 +152,56 @@ class GlobalVariablesService
   /**
    * Returns Apiman access token, uses cache if valid.
    */
+  // public function getApimanAccessToken(): ?string
+  // {
+  //   $cid = 'apiman_access_token';
+
+  //   // Check cache first
+  //   if ($cache_item = $this->cache->get($cid)) {
+  //     $cached = $cache_item->data;
+  //     if (!empty($cached['access_token']) && time() < $cached['expires_at']) {
+  //       return $cached['access_token'];
+  //     }
+  //   }
+
+  //   $globals = $this->getGlobalVariables();
+
+  //   if (empty($globals['apiManConfig']['config'])) {
+  //     $this->logger->error('Missing apiManConfig configuration in Vault response.');
+  //     return NULL;
+  //   }
+
+  //   $tokenUrl = $globals['apiManConfig']['config']['apiUrl']
+  //     . 'tiotAPIESBSubSystem'
+  //     . $globals['apiManConfig']['config']['apiVersion']
+  //     . 'getAccessToken';
+
+  //   try {
+  //     $client = \Drupal::httpClient();
+  //     $response = $client->post($tokenUrl, [
+  //       'headers' => [
+  //         'Content-Type' => 'application/json',
+  //       ],
+  //       'body' => json_encode($globals['apiManConfig']['config']),
+  //       'verify' => FALSE,
+  //     ]);
+
+  //     $data = json_decode($response->getBody(), TRUE);
+
+  //     if (!empty($data['access_token']) && !empty($data['expires_in'])) {
+  //       $this->cache->set($cid, [
+  //         'access_token' => $data['access_token'],
+  //         'expires_at' => time() + $data['expires_in'] - 30,
+  //       ], time() + $data['expires_in']);
+  //       return $data['access_token'];
+  //     }
+  //   } catch (RequestException $e) {
+  //     $this->logger->error('Apiman token fetch failed: ' . $e->getMessage());
+  //   }
+
+  //   return NULL;
+  // }
+
   public function getApimanAccessToken(): ?string
   {
     $cid = 'apiman_access_token';
@@ -118,11 +227,8 @@ class GlobalVariablesService
       . 'getAccessToken';
 
     try {
-      $client = \Drupal::httpClient();
-      $response = $client->post($tokenUrl, [
-        'headers' => [
-          'Content-Type' => 'application/json',
-        ],
+      $response = $this->httpClient->request('POST', $tokenUrl, [
+        'headers' => ['Content-Type' => 'application/json'],
         'body' => json_encode($globals['apiManConfig']['config']),
         'verify' => FALSE,
       ]);
@@ -130,10 +236,12 @@ class GlobalVariablesService
       $data = json_decode($response->getBody(), TRUE);
 
       if (!empty($data['access_token']) && !empty($data['expires_in'])) {
+        // Cache token until shortly before it expires
         $this->cache->set($cid, [
           'access_token' => $data['access_token'],
           'expires_at' => time() + $data['expires_in'] - 30,
         ], time() + $data['expires_in']);
+
         return $data['access_token'];
       }
     } catch (RequestException $e) {
@@ -268,6 +376,10 @@ class GlobalVariablesService
 
   public function fileUploadser(Request $request)
   {
+    $path = $request->getPathInfo();
+    if ($path !== '/fileupload') {
+      throw new NotFoundHttpException();
+    }
     define('UPLOAD_FILE', 'uploadedfile1');
     $globalVariables = $this->getGlobalVariables();
 
@@ -488,7 +600,7 @@ class GlobalVariablesService
       $body = $response->getBody()->getContents();
       return json_decode($body, true);
     } catch (RequestException $e) {
-      \Drupal::logger('global_module post idam')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
+      \Drupal::logger('global_module')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
       return ['error' => 'Request failed'];
     }
   }
@@ -496,26 +608,27 @@ class GlobalVariablesService
   {
     try {
       $client = \Drupal::httpClient();
-      $method = strtoupper($method);
-
+      $method = strtoupper($method); // Ensure method is uppercase (POST/PATCH)
       $options = [
         'headers' => [
           'Accept' => 'application/json',
-          'Content-Type' => 'application/json',
           'Authorization' => 'Basic ' . base64_encode('trinity:trinity@123'),
         ],
         'json' => $payload,
         'verify' => false,
       ];
 
+      // Call dynamically based on method (POST by default)
       switch ($method) {
         case 'PATCH':
           $response = $client->patch($url, $options);
           break;
+
         case 'PUT':
           $response = $client->put($url, $options);
           break;
-        default:
+
+        default: // Default to POST
           $response = $client->post($url, $options);
       }
 

@@ -66,19 +66,6 @@ class ReportGrievanceForm extends FormBase
    */
   public function buildForm(array $form, FormStateInterface $form_state)
   {
-    // $grievance_types = $this->apiService->getIncidentTypes();
-    // if (empty($grievance_types)) {
-    //   $this->messenger()->addError($this->t('No grievance types available.'));
-    //   return $form;
-    // }
-
-    // $selected_type = $form_state->getValue('grievance_type');
-    // $subtype_options = [];
-
-    // if (!empty($selected_type)) {
-
-    //   $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
-    // }
 
     if ($cache = $this->cache->get('grievance_types')) {
       $grievance_types = $cache->data;
@@ -94,9 +81,6 @@ class ReportGrievanceForm extends FormBase
     $selected_type = $form_state->getValue('grievance_type');
     $subtype_options = [];
 
-    // if (!empty($selected_type)) {
-    //   $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
-    // }
     if (!empty($selected_type)) {
       $cache_key = 'grievance_subtypes_' . $selected_type;
       if ($subtype_cache = $this->cache->get($cache_key)) {

@@ -8,7 +8,7 @@ module.exports = {
   ],
   safelist: [
     // existing safelist items
-    'w-28', 'mt-16', 'mx-10', 'mt-9', 'form-select',
+    'w-28', 'mt-16', 'mx-10', 'mt-9', 'form-select','text-green-600',
     'form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300',
     'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5',
     'checkbox', 'text-yellow-500', 'btn', 'btn-warning', 'hover:login-btn', 'active:login-btn',

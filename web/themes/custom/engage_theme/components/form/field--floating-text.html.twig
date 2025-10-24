@@ -19,7 +19,7 @@
 {# Remove disabled from attributes, because we handle it separately #}
 {% set attrs = create_attribute(field['#attributes']|default({})|without('disabled')) %}
 
-<div class="relative test">
+<div class="relative">
   {% if type == 'select' %}
     <select
       id="{{ id }}"
@@ -35,6 +35,46 @@
         </option>
       {% endfor %}
     </select>
+  {% elseif type == 'password' %}
+  <div class="relative mb-4 w-full max-w-md">
+    <!-- Input + label -->
+    <div class="relative">
+      <input
+        type="password"
+        id="{{ id }}"
+        name="{{ name }}"
+        {% if maxlength %} maxlength="{{ maxlength }}" {% endif %}
+        {% if required %} required {% endif %}
+        {{ attrs }}
+        class="peer w-full px-2.5 pb-2.5 pt-4 text-sm text-gray-700 bg-transparent rounded-lg border border-gray-300 appearance-none focus:outline-none focus:ring-0 focus:!border-yellow-500 {{ error ? 'border-red-500' : '' }}"
+      >
+      <label
+        for="edit-old-password"
+        class="absolute text-sm text-gray-500 bg-white px-1 transition-all duration-300 transform -translate-y-4 scale-75 top-2 left-2 origin-[0]
+          peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2
+          peer-placeholder-shown:top-1/2
+          peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 peer-focus:text-yellow-500"
+      >
+        {{ label }}{% if required %}{% endif %}
+      </label>
+    </div>
+
+    <!-- Eye toggle icons -->
+    <button type="button"
+      class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer"
+      aria-label="Toggle password visibility">
+      <img
+        src="/themes/custom/engage_theme/images/Profile/hide-eye.svg"
+        alt="Hide password"
+        class="hide-eye-old w-5 h-4"
+      >
+      <img
+        src="/themes/custom/engage_theme/images/Profile/show-eye.svg"
+        alt="Show password"
+        class="show-eye-old w-6 h-4 hidden"
+      >
+    </button>
+  </div>
   {% else %}
     <input
       type="{{ type }}"
@@ -49,15 +89,14 @@
       {{ disabled ? 'disabled' }}
       {{ attrs }}
     />
-  {% endif %}
-
-  <label
+    <label
     for="{{ id }}"
     class="absolute text-sm {{ error ? 'text-red-500' : 'text-gray-500' }} bg-white px-2 transition-all duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0]
       peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2
       peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-1
       peer-focus:text-yellow-500"
-  >
-    {{ label }}{% if required %}{% endif %}
-  </label>
+    >
+      {{ label }}{% if required %}{% endif %}
+    </label>
+  {% endif %}
 </div>

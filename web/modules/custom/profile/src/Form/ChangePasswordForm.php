@@ -46,7 +46,7 @@ class ChangePasswordForm extends FormBase
       '#title' => $this->t('Old Password'),
       '#required' => TRUE,
       '#attributes' => [
-        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'px-2.5', 'pb-2.5', 'pt-4', 'text-sm', 'text-medium_dark', 'bg-transparent', 'rounded-lg', 'border', 'border-gray-300', 'appearance-none', 'text-base', 's:text-sm', 'xs:text-sm'],
+        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'px-2.5', 'pb-2.5', 'pt-4', 'text-sm', 'text-medium_dark', 'bg-transparent', 'rounded-lg', 'border', 'border-gray-300', 'appearance-none', 'text-base', 's:text-sm', 'xs:text-sm', 'focus:outline-none', 'focus:ring-0', 'focus:!border-yellow-500'],
         'placeholder' => ' ',
         'autocomplete' => 'off',
         'id' => 'old-password',
@@ -61,7 +61,7 @@ class ChangePasswordForm extends FormBase
       '#title' => $this->t('New Password'),
       '#required' => TRUE,
       '#attributes' => [
-        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4'],
+        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4', 'focus:outline-none', 'focus:ring-0', 'focus:!border-yellow-500'],
         'maxlength' => 10,
         'minlength' => 10,
         'id' => 'new-password',
@@ -77,7 +77,7 @@ class ChangePasswordForm extends FormBase
       '#title' => $this->t('Confirm Password'),
       '#required' => TRUE,
       '#attributes' => [
-        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4'],
+        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4', 'focus:outline-none', 'focus:ring-0', 'focus:!border-yellow-500'],
         'placeholder' => ' ',
         'id' => 'confirm-password',
       ],

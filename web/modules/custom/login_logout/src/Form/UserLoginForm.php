@@ -90,7 +90,7 @@ class UserLoginForm extends FormBase
         //   'placeholder' => $this->t('Password'),
         // ],
         '#attributes' => [
-          'placeholder' => $this->t('Password'),
+          // 'placeholder' => $this->t('Password'),
           'onpaste' => 'return false;',
           'oncopy' => 'return false;',
           'oncut' => 'return false;',
@@ -111,8 +111,8 @@ class UserLoginForm extends FormBase
     }
 
 
-    $form['email']['#attributes']['class'][] = 'w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400';
-    $form['password']['#attributes']['class'][] = 'w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400';
+    $form['email']['#attributes']['class'][] = 'w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-0 focus:!border-yellow-500';
+    $form['password']['#attributes']['class'][] = 'w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-0 focus:!border-yellow-500';
 
     $form['login']['#attributes']['class'][] = 'bg-yellow-500 text-white rounded-xl px-6 py-2 cursor-pointer hover:bg-yellow-600 transition';
     // $form['check_email']['#attributes']['class'][] = 'w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition';

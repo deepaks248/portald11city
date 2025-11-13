@@ -1,5 +1,18 @@
 FROM drupal:11-php8.3-fpm
 
-ENV PATH="/opt/drupal/vendor/bin:${PATH}"
+# Install system dependencies needed for GD (with AVIF support)
+RUN apt-get update && apt-get install -y \
+    libjpeg-dev \
+    libpng-dev \
+    libwebp-dev \
+    libavif-dev \
+    libfreetype6-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-webp --with-avif --with-freetype \
+    && docker-php-ext-install -j$(nproc) gd \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Set the working directory
 WORKDIR /opt/drupal/web
+
+# Update PATH so vendor binaries (like Drush) are globally available
+ENV PATH="/opt/drupal/vendor/bin:${PATH}"

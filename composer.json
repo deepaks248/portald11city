@@ -51,6 +51,7 @@
         "drupal/svg_image": "^3.2",
         "drupal/twig_tweak": "^3.4",
         "drupal/ultimate_cron": "^2.0@beta",
+        "drupal/views_bulk_operations": "^4.4",
         "drupal/visitors": "^2.29",
         "drupal/votingapi": "4.0.x-dev@dev",
         "drupal/webform": "^6.3@beta",
@@ -79,6 +80,9 @@
     },
     "extra": {
         "patches": {
+            "drupal/core":{
+                "Fix deprecated function ": "https://www.drupal.org/files/issues/2025-10-03/fix_deprecation_in_view_exposed_form_block.patch"
+            },
             "drupal/seckit": {
                 "Fix for X-Generator": "https://www.drupal.org/files/issues/2020-09-03/seckit-2.x-2795025-remove_x_generator.patch"
             }

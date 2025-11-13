@@ -4,19 +4,19 @@
     Drupal.gmap = null;
     // let gmap = null;
     let map = null;
-    envSettings.gKey = "AIzaSyA7z_IJBC_8QTKN7HlO2ZmSZX-RKNIVUh8";
-    envSettings.mapDimension = "2D";
-    envSettings.mapLib = "ol7";
-    envSettings.type = "google";
-    envSettings.mapData = "google";
-    envSettings.gwc = false;
-    envSettings.offline = false;
-    envSettings.extent1 = 77.27133968401577;
-    envSettings.extent2 = 12.839963022940264;
-    envSettings.extent3 = 77.9711979045307;
-    envSettings.extent4 = 13.149758962153491;
-    envSettings.lat = 12.9716;
-    envSettings.lon = 77.5946;
+    envSettings.gKey = drupalSettings.globalVariables.mapConfig[0].gKey;
+    envSettings.mapDimension = drupalSettings.globalVariables.mapConfig[0].mapDimension;
+    envSettings.mapLib = drupalSettings.globalVariables.mapConfig[0].mapLib;
+    envSettings.type = drupalSettings.globalVariables.mapConfig[0].type;
+    envSettings.mapData = drupalSettings.globalVariables.mapConfig[0].mapData;
+    envSettings.gwc = drupalSettings.globalVariables.mapConfig[0].gwc;
+    envSettings.offline = drupalSettings.globalVariables.mapConfig[0].offline;
+    envSettings.extent1 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent1);
+    envSettings.extent2 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent2);
+    envSettings.extent3 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent3);
+    envSettings.extent4 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent4);
+    envSettings.lat = parseFloat(drupalSettings.globalVariables.mapConfig[0].lat);
+    envSettings.lon = parseFloat(drupalSettings.globalVariables.mapConfig[0].lon);
 
 
     Drupal.city_map.createMap = function () {
@@ -279,7 +279,7 @@
       id: 2,
     });
     console.log(Drupal.gmap);
-    console.log(gs1, map, "googleStreet");
+    // console.log(gs1, map, "googleStreet");
 
     document.querySelector('.googleMapDiv').classList.add('hidden');
     document.querySelector('.googleSatliteDiv').classList.remove('hidden');

@@ -46,7 +46,7 @@ class ActiveSessionService
 
         try {
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('GET', 'https://' . $idamconfig . '/api/users/v1/me/sessions', [
+            $response = $this->httpClient->request('GET', 'https://'. $idamconfig .':/api/users/v1/me/sessions', [
                 'headers' => [
                     'Accept' => '*/*',
                     'Authorization' => 'Bearer ' . $accessToken,
@@ -66,7 +66,8 @@ class ActiveSessionService
     public function terminateSession(string $session_id, string $access_token): bool
     {
         $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-        $url = 'https://' . $idamconfig . '/api/users/v1/me/sessions/' . $session_id;
+        // $url = 'https://tiotidam-poc:9443/api/users/v1/me/sessions/' . $session_id;
+        $url = 'https://'. $idamconfig .'/api/users/v1/me/sessions/' . $session_id;
 
         try {
             $this->httpClient->request('DELETE', $url, [
@@ -87,7 +88,8 @@ class ActiveSessionService
     public function terminateAllOtherSessions(string $access_token): bool
     {
         $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-        $url = 'https://' . $idamconfig . '/api/users/v1/me/sessions';
+        // $url = 'https://tiotidam-poc:9443/api/users/v1/me/sessions';
+        $url = 'https://'. $idamconfig .'/api/users/v1/me/sessions';
 
         try {
             $this->httpClient->request('DELETE', $url, [

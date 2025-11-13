@@ -1,10 +1,10 @@
 global_module.fileupload:
   path: "/fileupload"
   defaults:
-    _controller: 'global_module.global_variables:fileUploadser'
+    _controller: 'Drupal\global_module\Controller\GlobalController::fileUpload'
     _title: ""
   requirements:
-    _permission: "access content"
+    _custom_access: 'Drupal\global_module\Controller\GlobalController::fileUploadAccess'
   methods: [POST]
 
 global_module.postData:

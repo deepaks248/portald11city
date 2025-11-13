@@ -1,19 +1,32 @@
 <!-- Container for the city map engage template -->
-<section
-	class="container news_page max-w-screen-xl mx-auto mt-20 sm:p-5 md:pb-20 relative xs:p-5 xs:pt-0 xs:mt-0 xs:mb-20 s:p-5 s:pt-0 s:mt-0 s:mb-20 gri-form">
+<section id="city-map-id" class="mx-auto max-w-screen-xl bg-white px-4 py-6">
 	<!-- Container for the city map engage template -->
 
-	<div
-		class="main-heading flex mt-20 justify-between items-center">
-		<!-- Container for the city map engage template -->
-		<a href="./" class="md:text-5xl sm:text-xl s:text-xl xs:text-xl text-center md:mt-12 md:mb-20 mt-8 mb-8 font-bold s:my-0 xs:my-0"><img class="object-contain cursor-pointer sm:w-7 s:w-5 xs:w-5" src="themes/custom/engage_theme/images/Profile/reverse-arrow.svg" alt="arrow back"></a>
-		<h1 class="md:text-5xl sm:text-xl s:text-xl xs:text-xl text-center md:mt-12 md:mb-20 mt-8 mb-8 font-bold s:my-0 xs:my-0 font-nevis">City Map</h1>
-		<div></div>
-	</div>
+			<div
+			class="grid grid-cols-[auto,1fr,auto] items-center pt-6 pb-10">
+
+			<!-- Arrow -->
+			<div class="flex justify-start">
+				<a href="/" class="text-gray-700 ">
+					<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-arrow-left" viewbox="0 0 16 16">
+						<path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"></path>
+					</svg>
+				</a>
+			</div>
+
+			<!-- Title -->
+			<div class="text-center">
+				<h1 class="text-3xl sm:text-4xl md:text-5xl font-nevis">City Map</h1>
+			</div>
+
+			<!-- Spacer to balance grid -->
+			<div></div>
+
+		</div>
 	<div>
 		<!-- Container for the city map engage template -->
 		<div
-			class="form-sec border-inherit	border-2 rounded-xl p-4 lg:pt-4 lg:p-4 bg-white mb-16 s:mt-6 xs:mt-6 text-center lg:text-start xs:p-0 s:p-0 xs:border-0 s:border-0 xs:mb-0 s:mb-0">
+			class="form-sec border-inherit	border-2 rounded-xl p-4 lg:pt-4 lg:p-4 bg-white mb-16 s:mt-6 xs:mt-6 text-center lg:text-start xs:p-0 s:p-0 xs:border-0 s:border-0 xs:mb-0 s:mb-0 relative">
 			<!-- Container for the city map engage template -->
 			<div
 				class="grievance gap-4">
@@ -27,10 +40,10 @@
 						<img src="themes\engage\images\map_search.png" class="map_search xs:block s:block" alt="map_earch">
 					</div> #}
 					<div
-						class="map-types absolute z-[999] left-0 bottom-0 flex flex-col m-0 mx-[10px] text-center">
+						class="map-types absolute z-[999] left-0 bottom-[85px] md:bottom-0 flex flex-col m-0 mx-[10px] text-center">
 						<!-- Container for the city map engage template -->
 						<div
-							class="googleMapDiv hidden">
+							class="googleMapDiv hidden"	>
 							<!-- Container for the city map engage template -->
 							<button type="button" id="myButton"><img src="themes\custom\engage_theme\images\CityMap\map-1.jpg" class="layer-img googleMap w-[38px] h-[38px] shadow-[0_5px_15px_rgba(139,139,139,0.35)]" alt="Switch GBasemap Street"></button>
 						</div>
@@ -45,7 +58,7 @@
 						class="pois-layers overflow-x-auto">
 						<!-- Container for the city map engage template -->
 						<div class="layer-more">
-							<div id="layers" class="absolute flex gap-8 bottom-[50px] left-[40px] z-[999] m-0 me-[31px] p-[10px] rounded-[10px] border border-[#cecece] bg-white box-border">
+							<div id="layers" class="absolute flex gap-8 bottom-[15px] left-[5px] md:left-[60px] z-[999] m-0 me-[31px] p-[10px] rounded-[10px] border border-[#cecece] bg-white box-border">
 								{# {{ drupal_view('map_pois_category',"map_pois") }} #}
 								{# {{ dump(taxonomy_terms)}} #}
 									{% if taxonomy_terms %}
@@ -54,7 +67,7 @@
 												<a href="#" class="flex flex-col items-center term-link gap-2" data-tid="{{ term.id() }}">
 
 													{% if term.get('field_image').entity %}
-														<img src="{{ file_url(term.get('field_image').entity.fileuri) }}" class="w-[45px] h-[45px] rounded-full" alt="{{ term.getName }}">
+														<img src="{{ file_url(term.get('field_image').entity.fileuri) }}" class="w-[30px] h-[30px] md:w-[45px] md:h-[45px] rounded-full" alt="{{ term.getName }}">
 													{% endif %}
 
 													<span class="linktoDet text-[12px] bg-transparent box-border font-['Open_Sans_Semibold','Open_Sans',sans-serif] font-semibold text-[#404040] text-center leading-[12px] no-underline">{{ term.getName }}</span>
@@ -68,7 +81,7 @@
 					</div>
 				</div>
 
-				<div class="pois-list hidden absolute top-[335px] left-[73px] w-[435px] max-h-[475px] rounded-[20px] border border-[#cecece] bg-[#fdfcfa]">
+				<div class="pois-list z-[999] hidden absolute top-0 md:top-[60px] left-0 md:left-[45px] max-w-[ -webkit-fill-available ] md:w-[435px] max-h-[475px] rounded-[20px] border border-[#cecece] bg-[#fdfcfa]">
 					<!-- Container for the fire station engage template -->
 					<div class="poi_top">
 						<!-- Container for the fire station engage template -->	
@@ -131,9 +144,3 @@
 	</div>
 
 </section>
-
-
-
-
-{#     <script src="http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js"></script>
-#}

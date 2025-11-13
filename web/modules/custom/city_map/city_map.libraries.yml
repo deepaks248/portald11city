@@ -14,3 +14,4 @@ city-map-library:
     - core/jquery
     - core/drupal
     - core/drupalSettings
+    - core/once

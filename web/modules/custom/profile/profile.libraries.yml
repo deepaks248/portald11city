@@ -3,10 +3,13 @@ profile_assets:
     theme:
       css/profile.css: {}
   js:
+    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js: 
+      type: external
+      minified: true
     js/profile.js: {}
   dependencies:
     - core/jquery
-      - core/drupalSettings
+    - core/drupalSettings
 
 add-family-member-library:
   version: 1.x
@@ -14,6 +17,9 @@ add-family-member-library:
     theme:
       css/add-family-member.css: {}
   js:
+    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js: 
+      type: external
+      minified: true
     js/add-family-member.js: {}
   dependencies:
     - core/drupal
@@ -44,8 +50,11 @@ profile_form_popup:
 add_address_form:
   version: 1.x
   js:
-    # https://hcsjointstackportal.trinityiot.in/GISClientServices/v4.0.0/appconfig-security.js: {}
-    http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {}
+    https://hcsjointstackportal.trinityiot.in/GISClientServices/v4.0.0/appconfig-security.js: {}
+    # http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {}
+    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js: 
+      type: external
+      minified: true
     js/add-address.js: {}
   dependencies:
     - core/jquery

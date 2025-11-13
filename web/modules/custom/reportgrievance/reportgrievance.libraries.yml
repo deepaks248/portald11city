@@ -1,10 +1,17 @@
 report_grievance_form:
   version: 1.x
+  css:
+    theme:
+      css/report-grievance.css: {}
   js:
     # https://hcsjointstackportal.trinityiot.in/GISClientServices/v4.0.0/appconfig-security.js: {}
-    http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {} #use it for local testing
+    http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: { type: external }
+    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js:
+      type: external
+      minified: true
     js/report-grievance.js: {}
   dependencies:
     - core/jquery
+    - core/once
     - core/drupal
     - core/drupalSettings

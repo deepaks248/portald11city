@@ -41,37 +41,49 @@
 			<!-- Input Fields -->
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 				<div>
-					{{ form.postal_code }}
+					{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+                  field: form.postal_code
+          }) }}
 					{% if form.postal_code['#errors'] %}
 						<p class="text-red-600 text-sm mt-1">{{ form.postal_code['#errors'] }}</p>
 					{% endif %}
 				</div>
 				<div>
-					{{ form.flat }}
+					{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+                  field: form.flat
+          }) }}
 					{% if form.flat['#errors'] %}
 						<p class="text-red-600 text-sm mt-1">{{ form.flat['#errors'] }}</p>
 					{% endif %}
 				</div>
 				<div>
-					{{ form.area }}
+					{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+                  field: form.area
+          }) }}
 					{% if form.area['#errors'] %}
 						<p class="text-red-600 text-sm mt-1">{{ form.area['#errors'] }}</p>
 					{% endif %}
 				</div>
 				<div>
-					{{ form.landmark }}
+					{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+                  field: form.landmark
+          }) }}
 					{% if form.landmark['#errors'] %}
 						<p class="text-red-600 text-sm mt-1">{{ form.landmark['#errors'] }}</p>
 					{% endif %}
 				</div>
 				<div>
-					{{ form.country }}
+					{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+                  field: form.country
+          }) }}
 					{% if form.country['#errors'] %}
 						<p class="text-red-600 text-sm mt-1">{{ form.country['#errors'] }}</p>
 					{% endif %}
 				</div>
 				<div>
-					{{ form.address_type }}
+					{{ include('@engage_theme/components/form/field--floating-text.html.twig', {
+                  field: form.address_type
+          }) }}
 					{% if form.address_type['#errors'] %}
 						<p class="text-red-600 text-sm mt-1">{{ form.address_type['#errors'] }}</p>
 					{% endif %}

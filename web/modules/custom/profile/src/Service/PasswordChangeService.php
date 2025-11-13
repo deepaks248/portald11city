@@ -41,8 +41,9 @@ class PasswordChangeService
             }
 
             $email = $this->currentUser->getEmail();
-            $idamconfig = $this->globalVariables->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+
             // Step 1: Lookup in SCIM
+            $idamconfig = $this->globalVariables->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
             $url = 'https://' . $idamconfig . '/scim2/Users?filter=' . urlencode("emails eq \"$email\"");
             $responseData = $this->globalVariables->curl_get_api($url);
 

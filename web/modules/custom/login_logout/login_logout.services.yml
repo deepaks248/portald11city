@@ -30,13 +30,12 @@ services:
   login_logout.userinfo_check_subscriber:
     class: Drupal\login_logout\EventSubscriber\UserInfoCheckSubscriber
     arguments:
-      [
-        "@current_user",
-        "@session_manager",
-        "@login_logout.userinfo_validator",
-        "@logger.channel.login_logout",
-        "@path.current",
-      ]
+      - '@current_user'
+      - '@session_manager'
+      - '@login_logout.userinfo_validator'
+      - '@logger.channel.login_logout'
+      - '@path.current'
+      - '@global_module.global_variables'
     tags:
       - { name: event_subscriber }
 
@@ -48,3 +47,25 @@ services:
   logger.channel.login_logout:
     parent: logger.channel_base
     arguments: ["login_logout"]
+
+  login_logout.origin_subscriber:
+    class: Drupal\login_logout\EventSubscriber\OriginGuardSubscriber
+    arguments: ['%cors.config%']
+    tags:
+      - { name: event_subscriber }
+  
+  # login_logout.session_debug_subscriber:
+  #   class: Drupal\login_logout\EventSubscriber\SessionDebugSubscriber
+  #   arguments:
+  #     - '@logger.channel.login_logout'
+  #   tags:
+  #     - { name: event_subscriber }
+
+  login_logout.force_https_subscriber:
+    class: Drupal\login_logout\EventSubscriber\ForceHttpsSubscriber
+    tags:
+      - { name: event_subscriber }
+
+  login_logout.password_recovery_service:
+    class: Drupal\login_logout\Service\PasswordRecoveryService
+    arguments: ['@http_client','@global_module.global_variables', '@logger.channel.login_logout']

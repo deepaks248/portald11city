@@ -60,8 +60,8 @@ class UserRedirectSubscriber implements EventSubscriberInterface
             '/add-address',
             '/service-request',
             '/request/',
-            '/enquiry',
-            '/active-sessions'
+            '/active-sessions',
+            '/enquiry'
             //   '/view-name',
             //   '/my-account',
             //   '/another-protected-path',

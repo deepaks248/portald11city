@@ -22,7 +22,6 @@ class OAuthLoginService
         GlobalVariablesService $globalVariablesService
     ) {
         $this->globalVariablesService = $globalVariablesService;
-        // $this->activeSessionService = $activeSessionService;
         $this->httpClient = $http_client;
         $this->logger = $logger;
         $this->requestStack = $requestStack;
@@ -32,7 +31,7 @@ class OAuthLoginService
     {
         try {
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', 'https://'.$idamconfig.'/oauth2/authorize', [
+            $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oauth2/authorize', [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/x-www-form-urlencoded',
@@ -56,34 +55,6 @@ class OAuthLoginService
         }
     }
 
-    /**
-     * Decode a JWT token payload.
-     *
-     * @param string $jwt
-     *   The JWT token (e.g., id_token).
-     *
-     * @return array|null
-     *   Returns the payload as an associative array, or NULL if invalid.
-     */
-    public function decodeJwt(string $jwt): ?array
-    {
-        $parts = explode('.', $jwt);
-        if (count($parts) !== 3) {
-            return null; // Invalid token format
-        }
-
-        $payload = $parts[1];
-
-        // Decode Base64Url (replace -_ with +/ and pad with =)
-        $payload = strtr($payload, '-_', '+/');
-        $mod4 = strlen($payload) % 4;
-        if ($mod4) {
-            $payload .= str_repeat('=', 4 - $mod4);
-        }
-
-        $decoded = json_decode(base64_decode($payload), true);
-        return is_array($decoded) ? $decoded : null;
-    }
     public function authenticateUser(string $flow_id, string $email, string $password): ?array
     {
         $userAgent = $this->requestStack->getCurrentRequest()->headers->get('User-Agent');
@@ -100,7 +71,7 @@ class OAuthLoginService
                 ],
             ];
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', 'https://'.$idamconfig.'/oauth2/authn', [
+            $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oauth2/authn', [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
@@ -171,11 +142,41 @@ class OAuthLoginService
         }
     }
 
+
+    /**
+     * Decode a JWT token payload.
+     *
+     * @param string $jwt
+     *   The JWT token (e.g., id_token).
+     *
+     * @return array|null
+     *   Returns the payload as an associative array, or NULL if invalid.
+     */
+    public function decodeJwt(string $jwt): ?array
+    {
+        $parts = explode('.', $jwt);
+        if (count($parts) !== 3) {
+            return null; // Invalid token format
+        }
+
+        $payload = $parts[1];
+
+        // Decode Base64Url (replace -_ with +/ and pad with =)
+        $payload = strtr($payload, '-_', '+/');
+        $mod4 = strlen($payload) % 4;
+        if ($mod4) {
+            $payload .= str_repeat('=', 4 - $mod4);
+        }
+
+        $decoded = json_decode(base64_decode($payload), true);
+        return is_array($decoded) ? $decoded : null;
+    }
+
     public function exchangeCodeForToken(string $code): ?array
     {
         try {
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', 'https://'.$idamconfig.'/oauth2/token', [
+            $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oauth2/token', [
                 'headers' => [
                     'Content-Type' => 'application/x-www-form-urlencoded',
                 ],
@@ -268,17 +269,6 @@ class OAuthLoginService
 
     /**
      * Perform the full OAuth login flow: get flow ID, authenticate user, exchange code for token.
-     *
-     * @param string $email
-     *   User email.
-     * @param string $password
-     *   User password.
-     *
-     * @return array|null
-     *   Returns token data array on success, or NULL on failure.
-     *
-     * @throws \Exception
-     *   Throws exception if flow ID or authorization code is not received.
      */
     public function performOAuthLogin(string $email, string $password): ?array
     {

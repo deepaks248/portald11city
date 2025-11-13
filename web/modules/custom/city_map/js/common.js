@@ -65,17 +65,17 @@
       const html = `
         <div class="lists poiDetl cursor-pointer" data-poiid="${item.id}">
           <div class="grid card card-side border border-gray-300 mb-6 rounded-xl bg-white">
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="col-span-5 flex flex-stretch">
                 <img src="${item.image_url}" alt="${item.title}" class="w-full h-full rounded-xl object-cover">
               </div>
               <div class="col-span-7">
-                <h2 class="text-lg font-bold text-gray-800 line-clamp-2 overflow-hidden leading-7">${item.title}</h2>
-                <p class="text-sm text-gray-500 mb-2 line-clamp-2">${item.address}</p>
-                <p class="text-sm line-clamp-3">${item.description}</p>
-                <div class='flex justify-between items-baseline mx-[5px] mb-[5px]'>
-                  <p class="text-xs text-yellow-600 mt-2">Timings: ${item.timings}</p>
-                  <p class="text-xs font-bold text-green-600">₹ ${item.price}</p>
+                <h2 class="text-base sm:text-lg md:text-xl font-bold text-gray-800 line-clamp-2 leading-snug md:leading-7">${item.title}</h2>
+                <p class="text-xs sm:text-sm md:text-base text-gray-500 mb-2 line-clamp-2">${item.address}</p>
+                <p class="text-xs sm:text-sm md:text-base line-clamp-3">${item.description}</p>
+                <div class='flex justify-between items-center mx-1 mb-1 mt-2'>
+                  <p class="text-[10px] sm:text-xs md:text-sm text-yellow-600">Timings: ${item.timings}</p>
+                  <p class="text-[10px] sm:text-xs md:text-sm font-bold text-green-600">₹ ${item.price}</p>
                 </div>
               </div>  
             </div>
@@ -97,14 +97,16 @@
   function renderPOIDetails(item) {
     const container = document.querySelector('.poi-cards');
     container.innerHTML = `
-      <button class="mt-6 bg-gray-200 px-4 py-2 rounded back-to-list">← Back to List</button>
-      <div class="poi-full-details bg-white rounded-xl p-4">
+      <div class="flex items-start">
+        <button class="bg-gray-200 px-4 py-2 rounded back-to-list">← Back to List</button>
+      </div>
+      <div class="poi-full-details bg-white rounded-xl md:p-4">
         <img src="${item.image_url}" alt="${item.title}" class="w-full h-64 object-cover rounded-xl mb-4">
         <h2 class="text-xl font-bold mb-2">${item.title}</h2>
         <p class="text-sm mb-4">${item.description}</p>
         <div class="bg-gray-200 my-5 mx-1 h-px"></div>
         <div class="py-2 px-2">
-        <a target="_blank" href="https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${item.latitude},${item.longitude}">
+        <a class="flex flex-col items-start" target="_blank" href="https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${item.latitude},${item.longitude}">
           <img src="themes/custom/engage_theme/images/CityMap/direction.svg" class="w-14 h-12 cursor-pointer" alt="Pointer">
         <p>Directions</p>
         </a>

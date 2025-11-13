@@ -356,3 +356,80 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   };
 })(Drupal, drupalSettings);
+
+(function ($, Drupal) {
+  Drupal.behaviors.profileValidation = {
+    attach: function (context, settings) {
+      // Ensure jQuery Validate is loaded
+      if (typeof $.validator === 'undefined') {
+        console.error('jQuery Validate is not loaded!');
+        return;
+      }
+
+      var $form = $('#profile-form', context);
+      if (!$form.length) return;
+
+      // Prevent double initialization
+      if ($form.data('validated')) return;
+      $form.data('validated', true);
+      console.log("Form", $form);
+
+      // Initialize validation
+      $form.validate({
+        rules: {
+          first_name: { required: true, minlength: 2, maxlength: 50 },
+          last_name: { required: true, minlength: 2, maxlength: 50 },
+          dob: { required: true, date: true },
+          gender: { required: true },
+          mobile: { required: true, digits: true, minlength: 10, maxlength: 10 },
+          email: { required: true, email: true },
+          address: { required: true, minlength: 5, maxlength: 50 }
+        },
+        messages: {
+          first_name: { required: "First name is required", minlength: "Must be at least 2 characters", maxlength: "Max 50 characters" },
+          last_name: { required: "Last name is required", minlength: "Must be at least 2 characters", maxlength: "Max 50 characters" },
+          dob: { required: "Date of birth is required", date: "Invalid date" },
+          gender: { required: "Please select gender" },
+          mobile: { required: "Mobile number is required", digits: "Only digits allowed", minlength: "Must be 10 digits", maxlength: "Must be 10 digits" },
+          email: { required: "Email is required", email: "Enter a valid email address" },
+          address: { required: "Address is required", minlength: "At least 5 characters", maxlength: "Max 50 characters" }
+        },
+        errorClass: "text-red-500 text-sm mt-1 block",
+        errorPlacement: function (error, element) {
+          if (element.attr("type") === "checkbox") {
+            error.insertAfter(element.closest('div'));
+          } else {
+            error.insertAfter(element);
+          }
+        },
+        highlight: function (element) { $(element).addClass("border-red-500"); },
+        unhighlight: function (element) { $(element).removeClass("border-red-500"); }
+      });
+
+      // Override Drupal AJAX beforeSubmit
+      if (typeof Drupal.Ajax !== 'undefined') {
+        Drupal.Ajax.prototype.beforeSubmit = function (form_values, element_settings, options) {
+          // Only validate if form has class 'cv-validate-before-ajax' or validateAll is set
+          var validateAll = 1; // or set dynamically if needed
+          console.log("wjknwejkw",validateAll);
+          if (typeof this.$form !== 'undefined' &&
+              (validateAll === 1 || $(this.$form).hasClass('cv-validate-before-ajax')) &&
+              $(this.element).attr("formnovalidate") === undefined) {
+
+            $(this.$form).removeClass('ajax-submit-prevented');
+
+            // Trigger jQuery validation
+            $(this.$form).validate();
+            if (!($(this.$form).valid())) {
+              this.ajaxing = false;
+              $(this.$form).addClass('ajax-submit-prevented');
+              console.log(this.$form);
+              return false;
+            }
+          }
+        };
+      }
+
+    }
+  };
+})(jQuery, Drupal);

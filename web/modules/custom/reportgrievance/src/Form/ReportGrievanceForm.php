@@ -61,72 +61,295 @@ class ReportGrievanceForm extends FormBase
     return 'report_grievance';
   }
 
+  // /**
+  //  * {@inheritdoc}
+  //  */
+  // public function buildForm(array $form, FormStateInterface $form_state)
+  // {
+  //   // $grievance_types = $this->apiService->getIncidentTypes();
+  //   // if (empty($grievance_types)) {
+  //   //   $this->messenger()->addError($this->t('No grievance types available.'));
+  //   //   return $form;
+  //   // }
+
+  //   // $selected_type = $form_state->getValue('grievance_type');
+  //   // $subtype_options = [];
+
+  //   // if (!empty($selected_type)) {
+
+  //   //   $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
+  //   // }
+
+  //   if ($cache = $this->cache->get('grievance_types')) {
+  //     $grievance_types = $cache->data;
+  //   } else {
+  //     $grievance_types = $this->apiService->getIncidentTypes();
+  //     $this->cache->set('grievance_types', $grievance_types, time() + 1800);
+  //   }
+  //   if (empty($grievance_types)) {
+  //     $this->messenger()->addError($this->t('No grievance types available.'));
+  //     return $form;
+  //   }
+
+  //   $selected_type = $form_state->getValue('grievance_type');
+  //   $subtype_options = [];
+
+  //   // if (!empty($selected_type)) {
+  //   //   $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
+  //   // }
+  //   if (!empty($selected_type)) {
+  //     $cache_key = 'grievance_subtypes_' . $selected_type;
+  //     if ($subtype_cache = $this->cache->get($cache_key)) {
+  //       $subtype_options = $subtype_cache->data;
+  //     } else {
+  //       $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
+  //       $this->cache->set($cache_key, $subtype_options, time() + 1800);
+  //     }
+  //   }
+
+  //   $form['subtype_wrapper']['#attributes']['data-cv-exclude'] = '1';
+  //   // Grievance Type
+  //   $form['grievance_type'] = [
+  //     '#type' => 'select',
+  //     // '#title' => $this->t('Select a Category'),
+  //     '#options' => $grievance_types,
+  //     '#empty_option' => $this->t('Select a Category'),
+  //     '#default_value' => $selected_type,
+  //     '#required' => TRUE,
+  //     '#required_error' => $this->t('Please Select Category'),
+  //     '#ajax' => [
+  //       'callback' => '::updateSubtype',
+  //       'wrapper' => 'subtype-wrapper',
+  //       'event' => 'change',
+  //       // 'progress' => ['type' => 'throbber', 'message' => NULL],
+  //       'progress' => ['type' => 'none'],
+  //     ],
+  //     '#attributes' => [
+  //       'class' => [
+  //         'form-select',
+  //         'w-full',
+  //         'rounded-md',
+  //         'border',
+  //         'border-gray-300',
+  //         'focus:border-yellow-500',
+  //         'focus:ring-yellow-500',
+  //         'text-gray-700',
+  //         'text-base',
+  //         'p-2.5'
+  //       ],
+  //     ],
+  //   ];
+
+  //   // Subtype wrapper + Grievance Subtype
+  //   $form['subtype_wrapper'] = [
+  //     '#type' => 'container',
+  //     '#attributes' => ['id' => 'subtype-wrapper'],
+  //   ];
+
+  //   $form['subtype_wrapper']['grievance_subtype'] = [
+  //     '#type' => 'select',
+  //     // '#title' => $this->t('Select Sub Category'),
+  //     '#options' => $subtype_options,
+  //     '#empty_option' => $this->t('Select Sub Category'),
+  //     '#default_value' => $form_state->getValue(['subtype_wrapper', 'grievance_subtype']) ?? '',
+  //     '#required' => TRUE,
+  //     '#required_error' => $this->t('Please Select Sub Category'),
+  //     '#attributes' => [
+  //       'class' => [
+  //         'form-select',
+  //         'w-full',
+  //         'rounded-md',
+  //         'border',
+  //         'border-gray-300',
+  //         'focus:border-yellow-500',
+  //         'focus:ring-yellow-500',
+  //         'text-gray-700',
+  //         'text-base',
+  //         'p-2.5'
+  //       ],
+  //     ],
+  //   ];
+
+  //   // Remarks
+  //   $form['remarks'] = [
+  //     '#type' => 'textfield',
+  //     '#title' => $this->t('Remarks'),
+  //     // '#description' => $this->t('Please provide any additional information.'),
+  //     '#required' => TRUE,
+  //     '#required_error' => $this->t('Remarks is required.'),
+  //     '#maxlength' => 255,
+  //     '#attributes' => [
+  //       'placeholder' => $this->t('Remarks'),
+  //       'class' => [
+  //         'form-input',
+  //         'w-full',
+  //         'rounded-md',
+  //         'border',
+  //         'border-gray-300',
+  //         'focus:border-yellow-500',
+  //         'focus:ring-yellow-500',
+  //         'text-gray-700',
+  //         'text-base',
+  //         'p-2.5'
+  //       ],
+  //     ],
+  //   ];
+
+  //   // Address
+  //   $form['address'] = [
+  //     '#type' => 'textfield',
+  //     '#title' => $this->t('Address'),
+  //     '#maxlength' => 255,
+  //     '#required' => TRUE,
+  //     '#required_error' => $this->t('Address is required.'),
+  //     '#attributes' => [
+  //       'placeholder' => $this->t('Address'),
+  //       'class' => [
+  //         'form-input',
+  //         'w-full',
+  //         'rounded-md',
+  //         'border',
+  //         'border-gray-300',
+  //         'focus:border-yellow-500',
+  //         'focus:ring-yellow-500',
+  //         'text-gray-700',
+  //         'text-base',
+  //         'p-2.5'
+  //       ],
+  //     ],
+  //   ];
+  //   $form['address']['#attributes']['readonly'] = 'readonly';
+
+  //   // File Upload
+  //   $form['upload_file'] = [
+  //     '#type' => 'file',
+  //     // '#title' => $this->t('Upload File'),
+  //     // '#description' => $this->t('Allowed types: jpg, jpeg, png, pdf, docx, mp4'),
+  //     '#required' => FALSE,
+  //     '#limit_validation_errors' => [],
+  //     '#attributes' => [
+  //       'class' => [
+  //         'form-input',
+  //         // 'w-full',
+  //         'rounded-md',
+  //         'border',
+  //         'border-gray-300',
+  //         'focus:border-yellow-500',
+  //         'focus:ring-yellow-500',
+  //         'text-gray-700',
+  //         'text-base',
+  //         'p-2.5'
+  //       ],
+  //     ],
+  //   ];
+
+  //   // Agree to Terms
+  //   $form['agree_terms'] = [
+  //     '#type' => 'checkbox',
+  //     // '#title' => $this->t('I agree to the terms and conditions.'),
+  //     '#required' => TRUE,
+  //     '#attributes' => [
+  //       'class' => [
+  //         'w-6',
+  //         'h-6',
+  //         'rounded',
+  //         'cursor-pointer',
+  //         'border',
+  //         'border-gray-400',
+  //       ],
+  //     ],
+  //   ];
+
+  //   // Latitude & Longitude (hidden but preserved)
+  //   $form['latitude'] = [
+  //     '#type' => 'textfield',
+  //     '#attributes' => [
+  //       'class' => ['lat-input'],
+  //       'readonly' => 'readonly',
+  //       'style' => 'display: none;',
+  //     ],
+  //   ];
+
+  //   $form['longitude'] = [
+  //     '#type' => 'textfield',
+  //     '#attributes' => [
+  //       'class' => ['lng-input'],
+  //       'readonly' => 'readonly',
+  //       'style' => 'display: none;',
+  //     ],
+  //   ];
+
+  //   // Actions
+  //   $form['actions']['#type'] = 'actions';
+  //   $form['actions']['submit'] = [
+  //     '#type' => 'submit',
+  //     '#value' => $this->t('Submit'),
+  //     '#button_type' => 'primary',
+  //     '#attributes' => [
+  //       'class' => [
+  //         'lg:h-14',
+  //         'lg:w-44',
+  //         's:h-10',
+  //         'xs:h-10',
+  //         'bg-yellow-500',
+  //         'text-white',
+  //         'text-lg',
+  //         'rounded-full',
+  //         'px-6',
+  //         'py-2',
+  //         'hover:bg-yellow-600',
+  //         'transition'
+  //       ],
+  //     ],
+  //   ];
+
+  //   // $form['#cache'] = ['max-age' => 0];
+  //   // Attach theme and Tailwind-based styling
+  //   $form['#theme'] = 'report_grievance_form';
+  //   // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
+  //   $form['#attached']['library'][] = 'reportgrievance/report_grievance_form';
+  //   $form['#attributes']['enctype'] = 'multipart/form-data';
+
+  //   return $form;
+  // }
+
+
+  // /**
+  //  * AJAX callback to update subtypes.
+  //  */
+  // public function updateSubtype(array &$form, FormStateInterface $form_state)
+  // {
+  //   $selected_type = $form_state->getValue('grievance_type') ?? '';
+  //   if (empty($selected_type)) {
+  //     $form['subtype_wrapper']['grievance_subtype']['#options'] = [];
+  //   }
+  //   return $form['subtype_wrapper'];
+  // }
+
   /**
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state)
   {
-    // $grievance_types = $this->apiService->getIncidentTypes();
-    // if (empty($grievance_types)) {
-    //   $this->messenger()->addError($this->t('No grievance types available.'));
-    //   return $form;
-    // }
-
-    // $selected_type = $form_state->getValue('grievance_type');
-    // $subtype_options = [];
-
-    // if (!empty($selected_type)) {
-
-    //   $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
-    // }
-
-    if ($cache = $this->cache->get('grievance_types')) {
-      $grievance_types = $cache->data;
-    } else {
-      $grievance_types = $this->apiService->getIncidentTypes();
-      $this->cache->set('grievance_types', $grievance_types, time() + 1800);
-    }
-    if (empty($grievance_types)) {
-      $this->messenger()->addError($this->t('No grievance types available.'));
-      return $form;
-    }
-
-    $selected_type = $form_state->getValue('grievance_type');
+    // ✅ Step 1: Initialize empty dropdowns.
+    // They’ll be populated dynamically via JS fetching from your controller routes.
+    $grievance_types = [];
     $subtype_options = [];
+    $selected_type = $form_state->getValue('grievance_type') ?? '';
 
-    // if (!empty($selected_type)) {
-    //   $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
-    // }
-    if (!empty($selected_type)) {
-      $cache_key = 'grievance_subtypes_' . $selected_type;
-      if ($subtype_cache = $this->cache->get($cache_key)) {
-        $subtype_options = $subtype_cache->data;
-      } else {
-        $subtype_options = $this->apiService->getIncidentSubTypes((int) $selected_type);
-        $this->cache->set($cache_key, $subtype_options, time() + 1800);
-      }
-    }
-
-    $form['subtype_wrapper']['#attributes']['data-cv-exclude'] = '1';
-    // Grievance Type
+    // ✅ Grievance Type (will load via JS)
     $form['grievance_type'] = [
       '#type' => 'select',
-      // '#title' => $this->t('Select a Category'),
       '#options' => $grievance_types,
       '#empty_option' => $this->t('Select a Category'),
       '#default_value' => $selected_type,
       '#required' => TRUE,
+      '#validated' => TRUE,
       '#required_error' => $this->t('Please Select Category'),
-      '#ajax' => [
-        'callback' => '::updateSubtype',
-        'wrapper' => 'subtype-wrapper',
-        'event' => 'change',
-        // 'progress' => ['type' => 'throbber', 'message' => NULL],
-        'progress' => ['type' => 'none'],
-      ],
       '#attributes' => [
         'class' => [
           'form-select',
+          'grievance-type-select', // JS selector class
           'w-full',
           'rounded-md',
           'border',
@@ -137,10 +360,11 @@ class ReportGrievanceForm extends FormBase
           'text-base',
           'p-2.5'
         ],
+        'data-endpoint' => '/grievance/types', // Will be used by JS to fetch
       ],
     ];
 
-    // Subtype wrapper + Grievance Subtype
+    // ✅ Subtype wrapper + Grievance Subtype
     $form['subtype_wrapper'] = [
       '#type' => 'container',
       '#attributes' => ['id' => 'subtype-wrapper'],
@@ -148,15 +372,16 @@ class ReportGrievanceForm extends FormBase
 
     $form['subtype_wrapper']['grievance_subtype'] = [
       '#type' => 'select',
-      // '#title' => $this->t('Select Sub Category'),
       '#options' => $subtype_options,
       '#empty_option' => $this->t('Select Sub Category'),
-      '#default_value' => $form_state->getValue(['subtype_wrapper', 'grievance_subtype']) ?? '',
+      '#default_value' => '',
       '#required' => TRUE,
+      '#validated' => TRUE,
       '#required_error' => $this->t('Please Select Sub Category'),
       '#attributes' => [
         'class' => [
           'form-select',
+          'grievance-subtype-select', // JS selector class
           'w-full',
           'rounded-md',
           'border',
@@ -167,14 +392,14 @@ class ReportGrievanceForm extends FormBase
           'text-base',
           'p-2.5'
         ],
+        'data-endpoint-template' => '/grievance/subtypes/', // JS appends type ID
       ],
     ];
 
-    // Remarks
+    // ✅ Remarks
     $form['remarks'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Remarks'),
-      // '#description' => $this->t('Please provide any additional information.'),
       '#required' => TRUE,
       '#required_error' => $this->t('Remarks is required.'),
       '#maxlength' => 255,
@@ -195,7 +420,7 @@ class ReportGrievanceForm extends FormBase
       ],
     ];
 
-    // Address
+    // ✅ Address
     $form['address'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Address'),
@@ -216,21 +441,18 @@ class ReportGrievanceForm extends FormBase
           'text-base',
           'p-2.5'
         ],
+        'readonly' => 'readonly',
       ],
     ];
-    $form['address']['#attributes']['readonly'] = 'readonly';
 
-    // File Upload
+    // ✅ File Upload
     $form['upload_file'] = [
       '#type' => 'file',
-      // '#title' => $this->t('Upload File'),
-      // '#description' => $this->t('Allowed types: jpg, jpeg, png, pdf, docx, mp4'),
       '#required' => FALSE,
       '#limit_validation_errors' => [],
       '#attributes' => [
         'class' => [
           'form-input',
-          // 'w-full',
           'rounded-md',
           'border',
           'border-gray-300',
@@ -243,10 +465,9 @@ class ReportGrievanceForm extends FormBase
       ],
     ];
 
-    // Agree to Terms
+    // ✅ Agree to Terms
     $form['agree_terms'] = [
       '#type' => 'checkbox',
-      // '#title' => $this->t('I agree to the terms and conditions.'),
       '#required' => TRUE,
       '#attributes' => [
         'class' => [
@@ -260,7 +481,7 @@ class ReportGrievanceForm extends FormBase
       ],
     ];
 
-    // Latitude & Longitude (hidden but preserved)
+    // ✅ Hidden Lat/Long
     $form['latitude'] = [
       '#type' => 'textfield',
       '#attributes' => [
@@ -279,7 +500,7 @@ class ReportGrievanceForm extends FormBase
       ],
     ];
 
-    // Actions
+    // ✅ Submit Button
     $form['actions']['#type'] = 'actions';
     $form['actions']['submit'] = [
       '#type' => 'submit',
@@ -303,29 +524,47 @@ class ReportGrievanceForm extends FormBase
       ],
     ];
 
-    // $form['#cache'] = ['max-age' => 0];
-    // Attach theme and Tailwind-based styling
-    $form['#theme'] = 'report_grievance_form';
-    // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
+    // ✅ Attach JS and settings for endpoints
     $form['#attached']['library'][] = 'reportgrievance/report_grievance_form';
+    $form['#attached']['drupalSettings']['reportgrievance'] = [
+      'endpoints' => [
+        'types' => '/grievance/types',
+        'subtypes' => '/grievance/subtypes/',
+      ],
+    ];
+
+    // ✅ Cache settings and theme
+    $form['#cache']['max-age'] = 3600;
+    $form['#theme'] = 'report_grievance_form';
     $form['#attributes']['enctype'] = 'multipart/form-data';
 
     return $form;
   }
 
-
-  /**
-   * AJAX callback to update subtypes.
-   */
-  public function updateSubtype(array &$form, FormStateInterface $form_state)
+  public function validateForm(array &$form, FormStateInterface $form_state)
   {
-    $selected_type = $form_state->getValue('grievance_type') ?? '';
-    if (empty($selected_type)) {
-      $form['subtype_wrapper']['grievance_subtype']['#options'] = [];
-    }
-    return $form['subtype_wrapper'];
-  }
+    $grievance_type_id = $form_state->getValue('grievance_type');
+    $grievance_subtype_id = $form_state->getValue('grievance_subtype');
 
+    // Load the cached grievance types.
+    $cache = \Drupal::cache()->get('grievance_types');
+    $types = $cache ? $cache->data : [];
+
+    // Validate type.
+    if (!isset($types[$grievance_type_id])) {
+      $form_state->setErrorByName('grievance_type', $this->t('Invalid grievance type selected.'));
+      return;
+    }
+    // Load the cached subtypes (depends on the type).
+    $sub_cache = \Drupal::cache()->get('grievance_subtypes_' . $grievance_type_id);
+    $subtypes = $sub_cache ? $sub_cache->data : [];
+
+    // Validate subtype.
+    if (!isset($subtypes[$grievance_subtype_id])) {
+      $form_state->setErrorByName('grievance_subtype', $this->t('Invalid grievance subtype selected.'));
+      return;
+    }
+  }
 
   /**
    * Submit handler.

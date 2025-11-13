@@ -1,15 +1,15 @@
 
-<div class="container ideas_page mx-auto mt-20 mb-40 sm:p-5 md:px-20 md:pb-20 relative xs:p-5 xs:mt-0 xs:mb-0 s:p-5 s:mt-0 s:mb-0 s:hidden xs:hidden">
+<div class="container ideas_page mx-auto sm:p-5 md:px-20 md:pb-20 relative xs:p-5 xs:mt-0 xs:mb-0 p-5 s:mt-0 s:mb-0 s:hidden xs:hidden">
 	<div class="main-heading flex justify-between items-center">
 		<img class="object-contain cursor-pointer sm:w-7 s:w-5 xs:w-5" src="{{ file_url('themes/custom/engage_theme/images/Profile/reverse-arrow.svg') }}" alt="arrow back" onclick="history.go(-1)">
-		<h1 class="md:text-5xl sm:text-xl s:text-xl xs:text-xl text-center md:mt-12 md:mb-20 mt-8 mb-8 font-bold s:my-3 xs:my-3">Idea</h1>
+		<h1 class="md:text-5xl text-4xl text-center md:mt-12 md:mb-20 mt-8 mb-8 font-bold s:my-3 xs:my-3">Idea</h1>
 		<div></div>
 	</div>
 
 	<div class="blogs">
 
 		<div class="card blog-page">
-			<div class="grid grid-cols-2 gap-12">
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
 				<div class="relative">
 					<div>
 						{% set uri = node.field_idea_image.value %}
@@ -24,7 +24,6 @@
 							<li>
 								<h2 class="card-title text-xl font-normal font-['Open_Sans'] text-[#676767] opacity-80">{{ item.entity.label }}</h2>
 							</li>
-
 						{% endfor %}
 					</ul>
 					<div class="flex justify-between items-center">
@@ -32,10 +31,10 @@
 							{{ node.field_idea_author.value }}</p>
 					</div>
 					<div class="soc_share min-h-[122px]">
-						<span class="sh_icon inline-block relative -top-[30px]">
+						<span class="sh_icon inline-block relative md:-top-[30px]">
 							<svg xmlns="http://www.w3.org/2000/svg" width="25.9" height="28.164" viewbox="0 0 25.9 28.164">
 								<g id="share" transform="translate(0.5 0.5)">
-									<path id="Path_2658" data-name="Path 2658" d="M313.576,8.489a4.244,4.244,0,1,1,4.244-4.244A4.25,4.25,0,0,1,313.576,8.489Zm0-6.791a2.547,2.547,0,1,0,2.547,2.547A2.55,2.55,0,0,0,313.576,1.7Zm0,0" transform="translate(-292.92)" fill="#333" stroke="#333" stroke-width="1"/>
+										<path id="Path_2658" data-name="Path 2658" d="M313.576,8.489a4.244,4.244,0,1,1,4.244-4.244A4.25,4.25,0,0,1,313.576,8.489Zm0-6.791a2.547,2.547,0,1,0,2.547,2.547A2.55,2.55,0,0,0,313.576,1.7Zm0,0" transform="translate(-292.92)" fill="#333" stroke="#333" stroke-width="1"/>
 									<path id="Path_2659" data-name="Path 2659" d="M313.576,360.489a4.244,4.244,0,1,1,4.244-4.244A4.25,4.25,0,0,1,313.576,360.489Zm0-6.791a2.547,2.547,0,1,0,2.547,2.547A2.55,2.55,0,0,0,313.576,353.7Zm0,0" transform="translate(-292.92 -333.325)" fill="#333" stroke="#333" stroke-width="1"/>
 									<path id="Path_2660" data-name="Path 2660" d="M4.244,184.489a4.244,4.244,0,1,1,4.244-4.244A4.25,4.25,0,0,1,4.244,184.489Zm0-6.791a2.547,2.547,0,1,0,2.547,2.547A2.55,2.55,0,0,0,4.244,177.7Zm0,0" transform="translate(0 -166.662)" fill="#333" stroke="#333" stroke-width="1"/>
 									<path id="Path_2661" data-name="Path 2661" d="M120.539,103.244a.848.848,0,0,1-.421-1.586l10.5-5.987a.849.849,0,0,1,.84,1.475l-10.5,5.987A.85.85,0,0,1,120.539,103.244Zm0,0" transform="translate(-113.339 -90.489)" fill="#333" stroke="#333" stroke-width="1"/>
@@ -108,18 +107,3 @@
 	</div>
 
 </div></div></div>
-
-<script>
-  function copied() {
-    const element = document.querySelector('.copied_link');
-    if (!element) return;
-
-    element.innerHTML = "Link Copied!";
-    element.classList.add("copied");
-
-    setTimeout(() => {
-      element.innerHTML = "Copy Link";
-      element.classList.remove("copied");
-    }, 3000);
-  }
-</script>

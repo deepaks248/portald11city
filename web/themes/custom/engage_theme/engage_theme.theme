@@ -48,6 +48,7 @@ function engage_theme_preprocess_page(array &$variables)
   $variables['#attached']['drupalSettings']['globalVariables']['ceptenantCode'] = $globalVariables['applicationConfig']['config']['ceptenantCode'];
   $variables['#attached']['drupalSettings']['globalVariables']['tenantCode'] = $globalVariables['applicationConfig']['config']['tenantCode'];
   $variables['#attached']['drupalSettings']['globalVariables']['userLogged'] = \Drupal::currentUser()->isAuthenticated();
+  $variables['#attached']['drupalSettings']['globalVariables']['mapConfig'][] = $globalVariables['mapConfig']['config'];
 }
 
 // function engage_theme_preprocess_paragraph__slider_banner(array &$variables)

@@ -102,13 +102,11 @@ class ActiveSessionController extends ControllerBase
         $session = \Drupal::service('session');
         $accessToken = $session->get('login_logout.access_token');
         $storedLoginTime = $session->get('login_logout.login_time');
-        // print_r("<pre>");
-        // dump($storedLoginTime);
-        // dump($accessToken);
+
         // Fetch sessions from API
         $sessions = $this->sessionService->fetchActiveSessions($accessToken);
         $apiSessions = $sessions['sessions'] ?? [];
-        // dump($apiSessions);
+
         $currentUserSessions = [];
         $otherUserSessions = [];
 
@@ -150,10 +148,6 @@ class ActiveSessionController extends ControllerBase
             }
         }
 
-        // dump($currentUserSessions);
-        // dump($otherUserSessions);
-        // exit();
-
         return [
             '#title' => $this->t('Active Sessions'),
             '#theme' => 'active_sessions_page',
@@ -176,14 +170,6 @@ class ActiveSessionController extends ControllerBase
 
         [$id, $access_token] = explode('--', $session_id) + [null, null];
 
-        // print_r("<pre>");
-        // dump($accessToken);
-        // dump($session_id);
-        // dump($id);
-        // dump($session->get('login_logout.active_session_id_token'));
-        // dump($active_session_id_token);
-        // dump($id == $active_session_id_token);
-        // exit();
         try {
             $is_my_session = ($active_session_id_token == $id);
             if ($is_my_session) {

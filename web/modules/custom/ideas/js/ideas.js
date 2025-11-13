@@ -11,9 +11,9 @@
 
         // Create modal content
         overlay.innerHTML = `
-          <div class="bg-white rounded-lg shadow-lg p-6 text-center flex flex-col justify-center items-center">
+          <div class="bg-white rounded-lg shadow-lg p-6 text-center text-center p-10 flex flex-col justify-center items-center">
             <img src="themes/custom/engage_theme/images/Profile/success.png" alt="Success Popup">
-            <p class="font-bold text-3xl font-['nevis'] mb-10 flex justify-center">Your idea has been submitted successfully.</p>
+            <p class="font-bold text-3xl font-['nevis'] mb-10 flex justify-center mb-[20px]">Your idea has been submitted successfully.</p>
             <button onclick="window.location.href='./ideas'" class="mt-2 bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded" id="popup-close">Close</button>
           </div>
         `;
@@ -25,7 +25,9 @@
         if (closeBtn) {
           closeBtn.addEventListener('click', function () {
             overlay.classList.add('fade-out');
-            setTimeout(() => overlay.remove(), 300);
+            setTimeout(() => {
+              overlay.remove();
+            }, 300);
           });
         }
       }
@@ -37,6 +39,7 @@
 (function ($, Drupal) {
   Drupal.behaviors.ideasFormValidation = {
     attach: function (context, settings) {
+      // Ensure jQuery Validate is loaded
       if (typeof $.validator === 'undefined') {
         console.error('jQuery Validate is not loaded!');
         return;
@@ -44,6 +47,7 @@
 
       var $form = $('#ideas-form', context);
 
+      // Prevent double initialization
       if ($form.data('validated')) return;
       $form.data('validated', true);
 
@@ -97,12 +101,15 @@
       // Override Drupal AJAX beforeSubmit
       if (typeof Drupal.Ajax !== 'undefined') {
         Drupal.Ajax.prototype.beforeSubmit = function (form_values, element_settings, options) {
-          var validateAll = 1;
+          // Only validate if form has class 'cv-validate-before-ajax' or validateAll is set
+          var validateAll = 1; // or set dynamically if needed
           if (typeof this.$form !== 'undefined' &&
-              (validateAll === 1 || $(this.$form).hasClass('cv-validate-before-ajax')) &&
-              $(this.element).attr("formnovalidate") === undefined) {
+            (validateAll === 1 || $(this.$form).hasClass('cv-validate-before-ajax')) &&
+            $(this.element).attr("formnovalidate") === undefined) {
 
             $(this.$form).removeClass('ajax-submit-prevented');
+
+            // Trigger jQuery validation
             $(this.$form).validate();
             if (!($(this.$form).valid())) {
               this.ajaxing = false;
@@ -116,7 +123,6 @@
     }
   };
 })(jQuery, Drupal);
-
 
 (function ($, Drupal) {
   Drupal.behaviors.ideasFilePreUpload = {
@@ -132,15 +138,12 @@
       $fileInput.after($status);
 
       $fileInput.on('change', function (e) {
-        console.log('File input changed');
-        console.log('this:', this);
         const file = this.files[0];
         if (!file) return;
 
         $status.text('Uploading...').removeClass('hidden');
 
         const formData = new FormData();
-        console.log('File to upload:', file);
 
         formData.append('files[upload_file]', file);
 

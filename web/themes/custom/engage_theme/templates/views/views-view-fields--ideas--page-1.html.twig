@@ -2,9 +2,9 @@
   Custom template for ideas view, block_1 display.
 #}
 
-<div class="card flex gap-10 mt-6 card-side relative">
+<div class="card flex flex-col md:flex-row gap-10 mt-6 card-side relative">
   {% if fields.field_idea_image %}
-    <img src="{{ fields.field_idea_image.content|striptags|trim }}" alt="Idea Image" class="w-72 h-48 min-w-72 max-w-72">
+    <img src="{{ fields.field_idea_image.content|striptags|trim }}" alt="Idea Image" class="w-72 h-48 md:min-w-72 md:max-w-72">
   {% endif %}
 
   <div class="card-body py-0 xs:pt-2 xs:px-0 s:pt-2 s:px-0 flex flex-col gap-2">
@@ -28,8 +28,8 @@
 
    {% if fields.view_node %}
   {% set node_path = fields.view_node.content|striptags|trim %}
-  <div class="card-actions mt-4 justify-start">
-    <a class="btn px-6 bg-[#fc0] border border-[#fc0] px-6 text-white text-xl capitalize font-bold font-['Open_Sans'] mt-5 pt-[0.7rem] pb-[0.7rem] rounded-[10px]"
+  <div class="card-actions md:mt-4 flex md:block justify-start">
+    <a class="btn bg-[#fc0] border border-[#fc0] px-2 md:px-6 text-white text-xl capitalize font-bold font-['Open_Sans'] mt-5 py-2 md:py-[0.7rem] rounded-[10px]"
        href="{{ node_path }}">
       Read More
     </a>

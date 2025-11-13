@@ -2,13 +2,10 @@
 (function (Drupal) {
   Drupal.behaviors.modalToggle = {
     attach(context, settings) {
-      console.log("Modal Toggle Behavior Starting");
 
       // Engage buttons
       const engageButtons = once('modal-engage', '[engage-button]', context);
-      console.log("engageButtons",engageButtons);
       engageButtons.forEach((button) => {
-        console.log("clicked");
         button.addEventListener('click', function () {
           const modalId = this.getAttribute('data-modal-toggle');
           const modal = document.getElementById(modalId);
@@ -17,7 +14,7 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
           } else {
-            console.warn('Modal with ID', modalId, 'not found.');
+            // console.warn('Modal with ID', modalId, 'not found.');
           }
         });
       });
@@ -26,7 +23,6 @@
       const hideButtons = once('modal-hide', '[data-modal-hide]', context);
       hideButtons.forEach((closeBtn) => {
         closeBtn.addEventListener('click', function () {
-          console.log("Trial and error");
           const targetId = this.getAttribute('data-modal-hide');
           const targetModal = document.getElementById(targetId);
 
@@ -54,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
         modal.classList.remove("hidden");
         modal.classList.add("flex");
       } else {
-        console.warn("Modal with ID", modalId, "not found.");
+        // console.warn("Modal with ID", modalId, "not found.");
       }
     });
   });
@@ -191,3 +187,33 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 })(Drupal);
+
+(function (Drupal, once) {
+  Drupal.behaviors.candyMenuToggle = {
+    attach: function (context, settings) {
+      // 'once' ensures it runs only once per element
+      const buttons = once('candyMenu', '#candy-button', context);
+      buttons.forEach((button) => {
+        const menu = document.getElementById('candy-menu');
+        const wrapper = document.getElementById('candy-wrapper');
+
+        if (!menu || !wrapper) {
+          return; // exit if menu or wrapper does not exist
+        }
+
+        // Toggle on button click
+        button.addEventListener('click', function (e) {
+          e.stopPropagation();
+          menu.classList.toggle('hidden');
+        });
+
+        // Click outside closes menu
+        document.addEventListener('click', function (e) {
+          if (!wrapper.contains(e.target)) {
+            menu.classList.add('hidden');
+          }
+        });
+      });
+    }
+  };
+})(Drupal, once);

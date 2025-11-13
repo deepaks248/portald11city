@@ -6,7 +6,8 @@ use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\global_module\Service\GlobalService;
+use Drupal\Core\Access\AccessResult;
+use Drupal\global_module\Service\GlobalVariablesService;
 
 class GlobalController extends ControllerBase {
 
@@ -20,7 +21,7 @@ class GlobalController extends ControllerBase {
   /**
    * Constructs the controller with GlobalService.
    */
-  public function __construct(GlobalService $globalService) {
+  public function __construct(GlobalVariablesService $globalService) {
     $this->globalService = $globalService;
   }
 
@@ -48,6 +49,27 @@ class GlobalController extends ControllerBase {
     return $this->globalService->detailsUpdate();
   }
 
+  /**
+   * Access check for /fileupload.
+   */
+  public static function fileUploadAccess(Request $request) {
+    // Only allow POST
+    if ($request->getMethod() !== 'POST') {
+      return AccessResult::forbidden();
+    }
 
+    // Exact path match (case-insensitive)
+    $current_path = strtolower(\Drupal::service('path.current')->getPath());
+    if ($current_path !== '/fileupload') {
+      return AccessResult::forbidden();
+    }
 
+    // Optional: check user permission
+    $current_user = \Drupal::currentUser();
+    if (!$current_user->hasPermission('access content')) {
+      return AccessResult::forbidden();
+    }
+
+    return AccessResult::allowed();
+  }
 }

@@ -3,20 +3,19 @@
 
     let gmap = null;
     let map = null;
-    envSettings.gKey = "AIzaSyA7z_IJBC_8QTKN7HlO2ZmSZX-RKNIVUh8";
-    envSettings.mapDimension = "2D";
-    envSettings.mapLib = "ol7";
-    envSettings.type = "google";
-    envSettings.mapData = "google";
-    envSettings.gwc = false;
-    envSettings.offline = false;
-    envSettings.extent1 = 77.27133968401577;
-    envSettings.extent2 = 12.839963022940264;
-    envSettings.extent3 = 77.9711979045307;
-    envSettings.extent4 = 13.149758962153491;
-    envSettings.lat = 12.9716;
-    envSettings.lon = 77.5946;
-
+    envSettings.gKey = drupalSettings.globalVariables.mapConfig[0].gKey;
+    envSettings.mapDimension = drupalSettings.globalVariables.mapConfig[0].mapDimension;
+    envSettings.mapLib = drupalSettings.globalVariables.mapConfig[0].mapLib;
+    envSettings.type = drupalSettings.globalVariables.mapConfig[0].type;
+    envSettings.mapData = drupalSettings.globalVariables.mapConfig[0].mapData;
+    envSettings.gwc = drupalSettings.globalVariables.mapConfig[0].gwc;
+    envSettings.offline = drupalSettings.globalVariables.mapConfig[0].offline;
+    envSettings.extent1 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent1);
+    envSettings.extent2 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent2);
+    envSettings.extent3 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent3);
+    envSettings.extent4 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent4);
+    envSettings.lat = parseFloat(drupalSettings.globalVariables.mapConfig[0].lat);
+    envSettings.lon = parseFloat(drupalSettings.globalVariables.mapConfig[0].lon);
 
     function createMap() {
         map = tmpl.Map.mapCreation({
@@ -242,3 +241,173 @@
     };
 
 })(jQuery, Drupal);
+
+(function ($, Drupal) {
+  Drupal.behaviors.reportGrievanceValidation = {
+    attach: function (context, settings) {
+      // Wait until jQuery Validate is loaded
+      if (typeof $.validator === 'undefined') {
+        console.error('jQuery Validate is not loaded!');
+        return;
+      }
+
+      var $form = $('#report-grievance', context);
+
+      // Prevent double initialization
+      if ($form.data('validated')) return;
+      $form.data('validated', true);
+
+      // custom file size method
+      $.validator.addMethod("filesize", function (value, element, param) {
+        if (element.files.length === 0) return true;
+        return this.optional(element) || (element.files[0].size <= param);
+      }, "File size must be less than 2MB");
+
+      // custom extension method for file
+      $.validator.addMethod("extensionFile", function (value, element, param) {
+        if (element.files.length === 0) return true;
+        var allowed = param.split('|');
+        var fileName = element.files[0].name.toLowerCase();
+        for (var i = 0; i < allowed.length; i++) {
+          if (fileName.endsWith(allowed[i])) return true;
+        }
+        return false;
+      }, "Invalid file type");
+
+      $form.validate({
+        rules: {
+          grievance_type: { required: true },
+          grievance_subtype: { required: true },
+          remarks: { required: true, minlength: 10, maxlength: 255 },
+          address: { required: true, maxlength: 255 },
+          "files[upload_file]": { required: true, extensionFile: "jpg|jpeg|png|pdf|doc|docx|mp4", filesize: 2097152 },
+          agree_terms: { required: true }
+        },
+        messages: {
+          grievance_type: "Please select a Category",
+          grievance_subtype: "Please select a Sub Category",
+          remarks: { required: "Remarks are required", minlength: "At least 5 characters", maxlength: "Max 255 characters" },
+          address: { required: "Address is required", maxlength: "Max 255 characters" },
+          "files[upload_file]": { required: "Please upload a file", extensionFile: "Invalid file type", filesize: "File must be <= 2MB" },
+          agree_terms: "You must agree to the Terms and Conditions"
+        },
+        errorClass: "text-red-500 text-sm mt-1 block",
+        errorPlacement: function (error, element) {
+          if (element.attr("type") === "checkbox") {
+            error.insertAfter(element.closest('label'));
+          } else {
+            error.insertAfter(element);
+          }
+        },
+        highlight: function (element) { $(element).addClass("border-red-500"); },
+        unhighlight: function (element) { $(element).removeClass("border-red-500"); }
+      });
+    }
+  };
+})(jQuery, Drupal);
+
+(function ($, Drupal, drupalSettings) {
+  Drupal.behaviors.reportGrievanceForm = {
+    attach: function (context) {
+      const $context = $(context);
+      const $typeSelect = $context.find('.grievance-type-select');
+      const $subtypeSelect = $context.find('.grievance-subtype-select');
+
+      const typesUrl = drupalSettings?.reportgrievance?.endpoints?.types || '/grievance/types';
+      const subtypesUrlTemplate = drupalSettings?.reportgrievance?.endpoints?.subtypes || '/grievance/subtypes/';
+
+      // Prevent multiple attaches
+      if (!$typeSelect.length || !$subtypeSelect.length || $typeSelect.data('attached')) return;
+      $typeSelect.data('attached', true);
+
+      /**
+       * Utility: Reset select with placeholder text
+       */
+      function resetSelect($select, placeholder, disabled = false) {
+        $select.empty().append(`<option value="">${placeholder}</option>`);
+        $select.prop('disabled', disabled);
+      }
+
+      /**
+       * Fetch JSON with proper error handling
+       */
+      async function fetchJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        return await response.json();
+      }
+
+      /**
+       * Load grievance types
+       */
+      async function loadTypes() {
+        resetSelect($typeSelect, 'Loading categories...', true);
+        resetSelect($subtypeSelect, 'Select Sub Category', true);
+
+        try {
+          const data = await fetchJson(typesUrl);
+          resetSelect($typeSelect, 'Select a Category', false); // ✅ Matches form
+
+          if (Array.isArray(data)) {
+            data.forEach(item => {
+              const key = item.key ?? Object.keys(item)[0];
+              const value = item.value ?? Object.values(item)[0];
+              if (key && value) $typeSelect.append(`<option value="${key}">${value}</option>`);
+            });
+          } else if (typeof data === 'object') {
+            Object.entries(data).forEach(([key, value]) => {
+              $typeSelect.append(`<option value="${key}">${value}</option>`);
+            });
+          } else {
+            console.error('Unexpected types response format:', data);
+          }
+        } catch (err) {
+          console.error('Failed to load types:', err);
+          resetSelect($typeSelect, 'Failed to load', true);
+        }
+      }
+
+      /**
+       * Load subtypes for a selected category
+       */
+      async function loadSubtypesFor(typeKey) {
+        resetSelect($subtypeSelect, 'Loading subcategories...', true);
+
+        try {
+          const data = await fetchJson(subtypesUrlTemplate + encodeURIComponent(typeKey));
+          resetSelect($subtypeSelect, 'Select Sub Category', false); // ✅ Matches form
+
+          if (Array.isArray(data)) {
+            data.forEach(item => {
+              const key = item.key ?? Object.keys(item)[0];
+              const value = item.value ?? Object.values(item)[0];
+              if (key && value) $subtypeSelect.append(`<option value="${key}">${value}</option>`);
+            });
+          } else if (typeof data === 'object') {
+            Object.entries(data).forEach(([key, value]) => {
+              $subtypeSelect.append(`<option value="${key}">${value}</option>`);
+            });
+          } else {
+            console.error('Unexpected subtypes response format:', data);
+          }
+        } catch (err) {
+          console.error('Failed to load subtypes:', err);
+          resetSelect($subtypeSelect, 'Failed to load', true);
+        }
+      }
+
+      // Initialize on page load
+      loadTypes();
+
+      // Load subtypes dynamically when type changes
+      $typeSelect.on('change', function () {
+        const selected = $(this).val();
+        if (selected) {
+          loadSubtypesFor(selected);
+        } else {
+          resetSelect($subtypeSelect, 'Select Sub Category', true);
+        }
+      });
+    }
+  };
+})(jQuery, Drupal, drupalSettings);

@@ -1,0 +1,11 @@
+career-apply-form-library:
+  js:
+    # External jQuery Validate
+    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js:
+      type: external
+      minified: true
+    # Your custom validation JS
+    js/career-apply-form.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupalSettings

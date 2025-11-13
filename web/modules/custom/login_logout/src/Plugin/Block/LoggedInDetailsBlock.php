@@ -65,13 +65,6 @@ class LoggedInDetailsBlock extends BlockBase implements ContainerFactoryPluginIn
         // $uid = $this->currentUser->id();
         $account = $user_data;
 
-        // $request = \Drupal::service('request_stack')->getCurrentRequest();
-
-        // $options = \Drupal::service('session_configuration')->getOptions($request);
-
-        // dump($options);
-        // exit();
-
         // $avatar_url = ($user_data['profilePic'] != "null" || $user_data['profilePic'] != null)
         //     ? htmlspecialchars($user_data['profilePic'], ENT_QUOTES, 'UTF-8')
         //     : '/themes/custom/engage_theme/images/Profile/profile_pic.png';

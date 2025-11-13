@@ -85,6 +85,41 @@ class FileUploadService
             $fileTypeType = "video";
             $fileTypeValid = true;
         }
+        // dump($_FILES['uploadedfile1']);exit;    
+        $fileTmp = $_FILES['files']['tmp_name']['upload_file'];
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($fileTmp);
+        \Drupal::logger('file_upload')->info('Detected MIME type: @mime', ['@mime' => $mimeType]);
+        // ✅ Content validation
+        if (strpos($mimeType, 'image/') === 0) {
+            // Image validation
+            $imgInfo = getimagesize($fileTmp);
+            if ($imgInfo === false) {
+                \Drupal::logger('file_upload')->warning('Invalid image detected for file: @file', ['@file' => $fileTmp]);
+                return new JsonResponse(['status' => false, 'message' => 'Invalid image content!']);
+            }
+
+            // Re-process image to strip malicious payloads
+            $image = imagecreatefromstring(file_get_contents($fileTmp));
+            if ($image !== false) {
+                imagejpeg($image, $fileTmp, 90);
+                imagedestroy($image);
+                \Drupal::logger('file_upload')->info('Image sanitized successfully: @file', ['@file' => $fileTmp]);
+            }
+        } elseif ($mimeType === 'application/pdf') {
+
+            // PDF validation
+            $content = file_get_contents($fileTmp);
+            \Drupal::logger('file_upload')->debug('PDF first 200 chars: @snippet', [
+                '@snippet' => substr($content, 0, 200),
+            ]);
+            if (preg_match('/\/(JS|JavaScript|AA)/i', $content)) {
+                //  dump($content);exit;
+                \Drupal::logger('file_upload')->error('Malicious PDF detected for file: @file', ['@file' => $fileTmp]);
+                return new JsonResponse(['status' => false, 'message' => 'Malicious PDF detected!']);
+            }
+            \Drupal::logger('file_upload')->info('PDF passed validation: @file', ['@file' => $fileTmp]);
+        }
 
         $uuidFilename = $this->uuidService->generate() . '.' . $extension;
         // dump($fileTypeValid);
@@ -117,7 +152,7 @@ class FileUploadService
             ]);
 
             // dump($curl);
-            
+
             $response = curl_exec($curl);
             $curl_error = curl_error($curl);
             curl_close($curl);

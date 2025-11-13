@@ -8,7 +8,7 @@ module.exports = {
   ],
   safelist: [
     // existing safelist items
-    'w-28', 'mt-16', 'mx-10', 'mt-9', 'form-select','text-green-600',
+    'w-28', 'mt-16', 'mx-10', 'mt-9', 'form-select',
     'form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300',
     'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5',
     'checkbox', 'text-yellow-500', 'btn', 'btn-warning', 'hover:login-btn', 'active:login-btn',
@@ -33,7 +33,7 @@ module.exports = {
     'p-6', 'shadow-md', 'rounded-lg', 'max-w-md', 'mx-auto', 'mt-10', 'text-2xl',
     'font-semibold', 'mb-6', 'text-center', 'space-y-5', 'px-4', 'py-2', 'focus:outline-none',
     'focus:ring-2', 'focus:ring-blue-400', 'bg-blue-600', 'hover:bg-blue-700', 'transition',
-    'bg-yellow-500', 'hover:bg-yellow-600', 'font-semibold', 'rounded', 'transition-all'
+    'bg-yellow-500', 'hover:bg-yellow-600', 'font-semibold', 'rounded', 'transition-all','text-green-600'
   ],
   theme: {
     extend: {

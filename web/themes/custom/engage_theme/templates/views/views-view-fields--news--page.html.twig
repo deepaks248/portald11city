@@ -14,10 +14,7 @@
 
     <!-- Summary -->
     <div class="text-gray-700 text-base leading-relaxed mb-4">
-      {# {{ dump(row._entity.field_news_body) }} #}
-      {# {{ dump(fields.field_news_body.content) }} #}
-      <p>{{ fields.field_news_body.content }}</p>
-      {# <p>{{ (row._entity.field_news_body.0.value|striptags|slice(0, 242)) }}</p> #}
+      <p>{{ (row._entity.field_news_body.0.value|striptags|slice(0, 242)) }}</p>
     </div>
 
     <!-- Read More Button -->

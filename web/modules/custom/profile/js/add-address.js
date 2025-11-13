@@ -8,19 +8,19 @@
 
     let gmap = null;
     let map = null;
-    envSettings.gKey = "AIzaSyA7z_IJBC_8QTKN7HlO2ZmSZX-RKNIVUh8";
-    envSettings.mapDimension = "2D";
-    envSettings.mapLib = "ol7";
-    envSettings.type = "google";
-    envSettings.mapData = "google";
-    envSettings.gwc = false;
-    envSettings.offline = false;
-    envSettings.extent1 = 77.27133968401577;
-    envSettings.extent2 = 12.839963022940264;
-    envSettings.extent3 = 77.9711979045307;
-    envSettings.extent4 = 13.149758962153491;
-    envSettings.lat = 12.9716;
-    envSettings.lon = 77.5946;
+    envSettings.gKey = drupalSettings.globalVariables.mapConfig[0].gKey;
+    envSettings.mapDimension = drupalSettings.globalVariables.mapConfig[0].mapDimension;
+    envSettings.mapLib = drupalSettings.globalVariables.mapConfig[0].mapLib;
+    envSettings.type = drupalSettings.globalVariables.mapConfig[0].type;
+    envSettings.mapData = drupalSettings.globalVariables.mapConfig[0].mapData;
+    envSettings.gwc = drupalSettings.globalVariables.mapConfig[0].gwc;
+    envSettings.offline = drupalSettings.globalVariables.mapConfig[0].offline;
+    envSettings.extent1 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent1);
+    envSettings.extent2 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent2);
+    envSettings.extent3 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent3);
+    envSettings.extent4 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent4);
+    envSettings.lat = parseFloat(drupalSettings.globalVariables.mapConfig[0].lat);
+    envSettings.lon = parseFloat(drupalSettings.globalVariables.mapConfig[0].lon);
 
     function createMap() {
         try {
@@ -233,4 +233,53 @@
     window.onload = function () {
         createMap();
     };
+})(jQuery, Drupal);
+
+(function ($, Drupal) {
+  Drupal.behaviors.addAddressValidation = {
+    attach: function (context, settings) {
+      // Ensure jQuery Validate is loaded
+      if (typeof $.validator === 'undefined') {
+        console.error('jQuery Validate is not loaded!');
+        return;
+      }
+
+      var $form = $('#add-address-form', context);
+      console.log("Form",$form);
+      // Prevent double initialization
+      if ($form.data('validated')) return;
+      $form.data('validated', true);
+
+      // Initialize validation
+      $form.validate({
+        rules: {
+          postal_code: { required: true, digits: true, minlength: 6, maxlength: 6 },
+          flat: { required: true },
+          area: { required: true },
+          landmark: { required: true },
+          country: { required: true },
+          address_type: { required: true }
+        },
+        messages: {
+          postal_code: { 
+            required: "Postal code is required", 
+            digits: "Only digits allowed", 
+            minlength: "Postal code must be 6 digits", 
+            maxlength: "Postal code must be 6 digits"
+          },
+          flat: { required: "Flat/House no. is required" },
+          area: { required: "Area is required" },
+          landmark: { required: "Landmark is required" },
+          country: { required: "Country is required" },
+          address_type: { required: "Please select an address type" }
+        },
+        errorClass: "text-red-500 text-sm mt-1 block",
+        errorPlacement: function (error, element) {
+          error.insertAfter(element);
+        },
+        highlight: function (element) { $(element).addClass("border-red-500"); },
+        unhighlight: function (element) { $(element).removeClass("border-red-500"); }
+      });
+    }
+  };
 })(jQuery, Drupal);

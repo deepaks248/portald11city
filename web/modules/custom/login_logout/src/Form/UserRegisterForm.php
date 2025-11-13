@@ -453,6 +453,7 @@ class UserRegisterForm extends FormBase
       // $activeSessionService = \Drupal::service('active_sessions.session_service');
       // $activeSessions = $activeSessionService->fetchActiveSessions($accessToken);
       $activeSessions = $this->activeSessionService->fetchActiveSessions($accessToken);
+      $session->set('login_logout.login_time', \Drupal::time()->getRequestTime());
 
       // Find closest matching API session by loginTime
       $closestSessionId = null;
@@ -474,7 +475,6 @@ class UserRegisterForm extends FormBase
       // Fallback if nothing matched
       $session = \Drupal::service('session');
       $session->set('login_logout.active_session_id_token', $closestSessionId);
-      $session->set('login_logout.login_time', \Drupal::time()->getRequestTime());
 
       // 3. Create Drupal user
       $user = User::create([

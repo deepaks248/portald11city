@@ -70,8 +70,9 @@ class AddAddressForm extends FormBase
 
         $form['postal_code'] = [
             '#type' => 'textfield',
-            // '#title' => $this->t('Postal'),
+            '#title' => $this->t('Postal'),
             '#required' => TRUE,
+            '#required_error' => $this->t("Postal code is required"),
             '#default_value' => $defaults['postal_code'],
             '#maxlength' => 6,
             '#attributes' => [
@@ -95,7 +96,7 @@ class AddAddressForm extends FormBase
 
         $form['flat'] = [
             '#type' => 'textfield',
-            // '#title' => $this->t('Flat, House no., Building, Company, Apartment'),
+            '#title' => $this->t('Flat, House no., Building, Company, Apartment'),
             '#default_value' => $defaults['flat'],
             '#attributes' => [
                 'placeholder' => $this->t('Flat, House no., Building, Company, Apartment'),
@@ -113,12 +114,13 @@ class AddAddressForm extends FormBase
                 ],
             ],
             '#required' => TRUE,
+            '#required_error' => $this->t('Flat is required'),
         ];
 
         $form['area'] = [
             '#type' => 'textfield',
             '#default_value' => $defaults['area'],
-            // '#title' => $this->t('Area, Colony, Street Sector, Town/City'),
+            '#title' => $this->t('Area, Colony, Street Sector, Town/City'),
             '#attributes' => [
                 'placeholder' => $this->t('Area, Colony, Street Sector, Town/City'),
                 'class' => [
@@ -135,12 +137,13 @@ class AddAddressForm extends FormBase
                 ],
             ],
             '#required' => TRUE,
+            '#required_error' => $this->t("Area is required"),
         ];
 
         $form['landmark'] = [
             '#type' => 'textfield',
             '#default_value' => $defaults['landmark'],
-            // '#title' => $this->t('Landmark e.g. near Apollo Hospital'),
+            '#title' => $this->t('Landmark e.g. near Apollo Hospital'),
             '#attributes' => [
                 'placeholder' => $this->t('Landmark e.g. near Apollo Hospital'),
                 'class' => [
@@ -157,12 +160,13 @@ class AddAddressForm extends FormBase
                 ],
             ],
             '#required' => TRUE,
+            '#required_error' => $this->t('Landmark is required') 
         ];
 
         $form['country'] = [
             '#type' => 'textfield',
             '#default_value' => $defaults['country'],
-            // '#title' => $this->t('Country'),
+            '#title' => $this->t('Country'),
             '#attributes' => [
                 'placeholder' => $this->t('Country'),
                 'class' => [
@@ -180,12 +184,14 @@ class AddAddressForm extends FormBase
             ],
             // '#default_value' => 'India',
             '#required' => TRUE,
+            '#required_error' => $this->t('Country is required.')
         ];
 
         $form['address_type'] = [
             '#type' => 'select',
             // '#title' => $this->t('Select your Address Type'),
             '#required' => TRUE,
+            '#required_error' => $this->t('Please select any address type'),
             '#default_value' => $defaults['address_type'],
             '#empty_option' => $this->t('Select your Address Type'),
             '#options' => [
@@ -228,14 +234,13 @@ class AddAddressForm extends FormBase
             ],
         ];
 
-        // Attach theme and Tailwind-based styling
+        // Attach theme and Tailwind-based 
+        $form['#attributes']['class'][] = 'cv-validate-before-ajax';
         $form['#theme'] = 'add_address_form';
         $form['#attached']['library'][] = 'profile/add_address_form';
 
         return $form;
     }
-
-
     public static function access(NodeInterface $node, AccountInterface $account)
     {
         // Check if this node is of the expected content type.
@@ -255,7 +260,7 @@ class AddAddressForm extends FormBase
     {
         $value = $element['#value'];
         if (!preg_match('/^\d{6}$/', $value)) {
-            $form_state->setError($element, \Drupal::translation()->translate('Postal code must be 6 digits'));
+            $form_state->setError($element, t('Postal code must be 6 digits'));
         }
     }
 

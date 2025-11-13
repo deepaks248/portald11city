@@ -27,7 +27,7 @@ class CareerApplyForm extends FormBase
 
         $form['first_name'] = [
             '#type' => 'textfield',
-            // '#title' => $this->t('First Name'),
+            '#title' => $this->t('First Name'),
             '#attributes' => [
                 'placeholder' => $this->t('First Name'),
                 'class' => [
@@ -48,7 +48,7 @@ class CareerApplyForm extends FormBase
 
         $form['last_name'] = [
             '#type' => 'textfield',
-            // '#title' => $this->t('Last Name'),
+            '#title' => $this->t('Last Name'),
             '#attributes' => [
                 'placeholder' => $this->t('Last Name'),
                 'class' => [
@@ -69,7 +69,7 @@ class CareerApplyForm extends FormBase
 
         $form['email'] = [
             '#type' => 'email',
-            // '#title' => $this->t('Email'),
+            '#title' => $this->t('Email'),
             '#attributes' => [
                 'placeholder' => $this->t('Email'),
                 'class' => [
@@ -90,7 +90,7 @@ class CareerApplyForm extends FormBase
 
         $form['mobile'] = [
             '#type' => 'tel',
-            // '#title' => $this->t('Mobile Number'),
+            '#title' => $this->t('Mobile Number'),
             '#attributes' => [
                 'placeholder' => $this->t('Mobile Number'),
                 'class' => [
@@ -111,7 +111,7 @@ class CareerApplyForm extends FormBase
 
         $form['gender'] = [
             '#type' => 'select',
-            // '#title' => $this->t('Gender'),
+            '#title' => $this->t('Gender'),
             '#attributes' => [
                 'class' => [
                     'form-select',
@@ -136,7 +136,7 @@ class CareerApplyForm extends FormBase
 
         $form['resume'] = [
             '#type' => 'managed_file',
-            '#title' => $this->t('Upload Resume'),
+            '#title' => $this->t('Upload your CV*'),
             '#required' => TRUE,
             '#upload_location' => 'public://resumes/',
             '#constraints' => [
@@ -158,6 +158,7 @@ class CareerApplyForm extends FormBase
             '#value' => $this->t('Apply Now'),
         ];
 
+        $form['#attached']['library'][] = 'career_application/career-apply-form-library';
         return $form;
     }
 

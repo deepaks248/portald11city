@@ -3,13 +3,13 @@
     <h2 class="text-2xl font-semibold mb-6">Welcome</h2>
 
     {% if form.password['#required'] %}
-    <div class="mb-6">
-      <p class="text-gray-600 text-sm">Please enter your Email ID to Login</p>
-    </div>
+      <div class="mb-6">
+        <p class="text-gray-600 text-sm">Please enter your Email ID to Login</p>
+      </div>
     {% else %}
-    <div class="mb-6">
-      <p class="text-gray-600 text-sm">Please enter your Email ID to Login / Register</p>
-    </div>
+      <div class="mb-6">
+        <p class="text-gray-600 text-sm">Please enter your Email ID to Login / Register</p>
+      </div>
     {% endif %}
 
     <div class="border-b border-gray-200 mb-6"></div>
@@ -19,46 +19,49 @@
 
       {# Email Field #}
       <div>
-        {# {{ form.email }} #}
         {{ include('@engage_theme/components/form/field--floating-text.html.twig', {
-  					field: form.email,
-				}) }}
+          field: form.email,
+        }) }}
       </div>
 
-      {# Password or Email Verification Field #}
+      {# Password Field (Shown only after email validated) #}
       {% if form.password['#required'] %}
         <div class="mt-2">
-          {# {{ form.password }} #}
           {{ include('@engage_theme/components/form/field--floating-text.html.twig', {
-  					field: form.password,
-				  }) }}
+            field: form.password,
+          }) }}
         </div>
+
+        {# Login button first so Enter key triggers login #}
+        {% if form.login is defined %}
+          <div class="mt-4">
+            {{ form.login }}
+          </div>
+        {% endif %}
+
+        {# Forgot Password second (so Enter doesn’t trigger it) #}
+        {% if form.forgot_password is defined %}
+          <div class="text-right text-sm mt-2">
+            {{ form.forgot_password }}
+          </div>
+        {% endif %}
       {% else %}
+        {# Initial Email Verification Submit #}
         <div class="mt-4">
           {{ form.check_email }}
         </div>
       {% endif %}
 
-      {# Submit Buttons #}
-      {% if form.login is defined %}
-        <div class="mt-6">
-          {{ form.login }}
-        </div>
-      {% elseif form.check_email is defined %}
-        <div class="mt-4">
-          {{ form.check_email }}
-        </div>
-      {% endif %}
-
-      {# Signup Link #}
+      {# Signup Link (optional) #}
       {% if form.signup_link is defined %}
         <div class="text-center">
           {{ form.signup_link }}
         </div>
       {% endif %}
 
-      {# Render Hidden Fields #}
-      {{ form|without('email', 'password', 'login', 'check_email', 'signup_link') }}
+      {# Render Hidden Fields (token, build id, etc.) #}
+      {{ form|without('email', 'password', 'login', 'check_email', 'signup_link', 'forgot_password') }}
+
     </form>
   </div>
 </div>

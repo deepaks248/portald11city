@@ -95,7 +95,7 @@ class GlobalVariablesService
         $vaultAPI = Settings::get('vault_url');
         $vaultToken = Settings::get('vault_token');
 
-        $response = \Drupal::httpClient()->get($vaultAPI, [
+        $response = $this->httpClient->request('GET', $vaultAPI, [
           'headers' => [
             'Content-Type' => 'application/json',
             'X-Vault-Token' => $vaultToken,
@@ -215,7 +215,6 @@ class GlobalVariablesService
     }
 
     $globals = $this->getGlobalVariables();
-
     if (empty($globals['apiManConfig']['config'])) {
       $this->logger->error('Missing apiManConfig configuration in Vault response.');
       return NULL;

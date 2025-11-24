@@ -1,7 +1,7 @@
 career-apply-form-library:
   js:
     # External jQuery Validate
-    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js:
+    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js:
       type: external
       minified: true
     # Your custom validation JS

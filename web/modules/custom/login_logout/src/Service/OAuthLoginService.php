@@ -55,6 +55,61 @@ class OAuthLoginService
         }
     }
 
+    public function formatUserAgent($userAgent)
+    {
+        $browser = $userAgent;
+        $device  = $userAgent;
+
+        // Detect browser
+        switch (true) {
+            case stripos($userAgent, 'Edg') !== false:
+                $browser = 'Microsoft Edge';
+                break;
+            case stripos($userAgent, 'Chrome') !== false && stripos($userAgent, 'Chromium') === false:
+                $browser = 'Chrome';
+                break;
+            case stripos($userAgent, 'Firefox') !== false:
+                $browser = 'Firefox';
+                break;
+            case stripos($userAgent, 'Safari') !== false && stripos($userAgent, 'Chrome') === false:
+                $browser = 'Safari';
+                break;
+            case stripos($userAgent, 'Opera') !== false || stripos($userAgent, 'OPR') !== false:
+                $browser = 'Opera';
+                break;
+        }
+
+        // Detect device/OS
+        switch (true) {
+            case stripos($userAgent, 'Windows') !== false:
+                $device = 'Desktop (Windows)';
+                break;
+            case stripos($userAgent, 'Macintosh') !== false || stripos($userAgent, 'Mac OS X') !== false:
+                $device = 'Desktop (Mac)';
+                break;
+            case stripos($userAgent, 'iPhone') !== false:
+                $device = 'Mobile (iPhone)';
+                break;
+            case stripos($userAgent, 'iPad') !== false:
+                $device = 'Tablet (iPad)';
+                break;
+            case stripos($userAgent, 'Android') !== false && stripos($userAgent, 'Mobile') !== false:
+                $device = 'Mobile (Android)';
+                break;
+            case stripos($userAgent, 'Android') !== false:
+                $device = 'Tablet (Android)';
+                break;
+            case stripos($userAgent, 'Linux') !== false:
+                $device = 'Linux';
+                break;
+        }
+
+        if ($browser === $userAgent && $device === $userAgent) {
+            return $userAgent;
+        }
+        return "{$browser}, {$device}";
+    }
+
     public function authenticateUser(string $flow_id, string $email, string $password): ?array
     {
         $userAgent = $this->requestStack->getCurrentRequest()->headers->get('User-Agent');
@@ -83,7 +138,7 @@ class OAuthLoginService
 
             $result = json_decode($response->getBody()->getContents(), TRUE);
             $this->logger->notice('Authn response: <pre>@data</pre>', ['@data' => print_r($result, TRUE)]);
-
+            $this->logger->notice('User-Agent: @ua', ['@ua' => $this->formatUserAgent($userAgent)]);
             // Success: return code
             if (!empty($result['authData']['code'])) {
                 return [
@@ -224,7 +279,7 @@ class OAuthLoginService
 
         try {
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', 'https://'.$idamconfig.'/oidc/logout', [
+            $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oidc/logout', [
                 'headers' => [
                     'Content-Type' => 'application/x-www-form-urlencoded',
                     'Cookie' => $cookies,

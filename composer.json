@@ -23,7 +23,7 @@
         "cweagans/composer-patches": "^1.7",
         "drupal/admin_toolbar": "^3.6",
         "drupal/autologout": "^2.0",
-        "drupal/better_exposed_filters": "^7.0",
+        "drupal/better_exposed_filters": "^7.1",
         "drupal/captcha": "^2.0",
         "drupal/clientside_validation": "^4.1",
         "drupal/content_access": "^2.1@RC",
@@ -63,8 +63,8 @@
         "drupal/xhprof": "^2.0@beta",
         "drush/drush": "^13.6",
         "npm-asset/chart.js": "^4.4",
-        "wikimedia/composer-merge-plugin": "^2.1",
-        "oomphinc/composer-installers-extender": "^2.0"
+        "oomphinc/composer-installers-extender": "^2.0",
+        "wikimedia/composer-merge-plugin": "^2.1"
     },
     "conflict": {
         "drupal/drupal": "*"

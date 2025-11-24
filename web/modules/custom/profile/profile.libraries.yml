@@ -3,7 +3,7 @@ profile_assets:
     theme:
       css/profile.css: {}
   js:
-    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js: 
+    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
       type: external
       minified: true
     js/profile.js: {}
@@ -17,7 +17,7 @@ add-family-member-library:
     theme:
       css/add-family-member.css: {}
   js:
-    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js: 
+    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
       type: external
       minified: true
     js/add-family-member.js: {}
@@ -52,7 +52,7 @@ add_address_form:
   js:
     https://hcsjointstackportal.trinityiot.in/GISClientServices/v4.0.0/appconfig-security.js: {}
     # http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {}
-    https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js: 
+    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
       type: external
       minified: true
     js/add-address.js: {}

@@ -152,5 +152,14 @@
                 "support"
             ]
         }
+    },
+    "require-dev": {
+        "behat/mink-browserkit-driver": "^2.3",
+        "behat/mink-extension": "*",
+        "behat/mink-selenium2-driver": "^1.7",
+        "drupal/drupal-extension": "^5.1",
+        "phpspec/prophecy-phpunit": "^2.4",
+        "phpunit/phpunit": "^10.5",
+        "symfony/panther": "^2.3"
     }
 }

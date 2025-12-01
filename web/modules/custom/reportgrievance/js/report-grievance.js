@@ -10,12 +10,12 @@
     envSettings.mapData = drupalSettings.globalVariables.mapConfig[0].mapData;
     envSettings.gwc = drupalSettings.globalVariables.mapConfig[0].gwc;
     envSettings.offline = drupalSettings.globalVariables.mapConfig[0].offline;
-    envSettings.extent1 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent1);
-    envSettings.extent2 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent2);
-    envSettings.extent3 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent3);
-    envSettings.extent4 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent4);
-    envSettings.lat = parseFloat(drupalSettings.globalVariables.mapConfig[0].lat);
-    envSettings.lon = parseFloat(drupalSettings.globalVariables.mapConfig[0].lon);
+    envSettings.extent1 = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].extent1);
+    envSettings.extent2 = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].extent2);
+    envSettings.extent3 = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].extent3);
+    envSettings.extent4 = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].extent4);
+    envSettings.lat = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].lat);
+    envSettings.lon = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].lon);
 
     function createMap() {
         map = tmpl.Map.mapCreation({
@@ -46,7 +46,7 @@
         }
         function getAddress(coord) {
             console.log("coordddd", coord);
-            lat_log = coord;
+            let lat_log = coord;
             tmpl.Geocode.getGeocode({
                 point: [coord.lon, coord.lat],
                 callbackFunc: handleGeocode,
@@ -169,7 +169,7 @@
         getAddress(coord);
         function getAddress(coords) {
             console.log("coordddd", coords);
-            lat_log = coord;
+            let lat_log = coord;
             tmpl.Geocode.getGeocode({
                 point: [coords[0], coords[1]],
                 callbackFunc: handleGeocode,
@@ -226,7 +226,7 @@
             lat_logs.push(log);
 
             console.log("eureytiuyetyiy", lat_logs, gmap);
-            lat_log = lat_logs;
+            let lat_log = lat_logs;
             // console.log("rtueityireytiureytreyutyreuyte",lat_log);
         }
         tmpl.Geocode.getReverseGeocode({

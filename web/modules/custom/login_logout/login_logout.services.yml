@@ -11,6 +11,7 @@ services:
     class: Drupal\login_logout\Service\OAuthLoginService
     arguments:
       [
+        '@settings',
         "@http_client",
         "@logger.channel.login_logout",
         "@request_stack",

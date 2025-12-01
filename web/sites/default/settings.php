@@ -871,3 +871,8 @@ $settings['trusted_host_patterns'] = [
   '^nginx$',                 // Common Nginx service name
   '^.+$',                    // Allow all (for local only!)
 ];
+// settings.php
+/**
+ * Externalized Authenticator ID for the IDM system.
+ */
+$settings['idam_local_authenticator_id'] = 'QmFzaWNBdXRoZW50aWNhdG9yOkxPQ0FM';

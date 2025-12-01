@@ -42,53 +42,54 @@ class ActiveSessionController extends ControllerBase
         );
     }
 
-    private function formatUserAgent($userAgent)
+    private function format_user_agent($userAgent)
     {
-        $browser = $userAgent;
-        $device  = $userAgent;
-
         // Detect browser
-        switch (true) {
-            case stripos($userAgent, 'Edg') !== false:
+        switch (TRUE) {
+            case stripos($userAgent, 'Edg') !== FALSE:
                 $browser = 'Microsoft Edge';
                 break;
-            case stripos($userAgent, 'Chrome') !== false && stripos($userAgent, 'Chromium') === false:
+            case stripos($userAgent, 'Chrome') !== FALSE && stripos($userAgent, 'Chromium') === FALSE:
                 $browser = 'Chrome';
                 break;
-            case stripos($userAgent, 'Firefox') !== false:
+            case stripos($userAgent, 'Firefox') !== FALSE:
                 $browser = 'Firefox';
                 break;
-            case stripos($userAgent, 'Safari') !== false && stripos($userAgent, 'Chrome') === false:
+            case stripos($userAgent, 'Safari') !== FALSE && stripos($userAgent, 'Chrome') === FALSE:
                 $browser = 'Safari';
                 break;
-            case stripos($userAgent, 'Opera') !== false || stripos($userAgent, 'OPR') !== false:
+            case stripos($userAgent, 'Opera') !== FALSE || stripos($userAgent, 'OPR') !== FALSE:
                 $browser = 'Opera';
                 break;
+            default:
+                $browser = 'Unknown Browser';
         }
 
         // Detect device/OS
-        switch (true) {
-            case stripos($userAgent, 'Windows') !== false:
+        switch (TRUE) {
+            case stripos($userAgent, 'Windows') !== FALSE:
                 $device = 'Desktop (Windows)';
                 break;
-            case stripos($userAgent, 'Macintosh') !== false || stripos($userAgent, 'Mac OS X') !== false:
+            case stripos($userAgent, 'Macintosh') !== FALSE || stripos($userAgent, 'Mac OS X') !== FALSE:
                 $device = 'Desktop (Mac)';
                 break;
-            case stripos($userAgent, 'iPhone') !== false:
+            case stripos($userAgent, 'iPhone') !== FALSE:
                 $device = 'Mobile (iPhone)';
                 break;
-            case stripos($userAgent, 'iPad') !== false:
+            case stripos($userAgent, 'iPad') !== FALSE:
                 $device = 'Tablet (iPad)';
                 break;
-            case stripos($userAgent, 'Android') !== false && stripos($userAgent, 'Mobile') !== false:
+            case stripos($userAgent, 'Android') !== FALSE && stripos($userAgent, 'Mobile') !== FALSE:
                 $device = 'Mobile (Android)';
                 break;
-            case stripos($userAgent, 'Android') !== false:
+            case stripos($userAgent, 'Android') !== FALSE:
                 $device = 'Tablet (Android)';
                 break;
-            case stripos($userAgent, 'Linux') !== false:
+            case stripos($userAgent, 'Linux') !== FALSE:
                 $device = 'Linux';
                 break;
+            default:
+                $device = 'Unknown Device/OS';
         }
 
         if ($browser === $userAgent && $device === $userAgent) {
@@ -110,7 +111,7 @@ class ActiveSessionController extends ControllerBase
         $currentUserSessions = [];
         $otherUserSessions = [];
 
-        $closestSessionId = null;
+        $closestSessionId = NULL;
         if (!empty($storedLoginTime) && !empty($apiSessions)) {
             $targetTimeMs = $storedLoginTime * 1000;
             $closestDiff = PHP_INT_MAX;
@@ -136,7 +137,7 @@ class ActiveSessionController extends ControllerBase
         foreach ($apiSessions as &$apiSession) {
             $timestamp = (int) ($apiSession['loginTime'] / 1000);
             $apiSession['accessToken'] = $accessToken;
-            $apiSession['userAgentFormatted'] = $this->formatUserAgent($apiSession['userAgent'] ?? '');
+            $apiSession['userAgentFormatted'] = $this->format_user_agent($apiSession['userAgent'] ?? '');
             $apiSession['loginTimeSeconds'] = $timestamp;
             $apiSession['formattedLoginTime'] = $this->dateFormatter
                 ->format($timestamp, 'custom', 'd-m-Y, h:i:s', 'Asia/Kolkata');
@@ -163,12 +164,11 @@ class ActiveSessionController extends ControllerBase
         $accessToken = $session->get('login_logout.access_token');
         $active_session_id_token = $session->get('login_logout.active_session_id_token');
 
-        if ($accessToken === null) {
+        if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
-            return new RedirectResponse('/my-account');
         }
 
-        [$id, $access_token] = explode('--', $session_id) + [null, null];
+        [$id, $access_token] = explode('--', $session_id) + [NULL, NULL];
 
         try {
             $is_my_session = ($active_session_id_token == $id);
@@ -189,9 +189,8 @@ class ActiveSessionController extends ControllerBase
     {
         $session = \Drupal::service('session');
         $accessToken = $session->get('login_logout.access_token');
-        // $active_session_id_token = $session->get('login_logout.active_session_id_token');
 
-        if ($accessToken === null) {
+        if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
             return new RedirectResponse('/my-account');
         }

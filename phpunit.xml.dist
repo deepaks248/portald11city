@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    bootstrap="web/core/tests/bootstrap.php"
+    colors="true"
+    beStrictAboutTestsThatDoNotTestAnything="false"
+    cacheResultFile=".phpunit.cache/test-results"
+    executionOrder="depends,defects"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd">
+
+    <testsuites>
+        <testsuite name="unit">
+            <directory suffix="Test.php">web/modules/custom</directory>
+            <directory suffix="Test.php">web/themes/custom</directory>
+        </testsuite>
+    </testsuites>
+
+    <!-- REQUIRED for SonarQube -->
+    <coverage>
+        <include>
+            <directory>web/modules/custom</directory>
+            <directory>web/themes/custom</directory>
+        </include>
+        <report>
+            <clover outputFile="coverage/clover.xml" />
+        </report>
+    </coverage>
+
+</phpunit>

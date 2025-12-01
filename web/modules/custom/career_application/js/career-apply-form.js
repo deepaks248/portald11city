@@ -2,12 +2,12 @@
   Drupal.behaviors.careerApplyValidation = {
     attach: function (context, settings) {
       // Ensure jQuery Validate is loaded
-      if (typeof $.validator === 'undefined') {
+      if ($.validator === 'undefined') {
         console.error('jQuery Validate is not loaded!');
         return;
       }
 
-      var $form = $('#career-apply-form', context);
+      let $form = $('#career-apply-form', context);
 
       // Prevent double initialization
       if ($form.data('validated')) return;
@@ -22,9 +22,9 @@
       // Custom file extension validation
       $.validator.addMethod("extensionFile", function (value, element, param) {
         if (element.files.length === 0) return true;
-        var allowed = param.split('|');
-        var fileName = element.files[0].name.toLowerCase();
-        for (var i = 0; i < allowed.length; i++) {
+        let allowed = param.split('|');
+        let fileName = element.files[0].name.toLowerCase();
+        for (let i = 0; i < allowed.length; i++) {
           if (fileName.endsWith(allowed[i])) return true;
         }
         return false;

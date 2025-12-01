@@ -6,7 +6,7 @@ use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\global_module\Service\GlobalVariablesService;
-
+use Drupal\Core\Site\Settings;
 class OAuthLoginService
 {
 
@@ -14,6 +14,8 @@ class OAuthLoginService
     protected $logger;
     protected $requestStack;
     protected $globalVariablesService;
+    protected $localAuthenticatorId;
+    protected Settings $settings;
 
     public function __construct(
         ClientInterface $http_client,
@@ -25,6 +27,8 @@ class OAuthLoginService
         $this->httpClient = $http_client;
         $this->logger = $logger;
         $this->requestStack = $requestStack;
+        // Load the value from the Settings object
+        $this->localAuthenticatorId = $this->settings->get('idam_local_authenticator_id');
     }
 
     public function getFlowId(): ?string
@@ -43,7 +47,7 @@ class OAuthLoginService
                     'scope' => 'openid internal_login',
                     'response_mode' => 'direct',
                 ],
-                'verify' => false,
+                'verify' => FALSE,
             ]);
 
             $result = json_decode($response->getBody()->getContents(), TRUE);
@@ -55,53 +59,54 @@ class OAuthLoginService
         }
     }
 
-    public function formatUserAgent($userAgent)
+    public function format_user_agent($userAgent)
     {
-        $browser = $userAgent;
-        $device  = $userAgent;
-
         // Detect browser
-        switch (true) {
-            case stripos($userAgent, 'Edg') !== false:
+        switch (TRUE) {
+            case stripos($userAgent, 'Edg') !== FALSE:
                 $browser = 'Microsoft Edge';
                 break;
-            case stripos($userAgent, 'Chrome') !== false && stripos($userAgent, 'Chromium') === false:
+            case stripos($userAgent, 'Chrome') !== FALSE && stripos($userAgent, 'Chromium') === FALSE:
                 $browser = 'Chrome';
                 break;
-            case stripos($userAgent, 'Firefox') !== false:
+            case stripos($userAgent, 'Firefox') !== FALSE:
                 $browser = 'Firefox';
                 break;
-            case stripos($userAgent, 'Safari') !== false && stripos($userAgent, 'Chrome') === false:
+            case stripos($userAgent, 'Safari') !== FALSE && stripos($userAgent, 'Chrome') === FALSE:
                 $browser = 'Safari';
                 break;
-            case stripos($userAgent, 'Opera') !== false || stripos($userAgent, 'OPR') !== false:
+            case stripos($userAgent, 'Opera') !== FALSE || stripos($userAgent, 'OPR') !== FALSE:
                 $browser = 'Opera';
                 break;
+            default:
+                $browser = 'Unknown Browser';
         }
 
         // Detect device/OS
-        switch (true) {
-            case stripos($userAgent, 'Windows') !== false:
+        switch (TRUE) {
+            case stripos($userAgent, 'Windows') !== FALSE:
                 $device = 'Desktop (Windows)';
                 break;
-            case stripos($userAgent, 'Macintosh') !== false || stripos($userAgent, 'Mac OS X') !== false:
+            case stripos($userAgent, 'Macintosh') !== FALSE || stripos($userAgent, 'Mac OS X') !== FALSE:
                 $device = 'Desktop (Mac)';
                 break;
-            case stripos($userAgent, 'iPhone') !== false:
+            case stripos($userAgent, 'iPhone') !== FALSE:
                 $device = 'Mobile (iPhone)';
                 break;
-            case stripos($userAgent, 'iPad') !== false:
+            case stripos($userAgent, 'iPad') !== FALSE:
                 $device = 'Tablet (iPad)';
                 break;
-            case stripos($userAgent, 'Android') !== false && stripos($userAgent, 'Mobile') !== false:
+            case stripos($userAgent, 'Android') !== FALSE && stripos($userAgent, 'Mobile') !== FALSE:
                 $device = 'Mobile (Android)';
                 break;
-            case stripos($userAgent, 'Android') !== false:
+            case stripos($userAgent, 'Android') !== FALSE:
                 $device = 'Tablet (Android)';
                 break;
-            case stripos($userAgent, 'Linux') !== false:
+            case stripos($userAgent, 'Linux') !== FALSE:
                 $device = 'Linux';
                 break;
+            default:
+                $device = 'Unknown Device/OS';
         }
 
         if ($browser === $userAgent && $device === $userAgent) {
@@ -118,7 +123,7 @@ class OAuthLoginService
             $payload = [
                 "flowId" => $flow_id,
                 "selectedAuthenticator" => [
-                    "authenticatorId" => "QmFzaWNBdXRoZW50aWNhdG9yOkxPQ0FM",
+                    "authenticatorId" => $this->localAuthenticatorId,
                     "params" => [
                         "username" => $email,
                         "password" => $password,
@@ -133,12 +138,12 @@ class OAuthLoginService
                     'User-Agent' => $userAgent,
                 ],
                 'json' => $payload,
-                'verify' => false,
+                'verify' => FALSE,
             ]);
 
             $result = json_decode($response->getBody()->getContents(), TRUE);
             $this->logger->notice('Authn response: <pre>@data</pre>', ['@data' => print_r($result, TRUE)]);
-            $this->logger->notice('User-Agent: @ua', ['@ua' => $this->formatUserAgent($userAgent)]);
+            $this->logger->notice('User-Agent: @ua', ['@ua' => $this->format_user_agent($userAgent)]);
             // Success: return code
             if (!empty($result['authData']['code'])) {
                 return [
@@ -204,14 +209,14 @@ class OAuthLoginService
      * @param string $jwt
      *   The JWT token (e.g., id_token).
      *
-     * @return array|null
+     * @return array|NULL
      *   Returns the payload as an associative array, or NULL if invalid.
      */
     public function decodeJwt(string $jwt): ?array
     {
         $parts = explode('.', $jwt);
         if (count($parts) !== 3) {
-            return null; // Invalid token format
+            return NULL; // Invalid token format
         }
 
         $payload = $parts[1];
@@ -223,8 +228,8 @@ class OAuthLoginService
             $payload .= str_repeat('=', 4 - $mod4);
         }
 
-        $decoded = json_decode(base64_decode($payload), true);
-        return is_array($decoded) ? $decoded : null;
+        $decoded = json_decode(base64_decode($payload), TRUE);
+        return is_array($decoded) ? $decoded : NULL;
     }
 
     public function exchangeCodeForToken(string $code): ?array
@@ -241,7 +246,7 @@ class OAuthLoginService
                     'redirect_uri' => 'https://cityportal.ddev.site/',
                     'code' => $code,
                 ],
-                'verify' => false,
+                'verify' => FALSE,
             ]);
 
             $result = json_decode($response->getBody()->getContents(), TRUE);
@@ -288,7 +293,7 @@ class OAuthLoginService
                     'response_mode' => 'direct',
                     'id_token_hint' => $id_token_hint,
                 ],
-                'verify' => false, // 🚨 disables SSL verification
+                'verify' => FALSE, // 🚨 disables SSL verification
             ]);
 
             return [
@@ -303,24 +308,6 @@ class OAuthLoginService
             ];
         }
     }
-
-    // /**
-    //  * Full OAuth login flow (FlowId → Auth → Token).
-    //  */
-    // public function performOAuthLogin(string $email, string $password): ?array
-    // {
-    //     $flowId = $this->getFlowId();
-    //     if (!$flowId) {
-    //         throw new \Exception('Flow ID not received.');
-    //     }
-
-    //     $authorizationCode = $this->authenticateUser($flowId, $email, $password);
-    //     if (!$authorizationCode) {
-    //         throw new \Exception('Authorization code not received.');
-    //     }
-
-    //     return $this->exchangeCodeForToken($authorizationCode['code']);
-    // }
 
     /**
      * Perform the full OAuth login flow: get flow ID, authenticate user, exchange code for token.
@@ -353,10 +340,10 @@ class OAuthLoginService
     {
         $parts = explode('.', $idToken);
         if (count($parts) !== 3) {
-            return null;
+            return NULL;
         }
-        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-        return $payload['sub'] ?? null;
+        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), TRUE);
+        return $payload['sub'] ?? NULL;
     }
 
     /**

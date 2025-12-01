@@ -1,6 +1,4 @@
 (function ($, Drupal) {
-    // alert("HEY!!!");
-    console.log("add-address");
 
     /**
  * `createMap()` function is used to create a map object
@@ -15,12 +13,12 @@
     envSettings.mapData = drupalSettings.globalVariables.mapConfig[0].mapData;
     envSettings.gwc = drupalSettings.globalVariables.mapConfig[0].gwc;
     envSettings.offline = drupalSettings.globalVariables.mapConfig[0].offline;
-    envSettings.extent1 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent1);
-    envSettings.extent2 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent2);
-    envSettings.extent3 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent3);
-    envSettings.extent4 = parseFloat(drupalSettings.globalVariables.mapConfig[0].extent4);
-    envSettings.lat = parseFloat(drupalSettings.globalVariables.mapConfig[0].lat);
-    envSettings.lon = parseFloat(drupalSettings.globalVariables.mapConfig[0].lon);
+    envSettings.extent1 = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].extent1);
+    envSettings.extent2 = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].extent2);
+    envSettings.extent3 = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].extent3);
+    envSettings.extent4 = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].extent4);
+    envSettings.lat = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].lat);
+    envSettings.lon = Number.parseFloat(drupalSettings.globalVariables.mapConfig[0].lon);
 
     function createMap() {
         try {
@@ -55,7 +53,7 @@
         }
         function getAddress(coord) {
             console.log("coordddd", coord);
-            lat_log = coord;
+            let lat_log = coord;
             tmpl.Geocode.getGeocode({
                 point: [coord.lon, coord.lat],
                 callbackFunc: handleGeocode,
@@ -183,7 +181,7 @@
         getAddress(coord);
         function getAddress(coords) {
             console.log("coordddd", coords);
-            lat_log = coord;
+            let lat_log = coord;
             tmpl.Geocode.getGeocode({
                 point: [coords[0], coords[1]],
                 callbackFunc: handleGeocode,
@@ -236,50 +234,50 @@
 })(jQuery, Drupal);
 
 (function ($, Drupal) {
-  Drupal.behaviors.addAddressValidation = {
-    attach: function (context, settings) {
-      // Ensure jQuery Validate is loaded
-      if (typeof $.validator === 'undefined') {
-        console.error('jQuery Validate is not loaded!');
-        return;
-      }
+    Drupal.behaviors.addAddressValidation = {
+        attach: function (context, settings) {
+            // Ensure jQuery Validate is loaded
+            if (typeof $.validator === 'undefined') {
+                console.error('jQuery Validate is not loaded!');
+                return;
+            }
 
-      var $form = $('#add-address-form', context);
-      console.log("Form",$form);
-      // Prevent double initialization
-      if ($form.data('validated')) return;
-      $form.data('validated', true);
+            var $form = $('#add-address-form', context);
+            console.log("Form", $form);
+            // Prevent double initialization
+            if ($form.data('validated')) return;
+            $form.data('validated', true);
 
-      // Initialize validation
-      $form.validate({
-        rules: {
-          postal_code: { required: true, digits: true, minlength: 6, maxlength: 6 },
-          flat: { required: true },
-          area: { required: true },
-          landmark: { required: true },
-          country: { required: true },
-          address_type: { required: true }
-        },
-        messages: {
-          postal_code: { 
-            required: "Postal code is required", 
-            digits: "Only digits allowed", 
-            minlength: "Postal code must be 6 digits", 
-            maxlength: "Postal code must be 6 digits"
-          },
-          flat: { required: "Flat/House no. is required" },
-          area: { required: "Area is required" },
-          landmark: { required: "Landmark is required" },
-          country: { required: "Country is required" },
-          address_type: { required: "Please select an address type" }
-        },
-        errorClass: "text-red-500 text-sm mt-1 block",
-        errorPlacement: function (error, element) {
-          error.insertAfter(element);
-        },
-        highlight: function (element) { $(element).addClass("border-red-500"); },
-        unhighlight: function (element) { $(element).removeClass("border-red-500"); }
-      });
-    }
-  };
+            // Initialize validation
+            $form.validate({
+                rules: {
+                    postal_code: { required: true, digits: true, minlength: 6, maxlength: 6 },
+                    flat: { required: true },
+                    area: { required: true },
+                    landmark: { required: true },
+                    country: { required: true },
+                    address_type: { required: true }
+                },
+                messages: {
+                    postal_code: {
+                        required: "Postal code is required",
+                        digits: "Only digits allowed",
+                        minlength: "Postal code must be 6 digits",
+                        maxlength: "Postal code must be 6 digits"
+                    },
+                    flat: { required: "Flat/House no. is required" },
+                    area: { required: "Area is required" },
+                    landmark: { required: "Landmark is required" },
+                    country: { required: "Country is required" },
+                    address_type: { required: "Please select an address type" }
+                },
+                errorClass: "text-red-500 text-sm mt-1 block",
+                errorPlacement: function (error, element) {
+                    error.insertAfter(element);
+                },
+                highlight: function (element) { $(element).addClass("border-red-500"); },
+                unhighlight: function (element) { $(element).removeClass("border-red-500"); }
+            });
+        }
+    };
 })(jQuery, Drupal);

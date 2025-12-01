@@ -4,8 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile.web
     volumes:
-      - ./web:/opt/drupal/web
-      - ./vendor:/opt/drupal/vendor
+      - ./:/opt/drupal
     depends_on:
       - db
     environment:
@@ -13,8 +12,6 @@ services:
       - DRUPAL_DB_USER=drupal
       - DRUPAL_DB_PASSWORD=drupal
       - DRUPAL_DB_NAME=drupal
-      - MYSQL_USER=drupal
-      - MYSQL_PASSWORD=drupal
     mem_limit: 2g
     cpu_shares: 512
     networks:
@@ -69,9 +66,87 @@ services:
       - db
     networks:
       - drupal_network  # Add PHPMyAdmin to the custom network
+  
+  sonarqube:
+    image: sonarqube:25.11.0.114957-community
+    container_name: drupal_sonarqube
+    depends_on:
+      - sonar_db
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar_db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    ports:
+      - "9100:9000"     # Expose SonarQube on http://localhost:9100
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - sonar_logs:/opt/sonarqube/logs
+    mem_limit: 2g
+    cpu_shares: 512
+    networks:
+      - drupal_network
+
+  sonar_db:
+    image: postgres:15
+    container_name: drupal_sonar_db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    ports:
+      - "5434:5432"     # Expose Sonar DB externally (optional)
+    volumes:
+      - sonar_db_data:/var/lib/postgresql/data
+    mem_limit: 1g
+    cpu_shares: 256
+    networks:
+      - drupal_network
+
+  # sonar-scanner:
+  #   image: sonarsource/sonar-scanner-cli:latest
+  #   container_name: drupal_sonar_scanner
+  #   depends_on:
+  #     - sonarqube
+  #   volumes:
+  #     - ./:/usr/src  # Mount your project root
+  #   working_dir: /usr/src
+  #   environment:
+  #     - SONAR_TOKEN=sqa_5c732bbb518eafb37680cc230fd3b9097550aada
+  #     - SONAR_HOST_URL=http://sonarqube:9000
+  #   networks:
+  #     - drupal_network
+  #   entrypoint: ["sonar-scanner"]
+  #     # sonar-scanner
+  #     # -Dsonar.projectKey=Drupal11portal
+  #     # -Dsonar.sources=.
+  #     # -Dsonar.host.url=http://sonarqube:9000
+  #     # -Dsonar.login=sqa_5c732bbb518eafb37680cc230fd3b9097550aada
+
+  sonar_scanner:
+    image: sonarsource/sonar-scanner-cli:latest
+    container_name: drupal_sonar_scanner
+    depends_on:
+      - sonarqube
+    working_dir: /usr/src
+    volumes:
+      - ./:/usr/src
+      - ./coverage:/usr/src/coverage   # ← REQUIRED so scanner can read clover.xml
+    environment:
+      - SONAR_TOKEN=sqa_5c732bbb518eafb37680cc230fd3b9097550aada
+      - SONAR_HOST_URL=http://sonarqube:9000
+      - SONAR_SCANNER_OPTS=-Dsonar.php.coverage.reportPaths=/usr/src/coverage/clover.xml
+    networks:
+      - drupal_network
+    entrypoint:
+      - sonar-scanner
 
 volumes:
   db_data:
+  sonar_data:
+  sonar_extensions:
+  sonar_logs:
+  sonar_db_data:
 
 networks:
   drupal_network:  # Custom network to ensure all services communicate efficiently

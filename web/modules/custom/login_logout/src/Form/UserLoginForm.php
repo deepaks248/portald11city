@@ -124,12 +124,10 @@ class UserLoginForm extends FormBase
         $form['password']['#attributes']['class'][] = 'w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-yellow-500';
 
         $form['login']['#attributes']['class'][] = 'bg-yellow-500 text-white rounded-xl px-6 py-2 cursor-pointer hover:bg-yellow-600 transition';
-        // $form['check_email']['#attributes']['class'][] = 'w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition';
         $form['check_email']['#attributes']['class'][] = 'bg-yellow-500 text-white rounded-xl px-6 py-2 cursor-pointer hover:bg-yellow-600 transition';
         $form['#theme'] = 'user_login';
 
         $form['#attached']['library'][] = 'login_logout/user-login-library';
-        // $form['#attached']['library'][] = 'login_logout/capture_browser_info';
         return $form;
     }
 

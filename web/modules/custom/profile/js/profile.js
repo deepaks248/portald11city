@@ -1,21 +1,3 @@
-// document.querySelectorAll('.js-form-item input, .js-form-item select').forEach((input) => {
-//     const label = input.closest('.js-form-item')?.querySelector('label');
-//     if (label) {
-//         input.addEventListener('focus', () => {
-//             label.classList.add('floating');
-//         });
-//         input.addEventListener('blur', () => {
-//             if (!input.value) {
-//                 label.classList.remove('floating');
-//             }
-//         });
-//         // Trigger once on load
-//         if (input.value) {
-//             label.classList.add('floating');
-//         }
-//     }
-// });
-
 (function () {
     document.addEventListener('DOMContentLoaded', function () {
         const btn = document.getElementById('remove-profile-button');
@@ -43,8 +25,9 @@ async function fileUpload(fileData, inputName) {
         return;
     }
 
-    const extMatch = fileName.match(/[a-zA-Z0-9]+$/);
-    const extFile = extMatch ? extMatch[0].toLowerCase() : "";
+    const extMatch = fileName.match(/\.[a-zA-Z0-9]+$/); // Match file extension (starting with a dot)
+    const extFile = extMatch ? extMatch[0].slice(1).toLowerCase() : ""; // Remove the dot and convert to lowercase
+
     let fileTypeVal = "", fileTypeType = "", fileTypeValid = false;
 
     if (["jpg", "jpeg", "png"].includes(extFile)) {
@@ -96,9 +79,6 @@ async function fileUpload(fileData, inputName) {
 
                 // Assign values
 
-                // document.getElementById(inputName + "_id").value = responseObject.fileTypeId;
-                // document.getElementById(inputName + "_type").value = responseObject.fileTypeVal;
-
                 if (inputName === "profilePic") {
                     const img = document.querySelector('.profilePicSrc');
                     if (img) {
@@ -128,9 +108,6 @@ async function fileUpload(fileData, inputName) {
                     document.getElementById(inputName + "_id").value = responseObject.fileTypeId;
                     document.getElementById(inputName + "_type").value = responseObject.fileTypeVal;
                 }
-
-
-                // resolve(responseObject);
             } else {
                 console.warn("Upload failed response:", request.responseText);
                 errorMsg?.classList.remove("hidden");
@@ -146,10 +123,6 @@ async function fileUpload(fileData, inputName) {
 console.log("CONSO", window.drupalSettings);
 console.log("Popup flag: ", window.drupalSettings.profile_form?.show_success_popup);
 if (window.drupalSettings.profile_form?.show_success_popup) {
-    // const loader = document.querySelector('.loading');
-    // if (loader) {
-    // loader.classList.add('hidden');
-    // }
     document.getElementById('feedback_profile')?.classList.remove('hidden');
 }
 
@@ -237,7 +210,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const deleteButton = document.querySelector('.confirm-account-btn');
   const deleteInput = document.querySelector('#delete');
-//   const errorMessage = document.querySelector('#error-message');
 
   if (deleteButton && deleteInput) {
     deleteButton.addEventListener('click', function (event) {
@@ -248,7 +220,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
       }
 
-    //   if (errorMessage) errorMessage.style.display = 'none';
       deleteUser();
     });
   }
@@ -361,12 +332,12 @@ document.addEventListener('DOMContentLoaded', function () {
   Drupal.behaviors.profileValidation = {
     attach: function (context, settings) {
       // Ensure jQuery Validate is loaded
-      if (typeof $.validator === 'undefined') {
+      if ($.validator === 'undefined') {
         console.error('jQuery Validate is not loaded!');
         return;
       }
 
-      var $form = $('#profile-form', context);
+      let $form = $('#profile-form', context);
       if (!$form.length) return;
 
       // Prevent double initialization
@@ -407,10 +378,10 @@ document.addEventListener('DOMContentLoaded', function () {
       });
 
       // Override Drupal AJAX beforeSubmit
-      if (typeof Drupal.Ajax !== 'undefined') {
+      if (Drupal.Ajax !== 'undefined') {
         Drupal.Ajax.prototype.beforeSubmit = function (form_values, element_settings, options) {
           // Only validate if form has class 'cv-validate-before-ajax' or validateAll is set
-          var validateAll = 1; // or set dynamically if needed
+          let validateAll = 1; // or set dynamically if needed
           console.log("wjknwejkw",validateAll);
           if (typeof this.$form !== 'undefined' &&
               (validateAll === 1 || $(this.$form).hasClass('cv-validate-before-ajax')) &&

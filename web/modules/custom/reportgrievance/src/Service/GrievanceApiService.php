@@ -118,10 +118,10 @@ class GrievanceApiService
       ]);
 
       $body = json_decode($response->getBody()->getContents(), TRUE);
-      return ['success' => true, 'data' => $body];
+      return ['success' => TRUE, 'data' => $body];
     } catch (\Exception $e) {
       \Drupal::logger('report_grievance')->error('API submission failed: @message', ['@message' => $e->getMessage()]);
-      return ['success' => false];
+      return ['success' => FALSE];
     }
   }
 }

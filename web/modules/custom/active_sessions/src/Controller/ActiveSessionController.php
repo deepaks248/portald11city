@@ -104,50 +104,11 @@ class ActiveSessionController extends ControllerBase
         $accessToken = $session->get('login_logout.access_token');
         $storedLoginTime = $session->get('login_logout.login_time');
 
-        // Fetch sessions from API
-        $sessions = $this->sessionService->fetchActiveSessions($accessToken);
-        $apiSessions = $sessions['sessions'] ?? [];
+        $apiSessions = $this->get_api_sessions($accessToken);
+        $closestSessionId = $this->find_closest_sessionid($apiSessions, $storedLoginTime);
 
-        $currentUserSessions = [];
-        $otherUserSessions = [];
-
-        $closestSessionId = NULL;
-        if (!empty($storedLoginTime) && !empty($apiSessions)) {
-            $targetTimeMs = $storedLoginTime * 1000;
-            $closestDiff = PHP_INT_MAX;
-
-            foreach ($apiSessions as $apiSession) {
-                if (!empty($apiSession['loginTime'])) {
-                    $diff = abs($apiSession['loginTime'] - $targetTimeMs);
-
-                    // short-circuit if exact match
-                    if ($diff === 0) {
-                        $closestSessionId = $apiSession['id'];
-                        break;
-                    }
-
-                    if ($diff < $closestDiff) {
-                        $closestDiff = $diff;
-                        $closestSessionId = $apiSession['id'];
-                    }
-                }
-            }
-        }
-
-        foreach ($apiSessions as &$apiSession) {
-            $timestamp = (int) ($apiSession['loginTime'] / 1000);
-            $apiSession['accessToken'] = $accessToken;
-            $apiSession['userAgentFormatted'] = $this->format_user_agent($apiSession['userAgent'] ?? '');
-            $apiSession['loginTimeSeconds'] = $timestamp;
-            $apiSession['formattedLoginTime'] = $this->dateFormatter
-                ->format($timestamp, 'custom', 'd-m-Y, h:i:s', 'Asia/Kolkata');
-
-            if ($apiSession['id'] === $closestSessionId) {
-                $currentUserSessions[] = $apiSession;
-            } else {
-                $otherUserSessions[] = $apiSession;
-            }
-        }
+        [$currentUserSessions, $otherUserSessions] =
+            $this->categorize_sessions($apiSessions, $closestSessionId, $accessToken);
 
         return [
             '#title' => $this->t('Active Sessions'),
@@ -158,17 +119,98 @@ class ActiveSessionController extends ControllerBase
         ];
     }
 
+    /**
+     * Fetch sessions from API and return array.
+     */
+    private function get_api_sessions(string $accessToken): array
+    {
+        $sessions = $this->sessionService->fetchActiveSessions($accessToken);
+        return $sessions['sessions'] ?? [];
+    }
+
+    /**
+     * Find closest session ID based on login time.
+     */
+    private function find_closest_sessionid(array $apiSessions, $storedLoginTime): ?string
+    {
+        if (empty($storedLoginTime) || empty($apiSessions)) {
+            return NULL;
+        }
+
+        $targetTimeMs = $storedLoginTime * 1000;
+        $closestId = NULL;
+        $closestDiff = PHP_INT_MAX;
+
+        foreach ($apiSessions as $session) {
+            if (empty($session['loginTime'])) {
+                continue;
+            }
+
+            $diff = abs($session['loginTime'] - $targetTimeMs);
+
+            if ($diff === 0) {
+                return $session['id']; // perfect match
+            }
+
+            if ($diff < $closestDiff) {
+                $closestDiff = $diff;
+                $closestId = $session['id'];
+            }
+        }
+
+        return $closestId;
+    }
+
+    /**
+     * Categorize sessions into current user and other users.
+     */
+    private function categorize_sessions(array $apiSessions, ?string $closestId, string $accessToken): array
+    {
+        $currentUser = [];
+        $others = [];
+
+        foreach ($apiSessions as &$session) {
+            $this->format_session($session, $accessToken);
+
+            if ($session['id'] === $closestId) {
+                $currentUser[] = $session;
+            } else {
+                $others[] = $session;
+            }
+        }
+
+        return [$currentUser, $others];
+    }
+
+    /**
+     * Format/normalize session properties.
+     */
+    private function format_session(array &$session, string $accessToken): void
+    {
+        $timestamp = (int) ($session['loginTime'] / 1000);
+
+        $session['accessToken'] = $accessToken;
+        $session['userAgentFormatted'] = $this->format_user_agent($session['userAgent'] ?? '');
+        $session['loginTimeSeconds'] = $timestamp;
+        $session['formattedLoginTime'] = $this->dateFormatter->format(
+            $timestamp,
+            'custom',
+            'd-m-Y, h:i:s',
+            'Asia/Kolkata'
+        );
+    }
+
     public function endSession(string $session_id)
     {
         $session = \Drupal::service('session');
         $accessToken = $session->get('login_logout.access_token');
         $active_session_id_token = $session->get('login_logout.active_session_id_token');
-
+        $my_account_url = '/my-account';
         if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
         }
 
-        [$id, $access_token] = explode('--', $session_id) + [NULL, NULL];
+        [$id] = explode('--', $session_id);
 
         try {
             $is_my_session = ($active_session_id_token == $id);
@@ -177,11 +219,11 @@ class ActiveSessionController extends ControllerBase
                 return new RedirectResponse('/logout');
             } else {
                 $this->sessionService->terminateSession($id, $accessToken);
-                return new RedirectResponse('/my-account');
+                return new RedirectResponse($my_account_url);
             }
         } catch (\Exception $e) {
             $this->messenger()->addError($this->t('An error occurred while ending the session: @message', ['@message' => $e->getMessage()]));
-            return new RedirectResponse('/my-account');
+            return new RedirectResponse($my_account_url);
         }
     }
 
@@ -189,10 +231,10 @@ class ActiveSessionController extends ControllerBase
     {
         $session = \Drupal::service('session');
         $accessToken = $session->get('login_logout.access_token');
-
+        $my_account_url = '/my-account';
         if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
-            return new RedirectResponse('/my-account');
+            return new RedirectResponse($my_account_url);
         }
 
         try {
@@ -200,7 +242,7 @@ class ActiveSessionController extends ControllerBase
             return new RedirectResponse('/logout');
         } catch (\Exception $e) {
             $this->messenger()->addError($this->t('An error occurred while ending all sessions: @message', ['@message' => $e->getMessage()]));
-            return new RedirectResponse('/my-account');
+            return new RedirectResponse($my_account_url);
         }
     }
 }

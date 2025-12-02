@@ -8,7 +8,6 @@ use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Exception\RequestException;
 use Drupal\login_logout\Service\OAuthLoginService;
 use Drupal\global_module\Service\GlobalVariablesService;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -49,10 +48,8 @@ class UserRegisterForm extends FormBase
 
   public function buildForm(array $form, FormStateInterface $form_state)
   {
-    // $request = $this->requestStack->getCurrentRequest();
     $tempstore = \Drupal::service('tempstore.private')->get('login_logout');
     $email = $tempstore->get('registration_email');
-    // $email = $request->query->get('email', '');
     $phase = $form_state->get('phase') ?? 1;
 
     // Classes reused.
@@ -171,6 +168,8 @@ class UserRegisterForm extends FormBase
           '#attributes' => ['class' => $button_classes],
         ];
         break;
+      default:
+        break;
     }
 
     $form['#theme'] = 'user_register';
@@ -245,7 +244,7 @@ class UserRegisterForm extends FormBase
 
           // Return a JSON response with the rate limit message
           return new JsonResponse([
-            "status" => false,
+            "status" => FALSE,
             "message" => "Rate limit exceeded. Please wait {$remaining} seconds.",
           ], 429);
         }
@@ -272,7 +271,7 @@ class UserRegisterForm extends FormBase
                 'otp' => $otp,
                 'name' => $data['first_name'] . ' ' . $data['last_name'],
               ],
-              'verify' => false, // Set to true for SSL verification in production
+              'verify' => FALSE, // Set to TRUE for SSL verification in production
             ]);
 
             // Notify the user that OTP has been sent
@@ -294,7 +293,7 @@ class UserRegisterForm extends FormBase
             $lock_service->release($lock_key);
 
             return new JsonResponse([
-              "status" => false,
+              "status" => FALSE,
               "message" => "An error occurred while processing your request. Please try again later.",
             ], 500);
           }
@@ -302,7 +301,7 @@ class UserRegisterForm extends FormBase
           // Handle failure to acquire lock (i.e., too many parallel requests)
           $this->messenger()->addError($this->t('Unable to process OTP request. Please try again.'));
           return new JsonResponse([
-            "status" => false,
+            "status" => FALSE,
             "message" => "Unable to process your request at the moment. Please try again later.",
           ], 503);
         }
@@ -313,7 +312,7 @@ class UserRegisterForm extends FormBase
         // Show a generic error message
         $this->messenger()->addError($this->t('An unexpected error occurred. Please try again later.'));
         return new JsonResponse([
-          "status" => false,
+          "status" => FALSE,
           "message" => "An unexpected error occurred. Please try again later.",
         ], 500);
       }
@@ -373,11 +372,11 @@ class UserRegisterForm extends FormBase
               'tenantCode' => $globalVariables['applicationConfig']['config']['ceptenantCode'],
               'countryCode' => $data['country_code'],
             ],
-            'verify' => false,
+            'verify' => FALSE,
           ]
         );
       } catch (\GuzzleHttp\Exception\RequestException $e) {
-        $this->messenger()->addError($this->t('Registration failed: @msg', ['@msg' => json_decode($e->getResponse()->getBody()->getContents(), true)['developerMessage']]));
+        $this->messenger()->addError($this->t('Registration failed: @msg', ['@msg' => json_decode($e->getResponse()->getBody()->getContents(), TRUE)['developerMessage']]));
         return;
       }
 
@@ -401,11 +400,11 @@ class UserRegisterForm extends FormBase
             'emails' => [['value' => $data['mail']]],
             'phoneNumbers' => [['value' => $data['mobile'], 'type' => 'mobile']],
           ],
-          'verify' => false,
+          'verify' => FALSE,
         ]);
       } catch (\GuzzleHttp\Exception\RequestException $e) {
         \Drupal::logger('scim_user')->error('SCIM user creation failed: @error', ['@error' => $e->getMessage()]);
-        $err_msg = explode('-', json_decode($e->getResponse()->getBody()->getContents(), true)['detail']);
+        $err_msg = explode('-', json_decode($e->getResponse()->getBody()->getContents(), TRUE)['detail']);
         $this->messenger()->addError('Error: ' . $err_msg[1]);
       }
 
@@ -439,24 +438,21 @@ class UserRegisterForm extends FormBase
       if (count($parts) !== 3) {
         throw new \Exception('Invalid JWT token format.');
       }
-      $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
+      $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), TRUE);
       if (empty($payload['sub'])) {
         throw new \Exception('JWT payload missing "sub" claim.');
       }
-      $jwtEmail = $payload['sub'];
 
       $login_time = \Drupal::time()->getRequestTime(); // seconds
 
       // Get access token
       $accessToken = $tokenData['access_token'] ?? '';
 
-      // $activeSessionService = \Drupal::service('active_sessions.session_service');
-      // $activeSessions = $activeSessionService->fetchActiveSessions($accessToken);
       $activeSessions = $this->activeSessionService->fetchActiveSessions($accessToken);
       $session->set('login_logout.login_time', \Drupal::time()->getRequestTime());
 
       // Find closest matching API session by loginTime
-      $closestSessionId = null;
+      $closestSessionId = NULL;
       $closestDiff = PHP_INT_MAX;
       $targetTimeMs = $login_time * 1000;
 

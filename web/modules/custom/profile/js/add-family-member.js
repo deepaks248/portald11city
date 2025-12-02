@@ -22,11 +22,15 @@
       // Custom file extension method
       $.validator.addMethod("extensionFile", function (value, element, param) {
         if (element.files.length === 0) return true;
+
         let allowed = param.split('|');
         let fileName = element.files[0].name.toLowerCase();
-        for (let i = 0; i < allowed.length; i++) {
-          if (fileName.endsWith(allowed[i])) return true;
+
+        // Using for-of loop
+        for (const ext of allowed) {
+          if (fileName.endsWith(ext)) return true;
         }
+
         return false;
       }, "Invalid file type");
 

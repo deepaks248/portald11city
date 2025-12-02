@@ -44,25 +44,25 @@
 			</div>
 
 			<div class="form-control mt-5" id="fileUpoad">
-				<label class="s:hidden xs:hidden md:block label">
+				<div class="s:hidden xs:hidden md:block label">
 					<span class="label-text font-nevis text-lg text-black">Upload File*
 						<span class="text-medium_dark font-sans text-sm">
 							(Supported file types: JPG JPEG PNG PDF DOC DOCX MP4 & file size limit is 2MB)
 						</span>
 					</span>
-				</label>
+				</div>
 				{{ form.upload_file }}
 				<p class="server-error" style="color:red"></p>
 			</div>
 
 			<div class="form-control mt-5" id="checkboxBtn">
-				<label class="label cursor-pointer justify-start gap-4 xs:gap-2 flex">
+				<div class="label cursor-pointer justify-start gap-4 xs:gap-2 flex">
 					{{ form.agree_terms }}
 					<span class="label-text font-normal font-sans text-medium_dark text-base xs:text-sm">
 						I agree on
 						<a class="link link-primary text-blue-600 underline hover:text-blue-900" target="_blank" href="/grievance-terms-and-conditions">Terms and Conditions</a>
 					</span>
-				</label>
+				</div>
 			</div>
 
 			{{ form.latitude }}

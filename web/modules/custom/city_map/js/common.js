@@ -20,7 +20,7 @@
         document.querySelector('.pois-list').classList.remove('hidden');
         showLoader();
 
-        const termId = link.getAttribute('data-tid');
+        const termId = link.dataset.tid;
         console.log("Term ID:", termId);
 
         fetch('/api/get-content-by-term/' + termId)
@@ -87,7 +87,7 @@
 
     document.querySelectorAll('.lists.poiDetl').forEach(card => {
       card.addEventListener('click', () => {
-        const itemId = card.getAttribute('data-poiid');
+        const itemId = card.dataset.poiid;
         const item = items.find(i => i.id == itemId);
         renderPOIDetails(item);
       });

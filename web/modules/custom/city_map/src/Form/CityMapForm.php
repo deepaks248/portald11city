@@ -26,7 +26,7 @@ class CityMapForm extends FormBase
      * {@inheritdoc}
      */
 
-    public function buildForm(array $form, FormStateInterface $form_state, $srcId = false)
+    public function buildForm(array $form, FormStateInterface $form_state, $srcId = FALSE)
     {
         $form['#theme'] = 'city_map';
         $form['#attached']['library'][] = 'city_map/city-map-library';
@@ -34,5 +34,7 @@ class CityMapForm extends FormBase
     }
 
 
-    public function submitForm(array &$form, FormStateInterface $form_state) {}
+    public function submitForm(array &$form, FormStateInterface $form_state) {
+        // No submission handling needed as this form is for display only.
+    }
 }

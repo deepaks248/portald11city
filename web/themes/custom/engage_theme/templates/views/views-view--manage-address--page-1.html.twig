@@ -105,13 +105,13 @@
 		class="mx-auto max-w-screen-xl px-4">
 
 		<!-- Header Section -->
-		<div
+		<header
 			class="grid grid-cols-[auto,1fr,auto] items-center pt-6 pb-10">
 
-			<!-- Arrow -->
+			<!-- Back Arrow -->
 			<div class="flex justify-start">
-				<a href="/my-account" class="text-gray-700">
-					<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-arrow-left" viewbox="0 0 16 16">
+				<a href="/my-account" class="text-gray-700" aria-label="Go back to My Account">
+					<svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-arrow-left" viewbox="0 0 16 16" aria-hidden="true">
 						<path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"></path>
 					</svg>
 				</a>
@@ -119,31 +119,39 @@
 
 			<!-- Title -->
 			<div class="text-center">
-				<h1 class="text-3xl sm:text-4xl md:text-5xl font-nevis">{{'Manage Address'|t}}</h1>
+				<h1 class="text-3xl sm:text-4xl md:text-5xl font-nevis">
+					{{ 'Manage Address'|t }}
+				</h1>
 			</div>
 
-			<!-- Spacer to balance grid -->
+			<!-- Spacer -->
 			<div></div>
 
-		</div>
+		</header>
 
 		<!-- Address Cards Grid -->
 		<div
 			class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
 
 			<!-- Add New Address -->
-			<div class="border-dashed border-2 border-yellow-400 rounded-xl bg-white flex flex-col items-center justify-center p-8 hover:shadow-md transition cursor-pointer" onclick="window.location.href='/add-address'">
-				<img src="/themes/custom/engage_theme/images/Profile/location_pin.svg" alt="location" class="h-10 w-8 mb-2">
-				<h1 class="font-bold font-nevis text-xl sm:text-2xl text-yellow-500">Add New Address</h1>
-			</div>
+			<button type="button" class="border-dashed border-2 border-yellow-400 rounded-xl bg-white flex flex-col items-center justify-center p-8 hover:shadow-md transition cursor-pointer w-full text-center" onclick="window.location.href='/add-address'" aria-label="Add a new address">
+				<img src="/themes/custom/engage_theme/images/Profile/location_pin.svg" alt="Location icon" class="h-10 w-8 mb-2">
 
-			{% if rows -%}
+				<span class="font-bold font-nevis text-xl sm:text-2xl text-yellow-500">
+					Add New Address
+				</span>
+			</button>
+
+
+			{% if rows %}
 				{{ rows }}
-			{% elseif empty -%}
+			{% elseif empty %}
 				{{ empty }}
 			{% endif %}
+
 			{{ pager }}
 		</div>
+
 	</div>
 
 	{{ attachment_after }}

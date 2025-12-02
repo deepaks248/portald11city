@@ -20,7 +20,7 @@
 			{% if row.content['#row']._entity.field_event_taxonomy_image.0.entity.uri.value %}
 				<a href="event-list?title=&field_event_categories_target_id={{ row.content['#row']._entity.tid.0.value }}">
 					<div class="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition duration-200 p-5 text-center">
-						<img src="{{ file_url(row.content['#row']._entity.field_event_taxonomy_image.0.entity.uri.value|image_style('smart_service')) }}" class="mx-auto w-14 h-14" alt="Event image">
+						<img src="{{ file_url(row.content['#row']._entity.field_event_taxonomy_image.0.entity.uri.value|image_style('smart_service')) }}" class="mx-auto w-14 h-14" alt="Event category">
 						<h2 class="text-xl capitalize font-bold font-sans mt-5 mb-3 sm:text-base xs:text-xs">
 							{{ row.content['#row']._entity.name.0.value }}
 						</h2>

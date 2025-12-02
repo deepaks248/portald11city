@@ -867,6 +867,7 @@ $settings['cookie_samesite'] = 'Strict';
 $settings['trusted_host_patterns'] = [
   '^localhost$',             // Localhost access
   '^127\.0\.0\.1$',          // Access via loopback IP
+  '^localhost:\d+$',   // Localhost with any port
   '^web$',                   // Common PHP-FPM service name
   '^nginx$',                 // Common Nginx service name
   '^.+$',                    // Allow all (for local only!)

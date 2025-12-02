@@ -2,7 +2,6 @@
     console.log('Report Grievance JS loaded');
     Drupal.city_map = Drupal.city_map || {};
     Drupal.gmap = null;
-    // let gmap = null;
     let map = null;
     envSettings.gKey = drupalSettings.globalVariables.mapConfig[0].gKey;
     envSettings.mapDimension = drupalSettings.globalVariables.mapConfig[0].mapDimension;
@@ -201,24 +200,10 @@
         console.log(data);
         console.log(grievanceAddress);
         let appendAddress = document.querySelector("#edit-address");
-        // let appendAddressError = document.querySelector("#address-error");
         appendAddress.value = data.address;
         appendAddress.setAttribute("value", data.address);
-        // const validate = validateFormData;
-        // console.log(
-        //     validate.isValid,
-        //     validate.form.checkValidity(),
-        //     appendAddress.value.length > 3
-        // );
-        // if (appendAddress.value.length > 3) {
-        //     console.log("eurewtweyewurywetrwetyu");
-        //     appendAddress.classList.add("focus:focus:border-amber-300");
-        //     appendAddress.classList.remove("border-red-500");
-        //     appendAddressError.classList.add("hidden");
-        // }
     }
     // handleReverseGeocode(addressValue)
-    // .....
 
     function handleReverseGeocodeInternal(incomingAddress) {
         console.log(" ::::: Given Address :::::", incomingAddress);
@@ -235,7 +220,6 @@
 
             console.log("eureytiuyetyiy", lat_logs, Drupal.gmap);
             let lat_log = lat_logs;
-            // console.log("rtueityireytiureytreyutyreuyte",lat_log);
         }
         tmpl.Geocode.getReverseGeocode({
             address: incomingAddress,
@@ -279,7 +263,6 @@
       id: 2,
     });
     console.log(Drupal.gmap);
-    // console.log(gs1, map, "googleStreet");
 
     document.querySelector('.googleMapDiv').classList.add('hidden');
     document.querySelector('.googleSatliteDiv').classList.remove('hidden');

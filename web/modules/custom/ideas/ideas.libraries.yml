@@ -6,7 +6,8 @@ ideas-library:
     theme:
       css/ideas.css: {}
   js:
-    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: { type: external, minified: true }
+    # https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: { type: external, minified: true }
+    js/jquery.validate.min.js: {}
     js/ideas.js: { attributes: { type: module } }
   dependencies:
     - core/drupal

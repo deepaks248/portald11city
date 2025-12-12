@@ -3,9 +3,10 @@ profile_assets:
     theme:
       css/profile.css: {}
   js:
-    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
-      type: external
-      minified: true
+    # https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
+    #   type: external
+    #   minified: true
+    js/jquery.validate.min.js: {}
     js/profile.js: {}
   dependencies:
     - core/jquery
@@ -17,9 +18,10 @@ add-family-member-library:
     theme:
       css/add-family-member.css: {}
   js:
-    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
-      type: external
-      minified: true
+    # https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
+    #   type: external
+    #   minified: true
+    js/jquery.validate.min.js: {}
     js/add-family-member.js: {}
   dependencies:
     - core/drupal
@@ -52,9 +54,10 @@ add_address_form:
   js:
     https://hcsjointstackportal.trinityiot.in/GISClientServices/v4.0.0/appconfig-security.js: {}
     # http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {}
-    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
-      type: external
-      minified: true
+    js/jquery.validate.min.js: {}
+    # https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js: 
+    #   type: external
+    #   minified: true
     js/add-address.js: {}
   dependencies:
     - core/jquery

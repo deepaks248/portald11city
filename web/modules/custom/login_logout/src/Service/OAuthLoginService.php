@@ -15,9 +15,9 @@ class OAuthLoginService
     protected $requestStack;
     protected $globalVariablesService;
     protected $localAuthenticatorId;
-    protected Settings $settings;
 
     public function __construct(
+        Settings $settings,
         ClientInterface $http_client,
         LoggerInterface $logger,
         RequestStack $requestStack,
@@ -28,7 +28,7 @@ class OAuthLoginService
         $this->logger = $logger;
         $this->requestStack = $requestStack;
         // Load the value from the Settings object
-        $this->localAuthenticatorId = $this->settings->get('idam_local_authenticator_id');
+        $this->localAuthenticatorId = $settings->get('idam_local_authenticator_id');
     }
 
     public function getFlowId(): ?string

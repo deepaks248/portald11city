@@ -2,5 +2,5 @@ projectKey=Drupal11portal
 serverUrl=http://sonarqube:9000
 serverVersion=25.11.0.114957
 dashboardUrl=http://sonarqube:9000/dashboard?id=Drupal11portal
-ceTaskId=3c78bc56-b787-436e-a4e6-ac51970bc94b
-ceTaskUrl=http://sonarqube:9000/api/ce/task?id=3c78bc56-b787-436e-a4e6-ac51970bc94b
+ceTaskId=854431a6-5767-4008-af6b-fb488563efb0
+ceTaskUrl=http://sonarqube:9000/api/ce/task?id=854431a6-5767-4008-af6b-fb488563efb0

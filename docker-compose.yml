@@ -103,43 +103,23 @@ services:
     networks:
       - drupal_network
 
-  # sonar-scanner:
-  #   image: sonarsource/sonar-scanner-cli:latest
-  #   container_name: drupal_sonar_scanner
-  #   depends_on:
-  #     - sonarqube
-  #   volumes:
-  #     - ./:/usr/src  # Mount your project root
-  #   working_dir: /usr/src
-  #   environment:
-  #     - SONAR_TOKEN=sqa_5c732bbb518eafb37680cc230fd3b9097550aada
-  #     - SONAR_HOST_URL=http://sonarqube:9000
-  #   networks:
-  #     - drupal_network
-  #   entrypoint: ["sonar-scanner"]
-  #     # sonar-scanner
-  #     # -Dsonar.projectKey=Drupal11portal
-  #     # -Dsonar.sources=.
-  #     # -Dsonar.host.url=http://sonarqube:9000
-  #     # -Dsonar.login=sqa_5c732bbb518eafb37680cc230fd3b9097550aada
-
   sonar_scanner:
     image: sonarsource/sonar-scanner-cli:latest
-    container_name: drupal_sonar_scanner
+    container_name: drupal_sonar_scanner_portal
     depends_on:
       - sonarqube
     working_dir: /usr/src
     volumes:
       - ./:/usr/src
-      - ./coverage:/usr/src/coverage   # ← REQUIRED so scanner can read clover.xml
+      - ./coverage:/usr/src/coverage
     environment:
       - SONAR_TOKEN=sqa_5c732bbb518eafb37680cc230fd3b9097550aada
       - SONAR_HOST_URL=http://sonarqube:9000
-      - SONAR_SCANNER_OPTS=-Dsonar.php.coverage.reportPaths=/usr/src/coverage/clover.xml
     networks:
       - drupal_network
     entrypoint:
       - sonar-scanner
+      - -Dproject.settings=sonar-project.properties
 
 volumes:
   db_data:

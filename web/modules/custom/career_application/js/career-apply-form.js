@@ -2,7 +2,7 @@
   Drupal.behaviors.careerApplyValidation = {
     attach: function (context, settings) {
       // Ensure jQuery Validate is loaded
-      if ($.validator === 'undefined') {
+      if (typeof $.fn.validate !== 'function') {
         console.error('jQuery Validate is not loaded!');
         return;
       }
@@ -24,8 +24,10 @@
         if (element.files.length === 0) return true;
         let allowed = param.split('|');
         let fileName = element.files[0].name.toLowerCase();
-        for (let i = 0; i < allowed.length; i++) {
-          if (fileName.endsWith(allowed[i])) return true;
+        for (const ext of allowed) {
+          if (fileName.endsWith(ext)) {
+            return true;
+          }
         }
         return false;
       }, "Invalid file type");
@@ -38,9 +40,9 @@
           email: { required: true, email: true },
           mobile: { required: true, digits: true, minlength: 10, maxlength: 10 },
           gender: { required: true },
-          "files[resume]": { 
-            required: true, 
-            extensionFile: "pdf|doc|docx", 
+          "files[resume]": {
+            required: true,
+            extensionFile: "pdf|doc|docx",
             filesize: 5242880 // 5MB
           }
         },
@@ -48,17 +50,17 @@
           first_name: { required: "First name is required", minlength: "At least 2 characters" },
           last_name: { required: "Last name is required", minlength: "At least 2 characters" },
           email: { required: "Email is required", email: "Enter a valid email address" },
-          mobile: { 
-            required: "Mobile number is required", 
-            digits: "Only digits allowed", 
-            minlength: "Must be 10 digits", 
-            maxlength: "Must be 10 digits" 
+          mobile: {
+            required: "Mobile number is required",
+            digits: "Only digits allowed",
+            minlength: "Must be 10 digits",
+            maxlength: "Must be 10 digits"
           },
           gender: { required: "Please select gender" },
-          "files[resume]": { 
-            required: "Please upload your resume", 
-            extensionFile: "Allowed: PDF, DOC, DOCX", 
-            filesize: "File must be ≤ 5MB" 
+          "files[resume]": {
+            required: "Please upload your resume",
+            extensionFile: "Allowed: PDF, DOC, DOCX",
+            filesize: "File must be ≤ 5MB"
           }
         },
         errorClass: "text-red-500 text-sm mt-1 block",

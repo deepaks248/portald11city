@@ -8,6 +8,7 @@ use Drupal\user\Entity\User;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\RequestException;
 use Drupal\login_logout\Service\OAuthLoginService;
 use Drupal\global_module\Service\GlobalVariablesService;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -63,12 +64,14 @@ class UserRegisterForm extends FormBase
           '#type' => 'textfield',
           '#title' => $this->t('First Name'),
           '#required' => TRUE,
+          '#maxlength' => 255,
           '#attributes' => ['class' => $input_classes],
         ];
         $form['last_name'] = [
           '#type' => 'textfield',
           '#title' => $this->t('Last Name'),
           '#required' => TRUE,
+          '#maxlength' => 255,
           '#attributes' => ['class' => $input_classes],
         ];
         $form['mail'] = [
@@ -76,6 +79,7 @@ class UserRegisterForm extends FormBase
           '#title' => $this->t('Email'),
           '#default_value' => ($email),
           '#required' => TRUE,
+          '#maxlength' => 254,
           '#attributes' => ['class' => $input_classes],
         ];
         $form['country_code'] = [
@@ -168,8 +172,6 @@ class UserRegisterForm extends FormBase
           '#attributes' => ['class' => $button_classes],
         ];
         break;
-      default:
-        break;
     }
 
     $form['#theme'] = 'user_register';
@@ -192,6 +194,38 @@ class UserRegisterForm extends FormBase
         'country_code' => $form_state->getValue('country_code'),
         'mobile' => $form_state->getValue('mobile'),
       ];
+
+      $username = (string) $data['mail'];
+      $uid = \Drupal::currentUser()->id() ?: 0;
+      $ip = \Drupal::request()->headers->all()['x-real-ip'][0];
+      /**
+       * AE4 – Unexpected Quantity Of Characters In Username
+       */
+      if (strlen($username) < 5 || strlen($username) > 254) {
+        \Drupal::logger('secaudit')->warning(
+          'AE4: Abnormal username length detected for User Id: @uid, IP: @ip, Length: @length',
+          [
+            '@uid' => $uid,
+            '@ip' => $ip,
+            '@length' => strlen($username),
+          ]
+        );
+      }
+
+      /**
+       * AE6 – Unexpected Types Of Characters In Username
+       * Allow: email-safe characters only
+       */
+      if (!filter_var($username, FILTER_VALIDATE_EMAIL)) {
+        \Drupal::logger('secaudit')->warning(
+          'AE6: Unexpected characters or format in username detected IP: @ip for User ID: @uid',
+          [
+            '@uid' => $uid,
+            '@ip' => $ip,
+            '@username_sample' => substr($username, 0, 50),
+          ]
+        );
+      }
 
       $users = \Drupal::entityTypeManager()
         ->getStorage('user')
@@ -244,7 +278,7 @@ class UserRegisterForm extends FormBase
 
           // Return a JSON response with the rate limit message
           return new JsonResponse([
-            "status" => FALSE,
+            "status" => false,
             "message" => "Rate limit exceeded. Please wait {$remaining} seconds.",
           ], 429);
         }
@@ -271,7 +305,7 @@ class UserRegisterForm extends FormBase
                 'otp' => $otp,
                 'name' => $data['first_name'] . ' ' . $data['last_name'],
               ],
-              'verify' => FALSE, // Set to TRUE for SSL verification in production
+              'verify' => false, // Set to true for SSL verification in production
             ]);
 
             // Notify the user that OTP has been sent
@@ -293,7 +327,7 @@ class UserRegisterForm extends FormBase
             $lock_service->release($lock_key);
 
             return new JsonResponse([
-              "status" => FALSE,
+              "status" => false,
               "message" => "An error occurred while processing your request. Please try again later.",
             ], 500);
           }
@@ -301,7 +335,7 @@ class UserRegisterForm extends FormBase
           // Handle failure to acquire lock (i.e., too many parallel requests)
           $this->messenger()->addError($this->t('Unable to process OTP request. Please try again.'));
           return new JsonResponse([
-            "status" => FALSE,
+            "status" => false,
             "message" => "Unable to process your request at the moment. Please try again later.",
           ], 503);
         }
@@ -312,7 +346,7 @@ class UserRegisterForm extends FormBase
         // Show a generic error message
         $this->messenger()->addError($this->t('An unexpected error occurred. Please try again later.'));
         return new JsonResponse([
-          "status" => FALSE,
+          "status" => false,
           "message" => "An unexpected error occurred. Please try again later.",
         ], 500);
       }
@@ -343,6 +377,37 @@ class UserRegisterForm extends FormBase
       $password = $form_state->getValue('password');
       $confirm = $form_state->getValue('confirm_password');
 
+      $uid = \Drupal::currentUser()->id() ?: 0;
+      $ip = \Drupal::request()->headers->all()['x-real-ip'][0];
+      /**
+       * AE5 – Unexpected Quantity Of Characters In Password
+       */
+      $len = strlen((string) $password);
+      if ($len < 8 || $len > 128) {
+        \Drupal::logger('secaudit')->warning(
+          'AE5: Abnormal password length detected for User Id: @uid, IP: @ip, Length: @length',
+          [
+            '@uid' => $uid,
+            '@ip' => $ip,
+            '@length' => $len,
+          ]
+        );
+      }
+
+      /**
+       * AE7 – Unexpected Types Of Characters In Password
+       * Allow common secure password characters
+       */
+      if (preg_match('/[\x00-\x1F\x7F]/', (string) $password)) {
+        \Drupal::logger('secaudit')->warning(
+          'AE7: Control characters detected in password for User Id: @uid, IP: @ip',
+          [
+            '@uid' => $uid,
+            '@ip' => $ip,
+          ]
+        );
+      }
+
       if ($password !== $confirm) {
         $this->messenger()->addError($this->t('Passwords do not match.'));
         $form_state->setRebuild();
@@ -372,11 +437,11 @@ class UserRegisterForm extends FormBase
               'tenantCode' => $globalVariables['applicationConfig']['config']['ceptenantCode'],
               'countryCode' => $data['country_code'],
             ],
-            'verify' => FALSE,
+            'verify' => false,
           ]
         );
       } catch (\GuzzleHttp\Exception\RequestException $e) {
-        $this->messenger()->addError($this->t('Registration failed: @msg', ['@msg' => json_decode($e->getResponse()->getBody()->getContents(), TRUE)['developerMessage']]));
+        $this->messenger()->addError($this->t('Registration failed: @msg', ['@msg' => json_decode($e->getResponse()->getBody()->getContents(), true)['developerMessage']]));
         return;
       }
 
@@ -400,11 +465,11 @@ class UserRegisterForm extends FormBase
             'emails' => [['value' => $data['mail']]],
             'phoneNumbers' => [['value' => $data['mobile'], 'type' => 'mobile']],
           ],
-          'verify' => FALSE,
+          'verify' => false,
         ]);
       } catch (\GuzzleHttp\Exception\RequestException $e) {
         \Drupal::logger('scim_user')->error('SCIM user creation failed: @error', ['@error' => $e->getMessage()]);
-        $err_msg = explode('-', json_decode($e->getResponse()->getBody()->getContents(), TRUE)['detail']);
+        $err_msg = explode('-', json_decode($e->getResponse()->getBody()->getContents(), true)['detail']);
         $this->messenger()->addError('Error: ' . $err_msg[1]);
       }
 
@@ -438,10 +503,11 @@ class UserRegisterForm extends FormBase
       if (count($parts) !== 3) {
         throw new \Exception('Invalid JWT token format.');
       }
-      $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), TRUE);
+      $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
       if (empty($payload['sub'])) {
         throw new \Exception('JWT payload missing "sub" claim.');
       }
+      $jwtEmail = $payload['sub'];
 
       $login_time = \Drupal::time()->getRequestTime(); // seconds
 
@@ -452,7 +518,7 @@ class UserRegisterForm extends FormBase
       $session->set('login_logout.login_time', \Drupal::time()->getRequestTime());
 
       // Find closest matching API session by loginTime
-      $closestSessionId = NULL;
+      $closestSessionId = null;
       $closestDiff = PHP_INT_MAX;
       $targetTimeMs = $login_time * 1000;
 

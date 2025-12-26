@@ -38,7 +38,7 @@ class ChangePasswordForm extends FormBase
   {
     $form['#prefix'] = '<div id="change-password-form-wrapper">';
     $form['#suffix'] = '</div>';
-    // $form['#attributes']['class'][] = '';
+    $form['#attributes']['class'][] = 'form-sec lg:px-10 text-center lg:text-start s:mb-24 xs:mb-20';
 
     // Old password.
     $form['old_password'] = [
@@ -46,7 +46,7 @@ class ChangePasswordForm extends FormBase
       '#title' => $this->t('Old Password'),
       '#required' => TRUE,
       '#attributes' => [
-        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'px-2.5', 'pb-2.5', 'pt-4', 'text-sm', 'text-medium_dark', 'bg-transparent', 'rounded-lg', 'border', 'border-gray-300', 'appearance-none', 'text-base', 's:text-sm', 'xs:text-sm', 'focus:outline-none', 'focus:ring-0', 'focus:!border-yellow-500'],
+        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'px-2.5', 'pb-2.5', 'pt-4', 'text-sm', 'text-medium_dark', 'bg-transparent', 'rounded-lg', 'border', 'border-gray-300', 'appearance-none', 'text-base', 's:text-sm', 'xs:text-sm'],
         'placeholder' => ' ',
         'autocomplete' => 'off',
         'id' => 'old-password',
@@ -61,7 +61,7 @@ class ChangePasswordForm extends FormBase
       '#title' => $this->t('New Password'),
       '#required' => TRUE,
       '#attributes' => [
-        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4', 'focus:outline-none', 'focus:ring-0', 'focus:!border-yellow-500'],
+        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4'],
         'maxlength' => 10,
         'minlength' => 10,
         'id' => 'new-password',
@@ -77,7 +77,7 @@ class ChangePasswordForm extends FormBase
       '#title' => $this->t('Confirm Password'),
       '#required' => TRUE,
       '#attributes' => [
-        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4', 'focus:outline-none', 'focus:ring-0', 'focus:!border-yellow-500'],
+        'class' => ['peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4'],
         'placeholder' => ' ',
         'id' => 'confirm-password',
       ],
@@ -90,7 +90,7 @@ class ChangePasswordForm extends FormBase
       '#type' => 'submit',
       '#value' => $this->t('Continue'),
       '#attributes' => [
-        'class' => ['bg-yellow-500', 'text-white', 'rounded-xl', 'px-6', 'py-2', 'cursor-pointer', 'hover:bg-yellow-600', 'transition'],
+        'class' => ['btn', 'btn-warning', 'lg:h-14', 'lg:w-44', 'xs:h-10', 'text-white', 'capitalize', 'text-lg', 'submitBtn', 'engage-btn'],
       ],
     ];
 

@@ -1,4 +1,5 @@
 (function ($, Drupal) {
+    console.log("add-address");
 
     /**
  * `createMap()` function is used to create a map object
@@ -35,6 +36,7 @@
             });
         } catch (error) {
             console.error("Error at map creation:");
+            throw error;
         }
         console.log("Map Creation : ", map);
     }
@@ -53,29 +55,12 @@
         }
         function getAddress(coord) {
             console.log("coordddd", coord);
-            let lat_log = coord;
             tmpl.Geocode.getGeocode({
                 point: [coord.lon, coord.lat],
                 callbackFunc: handleGeocode,
             });
         }
         console.log("Add Search..", search);
-    }
-
-    /**
-     * "Resize the map to fit the container."
-     *
-     * The function is called by the `tmpl.Map.init` function
-     * @param mapData - The map data object that was returned from the map creation function.
-     */
-    function mapResize(mapData) {
-        try {
-            tmpl.Map.resize({
-                map: mapData,
-            });
-        } catch (error) {
-            console.error("Error at tmpl.Map.resize > ", error);
-        }
     }
 
     /**
@@ -144,10 +129,8 @@
      * @param wktGeom - The geometry of the feature in WKT format.
      * @param value - The value of the feature.
      */
-    let selected_pointer = [];
     function getDrawFeatureDetails(coord, feature, wktGeom, value) {
         console.log(coord);
-        selected_pointer = coord;
         tmpl.Layer.clearData({
             map: gmap,
             layer: "Incident_Layer",
@@ -181,7 +164,6 @@
         getAddress(coord);
         function getAddress(coords) {
             console.log("coordddd", coords);
-            let lat_log = coord;
             tmpl.Geocode.getGeocode({
                 point: [coords[0], coords[1]],
                 callbackFunc: handleGeocode,
@@ -193,10 +175,9 @@
  * It takes the address from the geocode API and sets it as the value of the address input field
  * @param data - The data object returned from the geocoder.
  */
-    let addressPick = "";
     function handleGeocode(data) {
         console.log(data);
-        var split_data = data.address.split(",");
+        let split_data = data.address.split(",");
         console.log("Split Data", split_data);
         document.querySelector("#edit-flat").value = split_data[0];
         document.querySelector("#edit-area").value = split_data[1];
@@ -207,24 +188,6 @@
             document.querySelector("#edit-country").value =
                 split_data[split_data.length - 1];
         }
-        // validateAddForm();
-        // console.log(grievanceAddress);
-        // let appendAddress = document.querySelector("#address");
-        // let appendAddressError = document.querySelector("#address-error");
-        // appendAddress.value = data.address;
-        // appendAddress.setAttribute("value", data.address);
-        // const validate = validateFormData;
-        // console.log(
-        //   validate.isValid,
-        //   validate.form.checkValidity(),
-        //   appendAddress.value.length > 3
-        // );
-        // if (appendAddress.value.length > 3) {
-        //   console.log("eurewtweyewurywetrwetyu");
-        //   appendAddress.classList.add("focus:focus:border-amber-300");
-        //   appendAddress.classList.remove("border-red-500");
-        //   appendAddressError.classList.add("hidden");
-        // }
     }
 
     /* Waiting for the page to load before running the code. */
@@ -234,50 +197,50 @@
 })(jQuery, Drupal);
 
 (function ($, Drupal) {
-    Drupal.behaviors.addAddressValidation = {
-        attach: function (context, settings) {
-            // Ensure jQuery Validate is loaded
-            if (typeof $.validator === 'undefined') {
-                console.error('jQuery Validate is not loaded!');
-                return;
-            }
+  Drupal.behaviors.addAddressValidation = {
+    attach: function (context, settings) {
+      // Ensure jQuery Validate is loaded
+      if (typeof $.fn.validate !== 'function') {
+        console.error('jQuery Validate is not loaded!');
+        return;
+      }
 
-            var $form = $('#add-address-form', context);
-            console.log("Form", $form);
-            // Prevent double initialization
-            if ($form.data('validated')) return;
-            $form.data('validated', true);
+      let $form = $('#add-address-form', context);
+      console.log("Form",$form);
+      // Prevent double initialization
+      if ($form.data('validated')) return;
+      $form.data('validated', true);
 
-            // Initialize validation
-            $form.validate({
-                rules: {
-                    postal_code: { required: true, digits: true, minlength: 6, maxlength: 6 },
-                    flat: { required: true },
-                    area: { required: true },
-                    landmark: { required: true },
-                    country: { required: true },
-                    address_type: { required: true }
-                },
-                messages: {
-                    postal_code: {
-                        required: "Postal code is required",
-                        digits: "Only digits allowed",
-                        minlength: "Postal code must be 6 digits",
-                        maxlength: "Postal code must be 6 digits"
-                    },
-                    flat: { required: "Flat/House no. is required" },
-                    area: { required: "Area is required" },
-                    landmark: { required: "Landmark is required" },
-                    country: { required: "Country is required" },
-                    address_type: { required: "Please select an address type" }
-                },
-                errorClass: "text-red-500 text-sm mt-1 block",
-                errorPlacement: function (error, element) {
-                    error.insertAfter(element);
-                },
-                highlight: function (element) { $(element).addClass("border-red-500"); },
-                unhighlight: function (element) { $(element).removeClass("border-red-500"); }
-            });
-        }
-    };
+      // Initialize validation
+      $form.validate({
+        rules: {
+          postal_code: { required: true, digits: true, minlength: 6, maxlength: 6 },
+          flat: { required: true },
+          area: { required: true },
+          landmark: { required: true },
+          country: { required: true },
+          address_type: { required: true }
+        },
+        messages: {
+          postal_code: { 
+            required: "Postal code is required", 
+            digits: "Only digits allowed", 
+            minlength: "Postal code must be 6 digits", 
+            maxlength: "Postal code must be 6 digits"
+          },
+          flat: { required: "Flat/House no. is required" },
+          area: { required: "Area is required" },
+          landmark: { required: "Landmark is required" },
+          country: { required: "Country is required" },
+          address_type: { required: "Please select an address type" }
+        },
+        errorClass: "text-red-500 text-sm mt-1 block",
+        errorPlacement: function (error, element) {
+          error.insertAfter(element);
+        },
+        highlight: function (element) { $(element).addClass("border-red-500"); },
+        unhighlight: function (element) { $(element).removeClass("border-red-500"); }
+      });
+    }
+  };
 })(jQuery, Drupal);

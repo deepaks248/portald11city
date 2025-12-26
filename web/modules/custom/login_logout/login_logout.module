@@ -13,6 +13,16 @@ function login_logout_theme($existing, $type, $theme, $path)
       'render element' => 'form',
       'template' => 'user-register',
     ],
+    'login_logout_forgot_password' => [
+      'render element' => 'form',
+      'template' => 'forgot-password-form', // This is your Twig file name
+    ],
+    'password_recovery_status' => [
+      'variables' => [
+        'email' => NULL,
+      ],
+      'template' => 'password-recovery-status',
+    ],
     'logged_in_details_block' => [
       'variables' => [
         'display_name' => NULL,

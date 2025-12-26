@@ -43,23 +43,23 @@ class ActiveSessionService
 
         // Get cookies from the request (optional if needed).
         $cookies = $request->headers->get('cookie');
-        $bearer = 'Bearer';
+
         try {
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('GET', 'https://'. $idamconfig .':/api/users/v1/me/sessions', [
+            $response = $this->httpClient->request('GET', 'https://'. $idamconfig .'/api/users/v1/me/sessions', [
                 'headers' => [
                     'Accept' => '*/*',
-                    'Authorization' => $bearer . $accessToken,
+                    'Authorization' => 'Bearer ' . $accessToken,
                     'Cookie' => $cookies,
                 ],
-                'verify' => FALSE, // Only if self-signed cert; remove in production
+                'verify' => false, // Only if self-signed cert; remove in production
             ]);
 
-            $data = json_decode($response->getBody()->getContents(), TRUE);
+            $data = json_decode($response->getBody()->getContents(), true);
             return $data ?? [];
         } catch (\Exception $e) {
             $this->logger->error('Error fetching active sessions: @message', ['@message' => $e->getMessage()]);
-            return NULL;
+            return null;
         }
     }
 
@@ -67,20 +67,20 @@ class ActiveSessionService
     {
         $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
         $url = 'https://'. $idamconfig .'/api/users/v1/me/sessions/' . $session_id;
-        $bearer = 'Bearer';
+
         try {
             $this->httpClient->request('DELETE', $url, [
                 'headers' => [
                     'Accept' => '*/*',
-                    'Authorization' => $bearer . $access_token,
+                    'Authorization' => 'Bearer ' . $access_token,
                 ],
-                'verify' => FALSE, // if SSL cert is self-signed
+                'verify' => false, // if SSL cert is self-signed
             ]);
 
-            return TRUE;
+            return true;
         } catch (RequestException $e) {
             $this->logger->error('Failed to terminate session: @message', ['@message' => $e->getMessage()]);
-            return FALSE;
+            return false;
         }
     }
 
@@ -88,20 +88,20 @@ class ActiveSessionService
     {
         $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
         $url = 'https://'. $idamconfig .'/api/users/v1/me/sessions';
-        $bearer = 'Bearer';
+
         try {
             $this->httpClient->request('DELETE', $url, [
                 'headers' => [
                     'Accept' => '*/*',
-                    'Authorization' => $bearer . $access_token,
+                    'Authorization' => 'Bearer ' . $access_token,
                 ],
-                'verify' => FALSE, // if SSL cert is self-signed
+                'verify' => false, // if SSL cert is self-signed
             ]);
 
-            return TRUE;
+            return true;
         } catch (RequestException $e) {
             $this->logger->error('Failed to terminate all other sessions: @message', ['@message' => $e->getMessage()]);
-            return FALSE;
+            return false;
         }
     }
 }

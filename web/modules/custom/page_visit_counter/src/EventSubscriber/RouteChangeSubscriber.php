@@ -8,23 +8,27 @@ use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Drupal\Core\State\StateInterface;
 
-class RouteChangeSubscriber implements EventSubscriberInterface {
+class RouteChangeSubscriber implements EventSubscriberInterface
+{
 
   protected SessionInterface $session;
   protected StateInterface $state;
 
-  public function __construct(SessionInterface $session, StateInterface $state) {
+  public function __construct(SessionInterface $session, StateInterface $state)
+  {
     $this->session = $session;
     $this->state = $state;
   }
 
-  public static function getSubscribedEvents(): array {
+  public static function getSubscribedEvents(): array
+  {
     return [
       KernelEvents::RESPONSE => ['onKernelResponse', 30],
     ];
   }
 
-  public function onKernelResponse(ResponseEvent $event): void {
+  public function onKernelResponse(ResponseEvent $event): void
+  {
     // Only process main HTML requests
     if (!$event->isMainRequest()) {
       return;
@@ -47,10 +51,10 @@ class RouteChangeSubscriber implements EventSubscriberInterface {
 
     // Ignore admin/system/internal paths
     if (
-      str_starts_with($current_path, '/admin') ||
-      str_starts_with($current_path, '/core') ||
-      str_starts_with($current_path, '/system') ||
-      str_starts_with($current_path, '/_')
+      $current_path !== null && substr($current_path, 0, strlen('/admin')) === '/admin' ||
+      $current_path !== null && substr($current_path, 0, strlen('/core')) === '/core' ||
+      $current_path !== null && substr($current_path, 0, strlen('/system')) === '/system' ||
+      $current_path !== null && substr($current_path, 0, strlen('/_')) === '/_'
     ) {
       return;
     }
@@ -66,5 +70,4 @@ class RouteChangeSubscriber implements EventSubscriberInterface {
 
     $this->session->set('page_visit_counted_for', $current_path);
   }
-
 }

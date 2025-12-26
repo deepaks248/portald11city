@@ -26,7 +26,7 @@ class IdeasFileUploadController extends ControllerBase {
     $response = $this->fileUploadService->uploadFile($request);
     
     if ($response instanceof JsonResponse) {
-      $data = json_decode($response->getContent(), TRUE);
+      $data = json_decode($response->getContent(), true);
       if (!empty($data['fileName'])) {
         return new JsonResponse(['fileUrl' => $data['fileName']]);
       }

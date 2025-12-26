@@ -48,29 +48,12 @@
         }
         function getAddress(coord) {
             console.log("coordddd", coord);
-            let lat_log = coord;
             tmpl.Geocode.getGeocode({
                 point: [coord.lon, coord.lat],
                 callbackFunc: handleGeocode,
             });
         }
         console.log("Add Search..", search);
-    }
-
-    /**
-     * "Resize the map to fit the container."
-     *
-     * The function is called by the `tmpl.Map.init` function
-     * @param mapData - The map data object that was returned from the map creation function.
-     */
-    function mapResize(mapData) {
-        try {
-            tmpl.Map.resize({
-                map: mapData,
-            });
-        } catch (error) {
-            console.error("Error at tmpl.Map.resize > ", error);
-        }
     }
 
     /**
@@ -139,10 +122,8 @@
      * @param wktGeom - The geometry of the feature in WKT format.
      * @param value - The value of the feature.
      */
-    let selected_pointer = [];
     function getDrawFeatureDetails(coord, feature, wktGeom, value) {
         console.log(coord);
-        selected_pointer = coord;
         tmpl.Layer.clearData({
             map: Drupal.gmap,
             layer: "Incident_Layer",
@@ -176,7 +157,6 @@
         getAddress(coord);
         function getAddress(coords) {
             console.log("coordddd", coords);
-            let lat_log = coord;
             tmpl.Geocode.getGeocode({
                 point: [coords[0], coords[1]],
                 callbackFunc: handleGeocode,
@@ -202,29 +182,6 @@
         let appendAddress = document.querySelector("#edit-address");
         appendAddress.value = data.address;
         appendAddress.setAttribute("value", data.address);
-    }
-    // handleReverseGeocode(addressValue)
-
-    function handleReverseGeocodeInternal(incomingAddress) {
-        console.log(" ::::: Given Address :::::", incomingAddress);
-        function handleReverseGeocode(data1) {
-            let lat_logs = [];
-
-            console.log(" ::::: lat :::::", data1.coordinates.lat());
-            console.log(" ::::: lat :::::", data1.coordinates.lng());
-            let lat = data1.coordinates.lat();
-            let log = data1.coordinates.lng();
-
-            lat_logs.push(lat);
-            lat_logs.push(log);
-
-            console.log("eureytiuyetyiy", lat_logs, Drupal.gmap);
-            let lat_log = lat_logs;
-        }
-        tmpl.Geocode.getReverseGeocode({
-            address: incomingAddress,
-            callbackFunc: handleReverseGeocode
-        });
     }
 
     /* Waiting for the page to load before running the code. */
@@ -258,12 +215,12 @@
   }
 
   function _googleStreet() {
-    let gs1 = tmpl.Map.switchBaseMaps({
+    tmpl.Map.switchBaseMaps({
       map: Drupal.gmap,
       id: 2,
     });
     console.log(Drupal.gmap);
-
+    
     document.querySelector('.googleMapDiv').classList.add('hidden');
     document.querySelector('.googleSatliteDiv').classList.remove('hidden');
   }

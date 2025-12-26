@@ -24,6 +24,7 @@ reportgrievance.grievance_failure:
 
 reportgrievance.grievance_types:
   path: '/grievance/types'
+  methods: [GET]
   defaults:
     _controller: '\Drupal\reportgrievance\Controller\GrievanceController::getGrievanceTypes'
   requirements:
@@ -31,6 +32,7 @@ reportgrievance.grievance_types:
 
 reportgrievance.grievance_subtypes:
   path: '/grievance/subtypes/{grievance_type_id}'
+  methods: [GET]
   defaults:
     _controller: '\Drupal\reportgrievance\Controller\GrievanceController::getGrievanceSubTypes'
   requirements:

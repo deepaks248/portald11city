@@ -28,16 +28,22 @@ class FileUploadService
     public function uploadFile(Request $request)
     {
         define('UPLOAD_FILE', 'uploadedfile1');
-        $file = $_FILES['files']['full_path']['upload_file'] ?? NULL;
+        // dump($_FILES['files']['full_path']['upload_file']);
+        $file = $_FILES['files']['full_path']['upload_file'] ?? null;
         if (!$file) {
             return new JsonResponse([
-                'status' => FALSE,
+                'status' => false,
                 'message' => 'No file uploaded.',
             ], 400);
         }
+        // dump(($file['name']['upload_file']));
         $extension = pathinfo($_FILES['files']['name']['upload_file'], PATHINFO_EXTENSION);
         $extn = explode(".", $_FILES['files']['name']['upload_file']);
         $fileMime = mime_content_type($_FILES['files']['tmp_name']['upload_file']);
+        // dump($fileMime);
+        // dump($extn);
+        // dump($extension);
+        // exit();
 
         $allowedTypes = [
             'image/jpeg',
@@ -49,7 +55,7 @@ class FileUploadService
 
         if (!in_array($fileMime, $allowedTypes)) {
             return new JsonResponse([
-                'status' => FALSE,
+                'status' => false,
                 'message' => 'File content not allowed!',
             ]);
         }
@@ -57,28 +63,29 @@ class FileUploadService
         if (count($extn) > 2) {
             return new JsonResponse([
                 'message' => 'Multiple file extensions not allowed',
-                'status' => FALSE,
+                'status' => false,
             ]);
         }
 
         $ext = strtolower($extn[1] ?? '');
-        $fileTypeVal = NULL;
+        $fileTypeVal = null;
         $fileTypeType = '';
-        $fileTypeValid = FALSE;
+        $fileTypeValid = false;
 
         if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
             $fileTypeVal = 2;
             $fileTypeType = "image";
-            $fileTypeValid = TRUE;
+            $fileTypeValid = true;
         } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'mp3', 'xlsx'])) {
             $fileTypeVal = 4;
             $fileTypeType = "file";
-            $fileTypeValid = TRUE;
+            $fileTypeValid = true;
         } elseif ($ext == 'mp4') {
             $fileTypeVal = 1;
             $fileTypeType = "video";
-            $fileTypeValid = TRUE;
+            $fileTypeValid = true;
         }
+        // dump($_FILES['uploadedfile1']);exit;    
         $fileTmp = $_FILES['files']['tmp_name']['upload_file'];
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
         $mimeType = $finfo->file($fileTmp);
@@ -87,14 +94,14 @@ class FileUploadService
         if (strpos($mimeType, 'image/') === 0) {
             // Image validation
             $imgInfo = getimagesize($fileTmp);
-            if ($imgInfo === FALSE) {
+            if ($imgInfo === false) {
                 \Drupal::logger('file_upload')->warning('Invalid image detected for file: @file', ['@file' => $fileTmp]);
-                return new JsonResponse(['status' => FALSE, 'message' => 'Invalid image content!']);
+                return new JsonResponse(['status' => false, 'message' => 'Invalid image content!']);
             }
 
             // Re-process image to strip malicious payloads
             $image = imagecreatefromstring(file_get_contents($fileTmp));
-            if ($image !== FALSE) {
+            if ($image !== false) {
                 imagejpeg($image, $fileTmp, 90);
                 imagedestroy($image);
                 \Drupal::logger('file_upload')->info('Image sanitized successfully: @file', ['@file' => $fileTmp]);
@@ -107,21 +114,25 @@ class FileUploadService
                 '@snippet' => substr($content, 0, 200),
             ]);
             if (preg_match('/\/(JS|JavaScript|AA)/i', $content)) {
+                //  dump($content);exit;
                 \Drupal::logger('file_upload')->error('Malicious PDF detected for file: @file', ['@file' => $fileTmp]);
-                return new JsonResponse(['status' => FALSE, 'message' => 'Malicious PDF detected!']);
+                return new JsonResponse(['status' => false, 'message' => 'Malicious PDF detected!']);
             }
             \Drupal::logger('file_upload')->info('PDF passed validation: @file', ['@file' => $fileTmp]);
         }
 
         $uuidFilename = $this->uuidService->generate() . '.' . $extension;
+        // dump($fileTypeValid);
         if ($fileTypeValid) {
             $cfile = curl_file_create($_FILES['files']['tmp_name']['upload_file'], $_FILES['files']['type']['upload_file'], $uuidFilename);
             $postRequest = [
                 UPLOAD_FILE => $cfile,
                 'success_action_status' => 200,
             ];
+            //   dump($cfile);
             $globals = $this->globalVariablesService->getGlobalVariables();
             $fileUplPath = $globals['applicationConfig']['config']['fileuploadPath'] ?? NULL;
+            //   dump($fileUplPath);
 
             if (!$fileUplPath) {
                 return new JsonResponse(['error' => 'Upload path not configured in Vault.'], 500);
@@ -131,21 +142,24 @@ class FileUploadService
             $curl = curl_init();
             curl_setopt_array($curl, [
                 CURLOPT_URL => $fileUplPath . 'upload_media_test1.php',
-                CURLOPT_RETURNTRANSFER => TRUE,
-                CURLOPT_FOLLOWLOCATION => TRUE,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_TIMEOUT => 0,
                 CURLOPT_CUSTOMREQUEST => 'POST',
                 CURLOPT_POSTFIELDS => $postRequest,
-                CURLOPT_SSL_VERIFYHOST => FALSE,
-                CURLOPT_SSL_VERIFYPEER => FALSE,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_SSL_VERIFYPEER => false,
             ]);
 
+            // dump($curl);
 
             $response = curl_exec($curl);
             $curl_error = curl_error($curl);
             curl_close($curl);
+            // dump($response);
+            // exit();
 
-            if ($response === FALSE) {
+            if ($response === false) {
                 return new JsonResponse(['error' => $curl_error], 500);
             }
 
@@ -153,6 +167,11 @@ class FileUploadService
                 return new JsonResponse(['error' => 'Invalid JSON response'], 500);
             }
 
+            // dump([
+            //     'fileName' => $fileUplPath . $uuidFilename,
+            //     'fileTypeId' => $fileTypeVal,
+            //     'fileTypeVal' => $fileTypeType,
+            // ]);
             return new JsonResponse([
                 'fileName' => $fileUplPath . $uuidFilename,
                 'fileTypeId' => $fileTypeVal,
@@ -162,7 +181,7 @@ class FileUploadService
 
         return new JsonResponse([
             'message' => 'Selected file not allowed!',
-            'status' => FALSE,
+            'status' => false,
         ]);
     }
 }

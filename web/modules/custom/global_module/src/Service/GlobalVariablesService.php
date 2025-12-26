@@ -38,6 +38,47 @@ class GlobalVariablesService
     $this->httpClient = $http_client;
   }
 
+  /**
+   * Fetches and returns global variables from Vault.
+   */
+  // public function getGlobalVariables(): ?array
+  // {
+  //   try {
+  //     $vaultAPI = Settings::get('vault_url');
+  //     $vaultToken = Settings::get('vault_token');
+
+  //     $response = \Drupal::httpClient()->get($vaultAPI, [
+  //       'headers' => [
+  //         'Content-Type' => 'application/json',
+  //         'X-Vault-Token' => $vaultToken,
+  //       ],
+  //     ]);
+
+  //     $data = $response->getBody()->getContents();
+
+  //     if ($data) {
+  //       $vaultData = json_decode($data)->data ?? [];
+  //       $vaultData = json_decode(json_encode($vaultData), true);
+
+  //       $vaultData = array_merge(
+  //         ['webportalUrl' => $vaultData['applicationConfig']['config']['webportalUrl'] ?? ''],
+  //         $vaultData
+  //       );
+  //       $vaultData = array_merge(
+  //         ['siteUrl' => $vaultData['applicationConfig']['config']['siteUrl'] ?? ''],
+  //         $vaultData
+  //       );
+
+  //       return $vaultData;
+  //     }
+  //   } catch (GuzzleException $e) {
+  //     $this->logger->error('Vault fetch failed: ' . $e->getMessage());
+  //     \Drupal::messenger()->addError('Our service is currently down, please try again later.');
+  //   }
+
+  //   return NULL;
+  // }
+
   public function getGlobalVariables(): ?array
   {
     $cid = 'globalvariables_data';
@@ -64,7 +105,7 @@ class GlobalVariablesService
         $data = $response->getBody()->getContents();
         if ($data) {
           $vaultData = json_decode($data)->data ?? [];
-          $vaultData = json_decode(json_encode($vaultData), TRUE);
+          $vaultData = json_decode(json_encode($vaultData), true);
 
           $vaultData = array_merge(
             ['webportalUrl' => $vaultData['applicationConfig']['config']['webportalUrl'] ?? ''],
@@ -107,6 +148,59 @@ class GlobalVariablesService
     $globals = $this->getGlobalVariables();
     return $globals['apiManConfig']['config']['apiVersion'] ?? NULL;
   }
+
+  /**
+   * Returns Apiman access token, uses cache if valid.
+   */
+  // public function getApimanAccessToken(): ?string
+  // {
+  //   $cid = 'apiman_access_token';
+
+  //   // Check cache first
+  //   if ($cache_item = $this->cache->get($cid)) {
+  //     $cached = $cache_item->data;
+  //     if (!empty($cached['access_token']) && time() < $cached['expires_at']) {
+  //       return $cached['access_token'];
+  //     }
+  //   }
+
+  //   $globals = $this->getGlobalVariables();
+
+  //   if (empty($globals['apiManConfig']['config'])) {
+  //     $this->logger->error('Missing apiManConfig configuration in Vault response.');
+  //     return NULL;
+  //   }
+
+  //   $tokenUrl = $globals['apiManConfig']['config']['apiUrl']
+  //     . 'tiotAPIESBSubSystem'
+  //     . $globals['apiManConfig']['config']['apiVersion']
+  //     . 'getAccessToken';
+
+  //   try {
+  //     $client = \Drupal::httpClient();
+  //     $response = $client->post($tokenUrl, [
+  //       'headers' => [
+  //         'Content-Type' => 'application/json',
+  //       ],
+  //       'body' => json_encode($globals['apiManConfig']['config']),
+  //       'verify' => FALSE,
+  //     ]);
+
+  //     $data = json_decode($response->getBody(), TRUE);
+
+  //     if (!empty($data['access_token']) && !empty($data['expires_in'])) {
+  //       $this->cache->set($cid, [
+  //         'access_token' => $data['access_token'],
+  //         'expires_at' => time() + $data['expires_in'] - 30,
+  //       ], time() + $data['expires_in']);
+  //       return $data['access_token'];
+  //     }
+  //   } catch (RequestException $e) {
+  //     $this->logger->error('Apiman token fetch failed: ' . $e->getMessage());
+  //   }
+
+  //   return NULL;
+  // }
 
   public function getApimanAccessToken(): ?string
   {
@@ -158,6 +252,9 @@ class GlobalVariablesService
 
   public function getServiceUrl($serviceName)
   {
+    // if ($serviceName === null || $serviceName === '') {
+    //     return new JsonResponse(array('status' => false, 'message' => 'Service not available'));
+    // }
 
     $serUrl = '';
     $globalVariables = $this->getGlobalVariables();
@@ -197,7 +294,7 @@ class GlobalVariablesService
   private function buildServiceUrl(array $data): ?string
   {
     $base = $this->getServiceUrl($data['service'] ?? '');
-    return $base ? $base . ($data['endPoint'] ?? '') : NULL;
+    return $base ? $base . ($data['endPoint'] ?? '') : null;
   }
 
   public function postData(Request $request): JsonResponse
@@ -205,23 +302,24 @@ class GlobalVariablesService
     try {
       $method = $request->getMethod();
       if ($method !== 'POST') {
-        return new JsonResponse(['status' => FALSE, 'message' => 'Method not allowed!']);
+        return new JsonResponse(['status' => false, 'message' => 'Method not allowed!']);
       }
 
-      $postData = json_decode($request->getContent(), TRUE);
+      $postData = json_decode($request->getContent(), true);
       if (!$postData || !isset($postData['service'], $postData['type'])) {
-        return new JsonResponse(['status' => FALSE, 'message' => 'Invalid payload!']);
+        return new JsonResponse(['status' => false, 'message' => 'Invalid payload!']);
       }
 
       $user = \Drupal::currentUser();
       $userId = $user->id();
+      // $this->validatePostData->urlForm($postData);
       $url = $this->buildServiceUrl($postData);
       $response = $this->handleRequestByType($postData, $url, $request, $userId);
 
       return new JsonResponse($response);
     } catch (\Exception $e) {
       \Drupal::logger('Post Data Error')->error($e->getMessage());
-      return new JsonResponse(['status' => FALSE, 'message' => 'Internal server error.'], 500);
+      return new JsonResponse(['status' => false, 'message' => 'Internal server error.'], 500);
     }
   }
 
@@ -229,7 +327,7 @@ class GlobalVariablesService
   {
     $session = \Drupal::request()->getSession();
     $user_data = $session->get('api_redirect_result') ?? [];
-    $type = $data['type'] ?? NULL;
+    $type = $data['type'] ?? null;
     $payload = $data[self::PAYLOADS] ?? [];
 
     switch ($type) {
@@ -249,6 +347,7 @@ class GlobalVariablesService
 
   public function decrypt($value)
   {
+    // dump("ess",$value);
     $key = "Fl%JTt%d954n@PoU";
     $cipher = "AES-128-ECB";
 
@@ -258,7 +357,7 @@ class GlobalVariablesService
 
       $decrypted = openssl_decrypt($ciphertext, $cipher, $key, OPENSSL_RAW_DATA | OPENSSL_ZERO_PADDING);
 
-      if ($decrypted !== FALSE) {
+      if ($decrypted !== false) {
 
         $pad = ord($decrypted[strlen($decrypted) - 1]);
         $decrypted = substr($decrypted, 0, -$pad);
@@ -267,7 +366,7 @@ class GlobalVariablesService
       return $decrypted;
     } catch (\Exception $e) {
       error_log('Decryption error: ' . $e->getMessage());
-      return NULL;
+      return null;
     }
   }
 
@@ -284,7 +383,7 @@ class GlobalVariablesService
     $globalVariables = $this->getGlobalVariables();
 
     if (!isset($_FILES[UPLOAD_FILE])) {
-      return new JsonResponse(['status' => FALSE, 'message' => 'No file uploaded.']);
+      return new JsonResponse(['status' => false, 'message' => 'No file uploaded.']);
     }
 
     $originalName = $_FILES[UPLOAD_FILE]['name'];
@@ -302,16 +401,16 @@ class GlobalVariablesService
     ];
 
     if (!in_array($mimeType, $allowedTypes)) {
-      return new JsonResponse(['status' => FALSE, 'message' => 'File content not allowed!']);
+      return new JsonResponse(['status' => false, 'message' => 'File content not allowed!']);
     }
 
     if (count($extnParts) > 2) {
-      return new JsonResponse(['message' => 'Multiple file extensions not allowed', self::STR_STS => FALSE]);
+      return new JsonResponse(['message' => 'Multiple file extensions not allowed', self::STR_STS => false]);
     }
 
     // Detect file type   
-    $fileTypeVal = NULL;
-    $fileTypeType = NULL;
+    $fileTypeVal = null;
+    $fileTypeType = null;
     $extensionLower = strtolower($extension);
     if (in_array($extensionLower, ['jpg', 'jpeg', 'png'])) {
       $fileTypeVal = 2;
@@ -325,7 +424,7 @@ class GlobalVariablesService
     }
 
     if (!$fileTypeVal) {
-      return new JsonResponse(['message' => 'Unsupported file type.', self::STR_STS => FALSE]);
+      return new JsonResponse(['message' => 'Unsupported file type.', self::STR_STS => false]);
     }
 
     $uuidFilename = \Drupal::service('uuid')->generate() . '.' . $extension;
@@ -334,7 +433,7 @@ class GlobalVariablesService
     try {
       // Upload using HTTP client with multipart
       $response = $this->httpClient->request('POST', $fileUplPath . 'upload_media_test1.php', [
-        'verify' => FALSE,
+        'verify' => false,
         'multipart' => [
           [
             'name' => UPLOAD_FILE,
@@ -353,6 +452,7 @@ class GlobalVariablesService
 
       $responseBody = $response->getBody()->getContents();
       $this->logger->debug('Upload raw response: ' . $responseBody);
+      $decoded = json_decode($responseBody, true);
 
       // Optional profilePic update
       if ($request->request->get('userPic') === 'profilePic') {
@@ -367,7 +467,7 @@ class GlobalVariablesService
       ]);
     } catch (\Exception $e) {
       $this->logger->error('File upload failed: @error', ['@error' => $e->getMessage()]);
-      return new JsonResponse(['status' => FALSE, 'message' => 'Upload error'], 500);
+      return new JsonResponse(['status' => false, 'message' => 'Upload error'], 500);
     }
   }
 
@@ -380,9 +480,10 @@ class GlobalVariablesService
       $user_data = $session->get('api_redirect_result') ?? [];
       $access_token = $this->getApimanAccessToken();
       if (empty($user_data['mobileNumber'])) {
-        return new JsonResponse(['status' => FALSE, 'message' => 'Mobile number not found in session'], 400);
+        return new JsonResponse(['status' => false, 'message' => 'Mobile number not found in session'], 400);
       }
 
+      // $apiEngage = $globalVariables['applicationConfig']['config']['apimantEngage'];
       $payload = [
         'mobileNumber' => $user_data['mobileNumber'],
         'profilePic' => $profilePic,
@@ -402,25 +503,34 @@ class GlobalVariablesService
         ],
         'json' => $payload,
         'timeout' => 10,
-        'verify' => FALSE, // optional: disable SSL verification for dev
+        'verify' => false, // optional: disable SSL verification for dev
       ]);
-      $result = json_decode($response->getBody()->getContents(), TRUE);
+      // dump($response);
+      $result = json_decode($response->getBody()->getContents(), true);
+      // dump($result);
+      // $session->remove('api_redirect_result');
       $this->logger->debug('Profile update result:', [
         'Message' => json_encode($result['data']),
       ]);
-      $session->set('api_redirect_result', array_merge($session->get('api_redirect_result', []), ['profilePic' => $result['data']['profilePic'] ?? NULL]));
+      $session->set('api_redirect_result', array_merge($session->get('api_redirect_result', []), ['profilePic' => $result['data']['profilePic'] ?? null]));
       return new JsonResponse([
-        'status' => TRUE,
-        'profilePic' => $result['data']['profilePic'] ?? NULL,
+        'status' => true,
+        'profilePic' => $result['data']['profilePic'] ?? null,
       ]);
     } catch (\Exception $e) {
       $this->logger->error('Profile update failed: @msg', ['@msg' => $e->getMessage()]);
       return new JsonResponse([
-        'status' => FALSE,
+        'status' => false,
         'message' => 'Profile update failed',
       ], 500);
     }
   }
+
+
+
+
+
+
 
   public function curl_post_apiman($url, $payload, $method = 'POST')
   {
@@ -452,7 +562,7 @@ class GlobalVariablesService
       }
 
       $body = $response->getBody()->getContents();
-      return json_decode($body, TRUE);
+      return json_decode($body, true);
     } catch (RequestException $e) {
       \Drupal::logger('global_module')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
       return ['error' => 'Request failed'];
@@ -469,7 +579,7 @@ class GlobalVariablesService
           'Content-Type' => 'application/x-www-form-urlencoded',
         ],
         'form_params' => $payload,
-        'verify' => FALSE,
+        'verify' => false,
       ];
 
       // Call dynamically based on method (POST by default)
@@ -487,7 +597,7 @@ class GlobalVariablesService
       }
 
       $body = $response->getBody()->getContents();
-      return json_decode($body, TRUE);
+      return json_decode($body, true);
     } catch (RequestException $e) {
       \Drupal::logger('global_module')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
       return ['error' => 'Request failed'];
@@ -504,7 +614,7 @@ class GlobalVariablesService
           'Authorization' => 'Basic ' . base64_encode('trinity:trinity@123'),
         ],
         'json' => $payload,
-        'verify' => FALSE,
+        'verify' => false,
       ];
 
       // Call dynamically based on method (POST by default)
@@ -522,9 +632,9 @@ class GlobalVariablesService
       }
 
       $body = $response->getBody()->getContents();
-      return json_decode($body, TRUE);
+      return json_decode($body, true);
     } catch (\GuzzleHttp\Exception\RequestException $e) {
-      $errorBody = NULL;
+      $errorBody = null;
       if ($e->hasResponse()) {
         $errorBody = (string) $e->getResponse()->getBody();
       }
@@ -539,7 +649,7 @@ class GlobalVariablesService
 
       return [
         'error' => 'Request failed',
-        'details' => $errorBody ? json_decode($errorBody, TRUE) : $e->getMessage(),
+        'details' => $errorBody ? json_decode($errorBody, true) : $e->getMessage(),
       ];
     }
   }
@@ -561,10 +671,10 @@ class GlobalVariablesService
       ]);
 
       $body = $response->getBody()->getContents();
-      return json_decode($body, TRUE);
+      return json_decode($body, true);
     } catch (\Exception $e) {
       \Drupal::logger('apiman')->error('Delete request failed: @message', ['@message' => $e->getMessage()]);
-      return ['status' => FALSE, 'error' => 'Request failed'];
+      return ['status' => false, 'error' => 'Request failed'];
     }
   }
 
@@ -582,7 +692,7 @@ class GlobalVariablesService
         'headers' => [
           'Accept' => 'application/json',
         ],
-        'verify' => FALSE, // Disable SSL verification (not for production)
+        'verify' => false, // Disable SSL verification (not for production)
       ]);
 
       $contents = $response->getBody()->getContents();
@@ -607,7 +717,7 @@ class GlobalVariablesService
           'Authorization' => 'Basic ' . base64_encode('trinity:trinity@123'),
           // 'Authorization' => 'Basic ' . base64_encode('admin:admin'),
         ],
-        'verify' => FALSE, // Disable SSL verification (only for dev/test)
+        'verify' => false, // Disable SSL verification (only for dev/test)
       ]);
 
       $contents = $response->getBody()->getContents();
@@ -627,8 +737,10 @@ class GlobalVariablesService
     $globalVariables = $this->getGlobalVariables();
     $apiUrl = $globalVariables['apiManConfig']['config']['apiUrl'];
     $apiVer = $globalVariables['apiManConfig']['config']['apiVersion'];
+    // $idamClientId = $globalVariables['applicationConfig']['config']['idamClientId'];
     $user = User::load(\Drupal::currentUser()->id());
     $email = $user->get('mail')->value;
+    // echo $email;
     $payload = '{
         "schemas": [
             "urn:ietf:params:scim:api:messages:2.0:SearchRequest"
@@ -641,21 +753,25 @@ class GlobalVariablesService
     $cityUrl = $globalVariables['applicationConfig']['config']['deleteAPICA'] . $userID;
     \Drupal::logger('City App Delete Url')->notice($cityUrl);
     $deleteResponse = $this->curl_post_api($cityUrl);
-    \Drupal::logger('Post Data response')->notice(print_r($deleteResponse, TRUE));
-    if ($deleteResponse && isset($deleteResponse['status']) && $deleteResponse['status'] === TRUE) {
+    \Drupal::logger('Post Data response')->notice(print_r($deleteResponse, true));
+    if (($deleteResponse && isset($deleteResponse['status']) && $deleteResponse['status'] === true)) {
 
-      $responseData = $this->curl_post_apiman($apiUrl . 'trinityengage-casemanagementsystem' . $apiVer . 'user/delete-user?userId=' . $userID . '&tenantCode=' . $tenantCode, '');
+      $responseData = $this->curl_post_apiman(
+        $apiUrl . 'trinityengage-casemanagementsystem' . $apiVer . 'user/delete-user?userId=' . $userID . '&tenantCode=' . $tenantCode,
+        ''
+      );
 
-      \Drupal::logger('CEP Delete API response')->notice(print_r($responseData, TRUE));
-      if ($responseData['status']) {
+
+      \Drupal::logger('CEP Delete API response')->notice(print_r($responseData, true));
+      if ($responseData['status'] == true) {
         $account = User::load(\Drupal::currentUser()->id());
         $account->delete();
-        return ['status' => TRUE, 'message' => 'User account deleted successfully!'];
+        return ['status' => true, 'message' => 'User account deleted successfully!'];
       } else {
-        return ['status' => FALSE, 'message' => 'Failed to delete user from case management system.'];
+        return ['status' => false, 'message' => 'Failed to delete user from case management system.'];
       }
     } else {
-      return ['status' => FALSE, 'message' => 'Failed to delete user account.'];
+      return ['status' => false, 'message' => 'Failed to delete user account.'];
     }
   }
 
@@ -677,11 +793,14 @@ class GlobalVariablesService
       'emailId' => $email,
       'mobileNumber' => $mobile,
       'tenantCode' => $user_data['tenantCode'],
-      'profilePic' => 'NULL',
+      'profilePic' => 'null',
       'userId' => $user_id
     ];
+    // dump($payload);exit;
     try {
+      // $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
       $access_token = $this->getApimanAccessToken();
+      // $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
       $globalVariables = $this->getGlobalVariables();
       $client = \Drupal::httpClient();
 
@@ -696,19 +815,19 @@ class GlobalVariablesService
         ]
       );
 
-      $data = json_decode($response->getBody(), TRUE);
+      $data = json_decode($response->getBody(), true);
 
-      if (!empty($data['status']) && ($data['status'] === TRUE || $data['status'] === 'TRUE')) {
+      if (!empty($data['status']) && ($data['status'] === true || $data['status'] === 'true')) {
         $session->remove('api_redirect_result');
         \Drupal::logger('profile')->notice('Profile removed successfully.');
         return new JsonResponse([
-          'status' => TRUE,
+          'status' => true,
           'message' => 'Profile removed successfully',
         ]);
       } else {
         \Drupal::logger('profile')->notice('Failed to remove profile');
         return new JsonResponse([
-          'status' => FALSE,
+          'status' => false,
           'message' => 'Failed to remove profile',
         ]);
       }

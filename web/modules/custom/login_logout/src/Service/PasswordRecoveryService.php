@@ -10,7 +10,8 @@ use Drupal\global_module\Service\GlobalVariablesService;
 /**
  * Service for handling password recovery related API calls.
  */
-class PasswordRecoveryService {
+class PasswordRecoveryService
+{
 
   /**
    * HTTP client service.
@@ -47,6 +48,59 @@ class PasswordRecoveryService {
   }
 
   /**
+   * Fetches the SCIM username for a given email.
+   *
+   * @param string $email
+   *   The user's email.
+   *
+   * @return string|null
+   *   The SCIM userName, or NULL if not found.
+   */
+  public function get_scim_username_by_email(string $email): ?string
+  {
+    try {
+      // Build the SCIM filter.
+      $filter = sprintf("emails eq %s", $email);
+      $attributes = "username";
+
+      $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+      $url = 'https://' . $idamconfig . '/scim2/Users/?filter=' . rawurlencode($filter)
+        . '&attributes=' . $attributes;
+
+      // Prepare headers.
+      $headers = [
+        'Authorization' => 'Basic dHJpbml0eTp0cmluaXR5QDEyMw==',
+        'Cookie' => 'route=1764759023.643.27377.401456|4df79418c1cd0ad4939e0cb01c3293ae',
+      ];
+
+      // Call the API.
+      $response = $this->httpClient->request('GET', $url, [
+        'headers' => $headers,
+        'http_errors' => FALSE,
+        'timeout' => 10,
+        'verify' => false,
+      ]);
+
+      // Decode JSON.
+      $data = json_decode($response->getBody()->getContents(), TRUE);
+
+      // Check and extract the userName.
+      if (!empty($data['Resources'][0]['userName'])) {
+        return $data['Resources'][0]['userName'];
+      }
+
+      return NULL;
+    } catch (\Exception $e) {
+      // Log and return NULL if needed.
+      $this->logger->error('SCIM username fetch failed for email @email: @msg', [
+        '@email' => $email,
+        '@msg' => $e->getMessage(),
+      ]);
+      return NULL;
+    }
+  }
+
+  /**
    * Initiate password recovery process.
    *
    * @param string $email
@@ -55,15 +109,17 @@ class PasswordRecoveryService {
    * @return string|null
    *   The recovery code or NULL on failure.
    */
-  public function initiateRecovery(string $email): ?string {
+  public function initiateRecovery(string $email): ?string
+  {
+    $username = $this->get_scim_username_by_email($email);
     $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
     $url = 'https://' . $idamconfig . '/api/users/v2/recovery/password/init';
 
     $payload = [
       'claims' => [
         [
-          'uri' => 'http://wso2.org/claims/emailaddress',
-          'value' => $email,
+          'uri' => 'http://wso2.org/claims/username',
+          'value' => $username,
         ],
       ],
       'properties' => [
@@ -85,6 +141,7 @@ class PasswordRecoveryService {
         'headers' => $headers,
         'json' => $payload,
         'timeout' => 10,
+        'verify' => false,
       ]);
       $decoded = json_decode($response->getBody()->getContents(), TRUE);
 
@@ -94,8 +151,7 @@ class PasswordRecoveryService {
 
       $this->logger->warning('No recovery code returned for email: @email', ['@email' => $email]);
       return NULL;
-    }
-    catch (RequestException $e) {
+    } catch (RequestException $e) {
       $this->logger->error('Password recovery initiation failed: @error', ['@error' => $e->getMessage()]);
       return NULL;
     }
@@ -112,7 +168,8 @@ class PasswordRecoveryService {
    * @return array|null
    *   The decoded JSON response or NULL on failure.
    */
-  public function completeRecovery(string $recovery_code, string $channel_id = '1'): ?array {
+  public function completeRecovery(string $recovery_code, string $channel_id = '1'): ?array
+  {
 
     $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
     $url = 'https://' . $idamconfig . '/api/users/v2/recovery/password/recover';
@@ -138,13 +195,13 @@ class PasswordRecoveryService {
       $response = $this->httpClient->request('POST', $url, [
         'headers' => $headers,
         'json' => $payload,
+        'verify' => false,
       ]);
 
       $decoded = json_decode($response->getBody()->getContents(), TRUE);
       $this->logger->info('Password recovery completed successfully for recovery code: @code', ['@code' => $recovery_code]);
       return $decoded;
-    }
-    catch (RequestException $e) {
+    } catch (RequestException $e) {
       $this->logger->error('Password recovery completion failed: @error', ['@error' => $e->getMessage()]);
       return NULL;
     }
@@ -159,24 +216,23 @@ class PasswordRecoveryService {
    * @return array|null
    *   The final response from the completeRecovery() call.
    */
-  public function recoverPassword(string $email): ?array {
+  public function recoverPassword(string $email): ?array
+  {
     try {
       // Step 1: Initiate recovery to get the recovery code.
       $recovery_code = $this->initiateRecovery($email);
-        if (empty($recovery_code)) {
-            $this->logger->warning('Password recovery initiation failed for email: @email', ['@email' => $email]);
-            return NULL;
-        }
-        
-        // Step 2: Complete recovery using the code.
-        $response = $this->completeRecovery($recovery_code, '1');
-        
+      if (empty($recovery_code)) {
+        $this->logger->warning('Password recovery initiation failed for email: @email', ['@email' => $email]);
+        return NULL;
+      }
+
+      // Step 2: Complete recovery using the code.
+      $response = $this->completeRecovery($recovery_code, '1');
+
       return $response;
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->logger->error('Password recovery process failed: @msg', ['@msg' => $e->getMessage()]);
       return NULL;
     }
   }
-
 }

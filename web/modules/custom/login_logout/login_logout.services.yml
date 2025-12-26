@@ -10,13 +10,11 @@ services:
   login_logout.oauth_login_service:
     class: Drupal\login_logout\Service\OAuthLoginService
     arguments:
-      [
-        '@settings',
-        "@http_client",
-        "@logger.channel.login_logout",
-        "@request_stack",
-        "@global_module.global_variables",
-      ]
+      - '@http_client'
+      - '@logger.channel.login_logout'
+      - '@request_stack'
+      - '@global_module.global_variables'
+
 
   login_logout.no_cache_subscriber:
     class: Drupal\login_logout\EventSubscriber\NoCacheSubscriber
@@ -26,7 +24,11 @@ services:
 
   login_logout.userinfo_validator:
     class: Drupal\login_logout\Service\UserInfoValidator
-    arguments: ["@http_client", "@logger.channel.login_logout", "@session", "@global_module.global_variables"]
+    arguments: 
+      - "@http_client" 
+      - "@logger.channel.login_logout" 
+      - "@session"
+      - "@global_module.global_variables"
 
   login_logout.userinfo_check_subscriber:
     class: Drupal\login_logout\EventSubscriber\UserInfoCheckSubscriber

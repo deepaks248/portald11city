@@ -1,0 +1,13 @@
+services:
+  secaudit.audit_service:
+    class: Drupal\secaudit\Service\AuditService
+    arguments:
+      - '@request_stack'
+      - '@logger.factory'
+
+  secaudit.request_subscriber:
+    class: Drupal\secaudit\EventSubscriber\RequestEventSubscriber
+    arguments:
+      - '@secaudit.audit_service'
+    tags:
+      - { name: event_subscriber }

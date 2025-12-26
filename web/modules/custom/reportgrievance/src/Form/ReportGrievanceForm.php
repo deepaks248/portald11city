@@ -315,11 +315,13 @@ class ReportGrievanceForm extends FormBase
     if (isset($_FILES['files']['full_path']['upload_file']) && is_uploaded_file($_FILES['files']['tmp_name']['upload_file'])) {
       $upload_response = $this->fileUploadService->uploadFile($request);
       if ($upload_response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
-        $response_data = json_decode($upload_response->getContent(), TRUE);
+        $response_data = json_decode($upload_response->getContent(), true);
         if (!empty($response_data['fileName'])) {
           $image_url = $response_data['fileName'];
         } else {
           $this->messenger()->addError($this->t('File upload failed.'));
+          //Security log for upload failure
+          \Drupal::logger('reportgrievance')->error('File upload failed during grievance submission. Response: @response', ['@response' => print_r($response_data, TRUE)]);
           return;
         }
       }

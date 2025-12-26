@@ -68,7 +68,7 @@ class UserRedirectSubscriber implements EventSubscriberInterface
         ];
 
         foreach ($protected_prefixes as $prefix) {
-            if (str_starts_with($path, $prefix)) {
+            if ($path !== null && substr($path, 0, strlen($prefix)) === $prefix) {
                 return TRUE;
             }
         }

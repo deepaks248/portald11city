@@ -171,10 +171,12 @@ $form['address'] = [
       ],
     ];
 
+    // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
     $form['#attached']['library'][] = 'profile/profile_assets';
     $form['#attached']['library'][] = 'profile/profile_form_popup';
     return $form;
   }
+  //  $family_members = $this->profileService->fetchFamilyMembers($user_id);
 
  public function validateForm(array &$form, FormStateInterface $form_state){
     $first_name = $form_state->getValue('first_name');
@@ -206,7 +208,7 @@ $form['address'] = [
     // DOB validation: must be a valid date in the past
     if (!empty($dob)) {
         $dob_timestamp = strtotime($dob);
-        if ($dob_timestamp === FALSE || $dob_timestamp > time()) {
+        if ($dob_timestamp === false || $dob_timestamp > time()) {
             $form_state->setErrorByName('dob', $this->t('Please enter a valid date of birth.'));
         }
     } else {
@@ -248,7 +250,9 @@ $form['address'] = [
     ];
 
     try {
+      // $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
       $access_token = $this->globalVariablesService->getApimanAccessToken();
+      // $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
       $globalVariables = $this->globalVariablesService->getGlobalVariables();
       $client = \Drupal::httpClient();
 
@@ -263,7 +267,7 @@ $form['address'] = [
         ]
       );
 
-      $data = json_decode($response->getBody(), TRUE);
+      $data = json_decode($response->getBody(), true);
       if (!empty($data['status'])) {
         $session->remove('api_redirect_result');
         \Drupal::messenger()->addMessage($this->t('Profile updated successfully.'));

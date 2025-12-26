@@ -1,114 +1,191 @@
-document.addEventListener("DOMContentLoaded", function () {
+  document.querySelector(".hide-eye-old").addEventListener("click", (e) => {
+    let x = document.getElementById("edit-old-password");
+    if (x.type === "password") {
+      x.type = "text";
+      document.querySelector(".show-eye-old").removeAttribute("hidden");
+      document.querySelector(".hide-eye-old").setAttribute("hidden", true);
+    } else {
+      x.type = "password";
+      document.querySelector(".hide-eye-old").removeAttribute("hidden");
+      document.querySelector(".show-eye-old").setAttribute("hidden", true);
+    }
+  });
 
-  /* =========================
-   * 1️⃣ PASSWORD VISIBILITY TOGGLE
-   * ========================= */
-  document.querySelectorAll('button[aria-label="Toggle password visibility"]').forEach(btn => {
-    const input = btn.closest('.relative').querySelector('input[type="password"], input[type="text"]');
-    const hideEye = btn.querySelector('.hide-eye-old');
-    const showEye = btn.querySelector('.show-eye-old');
+  document.querySelector(".show-eye-old").addEventListener("click", (e) => {
+    let x = document.getElementById("edit-old-password");
+    if (x.type === "text") {
+      x.type = "password";
+      document.querySelector(".hide-eye-old").removeAttribute("hidden");
+      document.querySelector(".show-eye-old").setAttribute("hidden", true);
+    } else {
+      x.type = "text";
+      document.querySelector(".show-eye-old").removeAttribute("hidden");
+      document.querySelector(".hide-eye-old").setAttribute("hidden", true);
+    }
+  });
+  document.querySelector(".hide-eye-new").addEventListener("click", (e) => {
+    let x = document.getElementById("edit-new-password");
+    if (x.type === "password") {
+      x.type = "text";
+      document.querySelector(".show-eye-new").removeAttribute("hidden");
+      document.querySelector(".hide-eye-new").setAttribute("hidden", true);
+    } else {
+      x.type = "password";
+      document.querySelector(".hide-eye-new").removeAttribute("hidden");
+      document.querySelector(".show-eye-new").setAttribute("hidden", true);
+    }
+  });
 
-    btn.addEventListener('click', () => {
-      const isPassword = input.type === 'password';
-      input.type = isPassword ? 'text' : 'password';
+  document.querySelector(".show-eye-new").addEventListener("click", (e) => {
+    let x = document.getElementById("edit-new-password");
+    if (x.type === "text") {
+      x.type = "password";
+      document.querySelector(".hide-eye-new").removeAttribute("hidden");
+      document.querySelector(".show-eye-new").setAttribute("hidden", true);
+    } else {
+      x.type = "text";
+      document.querySelector(".show-eye-new").removeAttribute("hidden");
+      document.querySelector(".hide-eye-new").setAttribute("hidden", true);
+    }
+  });
+  document.querySelector(".hide-eye-con").addEventListener("click", (e) => {
+    let x = document.getElementById("confirm-password");
+    if (x.type === "password") {
+      x.type = "text";
+      document.querySelector(".show-eye-con").removeAttribute("hidden");
+      document.querySelector(".hide-eye-con").setAttribute("hidden", true);
+    } else {
+      x.type = "password";
+      document.querySelector(".hide-eye-con").removeAttribute("hidden");
+      document.querySelector(".show-eye-con").setAttribute("hidden", true);
+    }
+  });
 
-      hideEye.classList.toggle('hidden', isPassword);
-      showEye.classList.toggle('hidden', !isPassword);
-    });
+  document.querySelector(".show-eye-con").addEventListener("click", (e) => {
+    let x = document.getElementById("edit-confirm-password");
+    if (x.type === "text") {
+      x.type = "password";
+      document.querySelector(".hide-eye-con").removeAttribute("hidden");
+      document.querySelector(".show-eye-con").setAttribute("hidden", true);
+    } else {
+      x.type = "text";
+      document.querySelector(".show-eye-con").removeAttribute("hidden");
+      document.querySelector(".hide-eye-con").setAttribute("hidden", true);
+    }
   });
 
 
-  /* =========================
-   * 2️⃣ PASSWORD VALIDATION (NEW + CONFIRM)
-   * ========================= */
-  const newPassInput = document.querySelector('#edit-new-password');
-  const confirmPassInput = document.querySelector('#edit-confirm-password');
 
-  const tooltipNew = document.querySelector('#password-tooltip-new');
-  const tooltipConfirm = document.querySelector('#password-tooltip-confirm');
 
-  const rulesNew = {
-    length: document.querySelector('#rule-length-new'),
-    uppercase: document.querySelector('#rule-uppercase-new'),
-    lowercase: document.querySelector('#rule-lowercase-new'),
-    number: document.querySelector('#rule-number-new'),
-    special: document.querySelector('#rule-special-new')
+
+ document.addEventListener('DOMContentLoaded', function () {
+  const pwInput = document.getElementById('edit-new-password');
+  const tooltip = document.getElementById('password-tooltip-new');
+
+ const rules = {
+  length: {
+    el: document.getElementById('rule-length-new'),
+    check: v => v.length >= 8,
+  },
+  uppercase: {
+    el: document.getElementById('rule-uppercase-new'),
+    check: v => /[A-Z]/.test(v), // ✅ matches A-Z anywhere
+  },
+  lowercase: {
+    el: document.getElementById('rule-lowercase-new'),
+    check: v => /[a-z]/.test(v),
+  },
+  number: {
+    el: document.getElementById('rule-number-new'),
+    check: v => /\d/.test(v), // ✅ alternative to [0-9]
+  },
+  special: {
+    el: document.getElementById('rule-special-new'),
+    check: v => /[!@#$%^&*]/.test(v), // ✅ no backslashes needed here
+  },
+};
+
+
+  pwInput.addEventListener('focusin', () => {
+    tooltip.classList.remove('invisible', 'opacity-0');
+    tooltip.classList.add('visible', 'opacity-100');
+  });
+
+  pwInput.addEventListener('focusout', () => {
+    tooltip.classList.add('invisible', 'opacity-0');
+    tooltip.classList.remove('visible', 'opacity-100');
+  });
+
+  pwInput.addEventListener('input', () => {
+    const value = pwInput.value;
+    for (const key in rules) {
+      const isValid = rules[key].check(value);
+      rules[key].el.classList.toggle('text-green-600', isValid);
+      rules[key].el.classList.toggle('text-red-600', !isValid);
+    }
+  });
+});
+
+
+
+  document.addEventListener('DOMContentLoaded', function () {
+  const pwInput = document.getElementById('edit-confirm-password');
+  const tooltip = document.getElementById('password-tooltip-confirm');
+  const newPasswordInput = document.getElementById('edit-new-password');
+
+  const rules = {
+    length: {
+      el: document.getElementById('rule-length-confirm'),
+      check: v => v.length >= 8,
+    },
+    uppercase: {
+      el: document.getElementById('rule-uppercase-confirm'),
+      check: v => /[A-Z]/.test(v),
+    },
+    lowercase: {
+      el: document.getElementById('rule-lowercase-confirm'),
+      check: v => /[a-z]/.test(v),
+    },
+    number: {
+      el: document.getElementById('rule-number-confirm'),
+      check: v => /[0-9]/.test(v),
+    },
+    special: {
+      el: document.getElementById('rule-special-confirm'),
+      check: v => /[@!$#%^&*]/.test(v),
+    },
+    match: {
+      el: document.getElementById('passmatch'),
+      check: v => v === newPasswordInput.value,
+    },
   };
 
-  const rulesConfirm = {
-    length: document.querySelector('#rule-length-confirm'),
-    uppercase: document.querySelector('#rule-uppercase-confirm'),
-    lowercase: document.querySelector('#rule-lowercase-confirm'),
-    number: document.querySelector('#rule-number-confirm'),
-    special: document.querySelector('#rule-special-confirm'),
-    match: document.querySelector('#passmatch')
-  };
-
-  // ✅ Helper to toggle colors (red ⇄ green)
-  function setRuleColor(el, valid) {
-    el.classList.toggle('text-green-600', valid);
-    el.classList.toggle('text-red-600', !valid);
-  }
-
-  // ✅ Validate password strength
-  function validatePassword(password, rules) {
-    const validations = {
-      length: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      number: /[0-9]/.test(password),
-      special: /[@!$#%^&*]/.test(password)
-    };
-
-    for (const [key, el] of Object.entries(rules)) {
-      if (validations[key] !== undefined) setRuleColor(el, validations[key]);
-    }
-
-    return Object.values(validations).every(Boolean);
-  }
-
-  // ✅ Handle New Password typing
-  newPassInput?.addEventListener('input', () => {
-    validatePassword(newPassInput.value, rulesNew);
-
-    // Show tooltip while typing
-    tooltipNew.classList.remove('invisible', 'opacity-0');
-    if (newPassInput.value === '') {
-      tooltipNew.classList.add('invisible', 'opacity-0');
-    }
-
-    // Re-validate confirm field if user changes new password
-    validateConfirmPassword();
+  pwInput.addEventListener('focusin', () => {
+    tooltip.classList.remove('invisible', 'opacity-0');
+    tooltip.classList.add('visible', 'opacity-100');
   });
 
-  // ✅ Handle Confirm Password typing
-  confirmPassInput?.addEventListener('input', validateConfirmPassword);
-
-  function validateConfirmPassword() {
-    const newPass = newPassInput.value;
-    const confirmPass = confirmPassInput.value;
-
-    // Validate confirm field strength (optional)
-    validatePassword(confirmPass, rulesConfirm);
-
-    // Check match
-    const match = newPass === confirmPass && confirmPass !== '';
-    setRuleColor(rulesConfirm.match, match);
-
-    tooltipConfirm.classList.remove('invisible', 'opacity-0');
-    if (confirmPass === '') {
-      tooltipConfirm.classList.add('invisible', 'opacity-0');
-    }
-  }
-
-  // ✅ Hide tooltips on blur
-  [newPassInput, confirmPassInput].forEach(input => {
-    input?.addEventListener('blur', () => {
-      setTimeout(() => {
-        tooltipNew.classList.add('invisible', 'opacity-0');
-        tooltipConfirm.classList.add('invisible', 'opacity-0');
-      }, 300);
-    });
+  pwInput.addEventListener('focusout', () => {
+    tooltip.classList.add('invisible', 'opacity-0');
+    tooltip.classList.remove('visible', 'opacity-100');
   });
 
+  // Validate on every input
+  pwInput.addEventListener('input', () => {
+    const value = pwInput.value;
+
+    for (const key in rules) {
+      const isValid = rules[key].check(value);
+      rules[key].el.classList.toggle('text-green-600', isValid);
+      rules[key].el.classList.toggle('text-red-600', !isValid);
+    }
+  });
+
+  // Re-check match when new password changes
+  newPasswordInput.addEventListener('input', () => {
+    const matchEl = rules.match.el;
+    const isMatch = pwInput.value === newPasswordInput.value;
+    matchEl.classList.toggle('text-green-600', isMatch);
+    matchEl.classList.toggle('text-red-600', !isMatch);
+  });
 });

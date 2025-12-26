@@ -364,7 +364,6 @@ class AddFamilyMemberForm extends FormBase
       ],
     ];
     $form['#theme'] = 'add-family-member';
-    // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
     $form['#attached']['library'][] = 'profile/add-family-member-library';
     $form['#attached']['library'][] = 'global_module/ajax_loader';
     return $form;
@@ -402,9 +401,7 @@ class AddFamilyMemberForm extends FormBase
     }
 
 
-    // $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
     $access_token = $this->globalVariableService->getApimanAccessToken();
-    // $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
     $globalVariables = $this->globalVariableService->getGlobalVariables();
 
     $payload = [

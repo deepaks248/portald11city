@@ -55,22 +55,6 @@
   }
 
   /**
-   * "Resize the map to fit the container."
-   *
-   * The function is called by the `tmpl.Map.init` function
-   * @param mapData - The map data object that was returned from the map creation function.
-   */
-  function mapResize(mapData) {
-    try {
-      tmpl.Map.resize({
-        map: mapData,
-      });
-    } catch (error) {
-      console.error("Error at tmpl.Map.resize > ", error);
-    }
-  }
-
-  /**
    * > The function `mapResize` is called when the window is resized. It calls the `tmpl.Map.resize`
    * function, which is a function that is part of the `tmpl` object
    * @param mapData - The map data object that was returned from the map creation function.
@@ -131,10 +115,8 @@
    * @param wktGeom - The geometry of the feature in WKT format.
    * @param value - The value of the feature.
    */
-  let selected_pointer = [];
   function getDrawFeatureDetails(coord, feature, wktGeom, value) {
     console.log(coord);
-    selected_pointer = coord;
     tmpl.Layer.clearData({
       map: gmap,
       layer: "Incident_Layer",
@@ -168,7 +150,6 @@
     getAddress(coord);
     function getAddress(coords) {
       console.log("coordddd", coords);
-      let lat_log = coord;
       tmpl.Geocode.getGeocode({
         point: [coords[0], coords[1]],
         callbackFunc: handleGeocode,
@@ -194,28 +175,7 @@
     let appendAddress = document.querySelector("#edit-address");
     appendAddress.value = data.address;
     appendAddress.setAttribute("value", data.address);
-  }
 
-  function handleReverseGeocodeInternal(incomingAddress) {
-    console.log(" ::::: Given Address :::::", incomingAddress);
-    function handleReverseGeocode(data1) {
-      let lat_logs = [];
-
-      console.log(" ::::: lat :::::", data1.coordinates.lat());
-      console.log(" ::::: lat :::::", data1.coordinates.lng());
-      let lat = data1.coordinates.lat();
-      let log = data1.coordinates.lng();
-
-      lat_logs.push(lat);
-      lat_logs.push(log);
-
-      console.log("eureytiuyetyiy", lat_logs, gmap);
-      let lat_log = lat_logs;
-    }
-    tmpl.Geocode.getReverseGeocode({
-      address: incomingAddress,
-      callbackFunc: handleReverseGeocode
-    });
   }
 
   /* Waiting for the page to load before running the code. */
@@ -229,7 +189,7 @@
   Drupal.behaviors.reportGrievanceValidation = {
     attach: function (context, settings) {
       // Wait until jQuery Validate is loaded
-      if ($.validator === 'undefined') {
+      if (typeof $.fn.validate !== 'function') {
         console.error('jQuery Validate is not loaded!');
         return;
       }
@@ -249,15 +209,13 @@
       // custom extension method for file
       $.validator.addMethod("extensionFile", function (value, element, param) {
         if (element.files.length === 0) return true;
-
         let allowed = param.split('|');
         let fileName = element.files[0].name.toLowerCase();
-
-        // Using for-of loop
         for (const ext of allowed) {
-          if (fileName.endsWith(ext)) return true;
+          if (fileName.endsWith(ext)) {
+            return true;
+          }
         }
-
         return false;
       }, "Invalid file type");
 
@@ -293,6 +251,23 @@
   };
 })(jQuery, Drupal);
 
+/**
+       * Utility: Reset select with placeholder text
+       */
+function resetSelect($select, placeholder, disabled = false) {
+  $select.empty().append(`<option value="">${placeholder}</option>`);
+  $select.prop('disabled', disabled);
+}
+
+/**
+ * Fetch JSON with proper error handling
+ */
+async function fetchJson(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  return await response.json();
+}
+
 (function ($, Drupal, drupalSettings) {
   Drupal.behaviors.reportGrievanceForm = {
     attach: function (context) {
@@ -307,22 +282,6 @@
       if (!$typeSelect.length || !$subtypeSelect.length || $typeSelect.data('attached')) return;
       $typeSelect.data('attached', true);
 
-      /**
-       * Utility: Reset select with placeholder text
-       */
-      function resetSelect($select, placeholder, disabled = false) {
-        $select.empty().append(`<option value="">${placeholder}</option>`);
-        $select.prop('disabled', disabled);
-      }
-
-      /**
-       * Fetch JSON with proper error handling
-       */
-      async function fetchJson(url) {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-        return await response.json();
-      }
 
       /**
        * Load grievance types

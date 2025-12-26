@@ -2,12 +2,12 @@
   Drupal.behaviors.addFamilyMemberValidation = {
     attach: function (context, settings) {
       // Ensure jQuery Validate is loaded
-      if ($.validator === 'undefined') {
+      if (typeof $.validator === 'undefined') {
         console.error('jQuery Validate is not loaded!');
         return;
       }
 
-      let $form = $('#add-family-member-form', context);
+      var $form = $('#add-family-member-form', context);
 
       // Prevent double initialization
       if ($form.data('validated')) return;
@@ -22,15 +22,11 @@
       // Custom file extension method
       $.validator.addMethod("extensionFile", function (value, element, param) {
         if (element.files.length === 0) return true;
-
-        let allowed = param.split('|');
-        let fileName = element.files[0].name.toLowerCase();
-
-        // Using for-of loop
-        for (const ext of allowed) {
-          if (fileName.endsWith(ext)) return true;
+        var allowed = param.split('|');
+        var fileName = element.files[0].name.toLowerCase();
+        for (var i = 0; i < allowed.length; i++) {
+          if (fileName.endsWith(allowed[i])) return true;
         }
-
         return false;
       }, "Invalid file type");
 

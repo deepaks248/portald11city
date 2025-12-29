@@ -39,8 +39,8 @@ class IdeasForm extends FormBase
   private function getIdeaCategoryOptions()
   {
     // Static variable to avoid rebuilding in the same request
-    static $options = null;
-    if ($options !== null) {
+    static $options = NULL;
+    if ($options !== NULL) {
       return $options;
     }
 
@@ -67,9 +67,6 @@ class IdeasForm extends FormBase
   {
     $form['#prefix'] = '<div id="ideas-form-wrapper">';
     $form['#suffix'] = '</div>';
-
-    // $floatLabelClass = explode(' ', 'absolute text-sm text-medium_dark dark:text-white duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-900 px-2 peer-focus:px-2 peer-focus:text-amber-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 left-1');
-
     $inputFieldClass = explode(' ', 'px-2.5 pb-2.5 pt-4 text-sm text-medium_dark bg-transparent rounded-lg border border-1 border-gray-300 appearance-none dark:border-gray-600 dark:focus:border-blue-500 focus:focus:border-amber-300 focus:outline-none focus:ring-0 focus:border-yellow-600 peer');
 
     $form['#attributes']['class'][] = 'form-sec p-4 lg:px-10 lg:py-12 bg-white text-center lg:text-start s:mb-24 xs:mb-20';
@@ -233,61 +230,11 @@ class IdeasForm extends FormBase
       ],
     ];
     $form['#theme'] = 'ideas';
-    // $form['#attributes']['class'][] = 'cv-validate-before-ajax';
     $form['#attached']['library'][] = 'ideas/ideas-library';
     $form['#attached']['library'][] = 'global_module/ajax_loader';
     $form['#attributes']['enctype'] = 'multipart/form-data';
     return $form;
   }
-
-
-  // public function submitForm(array &$form, FormStateInterface $form_state)
-  // {
-  //   $image_url = NULL;
-  //   $response_data = [];
-
-  //   $image_url = $form_state->getValue('upload_file_hidden');
-  //   if (empty($image_url)) {
-  //     $this->messenger()->addError($this->t('Please upload a file before submitting.'));
-  //     return;
-  //   }
-
-  //   // Get form values
-  //   $title = $form_state->getValue('first_name');
-  //   $author = $form_state->getValue('author');
-  //   $category_id = $form_state->getValue('category_idea');
-  //   $body = $form_state->getValue('idea_content');
-
-  //   // Basic validation
-  //   if (empty($title) || empty($author) || empty($category_id) || empty($body) || empty($image_url)) {
-  //     $this->messenger()->addError($this->t('Please fill in all required fields.'));
-  //     return;
-  //   }
-
-  //   try {
-  //     // Create a new idea node
-  //     $node = Node::create([
-  //       'type' => 'ideas',
-  //       'title' => $title,
-  //       'field_idea_author' => $author,
-  //       'field_idea_content' => [
-  //         'value' => $body,
-  //         'format' => 'basic_html',
-  //       ],
-  //       'field_ideas_categories' => [
-  //         'target_id' => $category_id,
-  //       ],
-  //       'field_idea_image' => $image_url, // Plain text field
-  //       'status' => 0,
-  //     ]);
-  //     $node->save();
-
-  //     $this->messenger()->addStatus($this->t('Your idea has been submitted successfully.'));
-  //   } catch (\Exception $e) {
-  //     \Drupal::logger('ideas_form')->error($e->getMessage());
-  //     $this->messenger()->addError($this->t('An error occurred while submitting your idea.'));
-  //   }
-  // }
 
   public function submitForm(array &$form, FormStateInterface $form_state)
   {

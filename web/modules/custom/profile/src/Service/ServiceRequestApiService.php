@@ -24,7 +24,6 @@ class ServiceRequestApiService
         $globalVariables = $this->globalVariablesService->getGlobalVariables();
         $accessToken = $this->globalVariablesService->getApimanAccessToken();
         
-        // $url = "https://hcsjointstack.trinityiot.in/trinityengage-casemanagementsystem/1.0.0/common/service-request-by-grievance?grievanceId={$grievanceId}&requestTypeId={$requestTypeId}";
         $req_detail_url = $globalVariables['apiManConfig']['config']['apiUrl'] . 'trinityengage-casemanagementsystem' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'common/service-request-by-grievance?grievanceId=' . $grievanceId . '&requestTypeId=' . $requestTypeId;
         $options = [
             'headers' => [
@@ -37,7 +36,7 @@ class ServiceRequestApiService
         try {
             $client = \Drupal::httpClient();
             $response = $client->get($req_detail_url, $options);
-            $data = json_decode($response->getBody(), true);
+            $data = json_decode($response->getBody(), TRUE);
             return $data ?? [];
         } catch (\Exception $e) {
             watchdog_exception('profile', $e);
@@ -51,7 +50,6 @@ class ServiceRequestApiService
         $globalVariables = $this->globalVariablesService->getGlobalVariables();
         $accessToken = $this->globalVariablesService->getApimanAccessToken();
         $service_req_url = $globalVariables['apiManConfig']['config']['apiUrl'] . 'trinityengage-casemanagementsystem' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'common/service-request';
-        // $url = 'https://hcsjointstack.trinityiot.in/trinityengage-casemanagementsystem/1.0.0/common/service-request';
         $headers = [
             'Authorization' => 'Bearer ' . $accessToken,
             'Content-Type' => 'application/json',
@@ -73,6 +71,6 @@ class ServiceRequestApiService
             'json' => $body,
         ]);
 
-        return json_decode($response->getBody(), true);
+        return json_decode($response->getBody(), TRUE);
     }
 }

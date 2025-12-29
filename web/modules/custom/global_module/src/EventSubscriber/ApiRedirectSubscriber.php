@@ -88,13 +88,8 @@ class ApiRedirectSubscriber implements EventSubscriberInterface
    * @return mixed
    *   API result (array, string, etc.) depending on your API.
    */
-
-
-
-
   private function callYourApi()
   {
-    // dump("HttpClient");exit;
     try {
 
       $global_service = \Drupal::service('global_module.global_variables');
@@ -103,11 +98,9 @@ class ApiRedirectSubscriber implements EventSubscriberInterface
       $access_token = $global_service->getApimanAccessToken();
       $client = \Drupal::httpClient();
       $email = \Drupal::currentUser()->getEmail();
-      // $email = 'deepak.s@trinitymobility.com';
       $payload = [
         'userId' => $email
       ];
-      //   echo $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotcitizenapp' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'user/details';
       $response = $client->post(
         $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotcitizenapp' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'user/details',
         [
@@ -118,7 +111,7 @@ class ApiRedirectSubscriber implements EventSubscriberInterface
           'json' => $payload,
         ]
       );
-      $data = json_decode($response->getBody(), true);
+      $data = json_decode($response->getBody(), TRUE);
       // dump("Data",$data);
       return $data['data'] ?? NULL; // adjust key as per your API
     } catch (\Exception $e) {

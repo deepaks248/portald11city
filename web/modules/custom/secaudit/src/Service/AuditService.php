@@ -133,7 +133,7 @@ class AuditService
         // Allow only GET and POST
         $allowedMethods = ['GET', 'POST'];
 
-        if (!in_array($method, $allowedMethods, true)) {
+        if (!in_array($method, $allowedMethods, TRUE)) {
             $logger = $this->loggerFactory->get('secaudit');
 
             $logger->warning(
@@ -163,7 +163,7 @@ class AuditService
         $allowedMethods = ['GET', 'POST'];
         $method = strtoupper($request->getMethod());
 
-        if (!in_array($method, $allowedMethods, true)) {
+        if (!in_array($method, $allowedMethods, TRUE)) {
             $logger = $this->loggerFactory->get('secaudit');
 
             $logger->warning('RE2: Unsupported HTTP method attempt detected.', [
@@ -313,8 +313,8 @@ class AuditService
         ];
 
         $contentType = (string) $request->headers->get('Content-Type', '');
-        if (stripos($contentType, 'application/json') !== false) {
-            $decoded = json_decode((string) $request->getContent(), true);
+        if (stripos($contentType, 'application/json') !== FALSE) {
+            $decoded = json_decode((string) $request->getContent(), TRUE);
             if (is_array($decoded)) {
                 $inputs['json_body'] = $decoded;
             }
@@ -419,7 +419,7 @@ class AuditService
             // Check if there's a mismatch after double-decoding (even if the value appears unchanged in the logs)
             if ($twice !== $once || $this->containsHTMLEntity($twice)) {
                 $this->logEE1($request, $value, 'double_url_encoding');
-                $request->attributes->set('_secaudit_ee1_detected', true);
+                $request->attributes->set('_secaudit_ee1_detected', TRUE);
                 return;
             }
 
@@ -428,7 +428,7 @@ class AuditService
             $twice = html_entity_decode($once, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             if ($twice !== $once) {
                 $this->logEE1($request, $value, 'double_html_encoding');
-                $request->attributes->set('_secaudit_ee1_detected', true);
+                $request->attributes->set('_secaudit_ee1_detected', TRUE);
                 return;
             }
 
@@ -448,7 +448,7 @@ class AuditService
     {
         $len = strlen($s);
         if ($len < 8 || $len % 4 !== 0) {
-            return false;
+            return FALSE;
         }
         return (bool) preg_match('/^[A-Za-z0-9+\/]+=*$/', $s);
     }
@@ -556,6 +556,6 @@ class AuditService
             ]
         );
 
-        $request->attributes->set('_secaudit_ee2_detected', true);
+        $request->attributes->set('_secaudit_ee2_detected', TRUE);
     }
 }

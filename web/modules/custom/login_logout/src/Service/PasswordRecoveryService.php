@@ -78,7 +78,7 @@ class PasswordRecoveryService
         'headers' => $headers,
         'http_errors' => FALSE,
         'timeout' => 10,
-        'verify' => false,
+        'verify' => FALSE,
       ]);
 
       // Decode JSON.
@@ -141,7 +141,7 @@ class PasswordRecoveryService
         'headers' => $headers,
         'json' => $payload,
         'timeout' => 10,
-        'verify' => false,
+        'verify' => FALSE,
       ]);
       $decoded = json_decode($response->getBody()->getContents(), TRUE);
 
@@ -195,7 +195,7 @@ class PasswordRecoveryService
       $response = $this->httpClient->request('POST', $url, [
         'headers' => $headers,
         'json' => $payload,
-        'verify' => false,
+        'verify' => FALSE,
       ]);
 
       $decoded = json_decode($response->getBody()->getContents(), TRUE);

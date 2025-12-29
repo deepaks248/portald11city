@@ -51,10 +51,10 @@ class RouteChangeSubscriber implements EventSubscriberInterface
 
     // Ignore admin/system/internal paths
     if (
-      $current_path !== null && substr($current_path, 0, strlen('/admin')) === '/admin' ||
-      $current_path !== null && substr($current_path, 0, strlen('/core')) === '/core' ||
-      $current_path !== null && substr($current_path, 0, strlen('/system')) === '/system' ||
-      $current_path !== null && substr($current_path, 0, strlen('/_')) === '/_'
+      $current_path !== NULL && substr($current_path, 0, strlen('/admin')) === '/admin' ||
+      $current_path !== NULL && substr($current_path, 0, strlen('/core')) === '/core' ||
+      $current_path !== NULL && substr($current_path, 0, strlen('/system')) === '/system' ||
+      $current_path !== NULL && substr($current_path, 0, strlen('/_')) === '/_'
     ) {
       return;
     }

@@ -38,7 +38,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
 
         // Ignore certain paths (like analytics)
         $path = $request->getPathInfo();
-        if ($path !== null && substr($path, 0, strlen('/visitors/_track')) === '/visitors/_track') {
+        if ($path !== NULL && substr($path, 0, strlen('/visitors/_track')) === '/visitors/_track') {
             return;
         }
 
@@ -46,7 +46,6 @@ class RequestEventSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // $this->auditService->detectXss();
         $this->auditService->detectEE1();
         $this->auditService->detectIE1();
         $this->auditService->detectEE2();
@@ -55,7 +54,7 @@ class RequestEventSubscriber implements EventSubscriberInterface
         $this->auditService->detectUnsupportedHttpMethods();
         $this->auditService->detectCookieTampering();
 
-        $request->attributes->set('_secaudit_logged', true);
+        $request->attributes->set('_secaudit_logged', TRUE);
     }
 
 

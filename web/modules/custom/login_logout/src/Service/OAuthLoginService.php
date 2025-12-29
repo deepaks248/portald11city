@@ -169,6 +169,11 @@ class OAuthLoginService
                         date('Y-m-d H:i:s', $s['lastAccessTime'] / 1000) . "\n";
                 }
 
+                $this->logger->notice('Active sessions for user @email: @sessions', [
+                    '@email' => $email,
+                    '@sessions' => $sessionList,
+                ]);
+
                 $message = "You have reached the maximum active sessions ($maxSessions).";
 
                 return [
@@ -217,7 +222,7 @@ class OAuthLoginService
     {
         $parts = explode('.', $jwt);
         if (count($parts) !== 3) {
-            return null; // Invalid token format
+            return NULL; // Invalid token format
         }
 
         $payload = $parts[1];
@@ -229,8 +234,8 @@ class OAuthLoginService
             $payload .= str_repeat('=', 4 - $mod4);
         }
 
-        $decoded = json_decode(base64_decode($payload), true);
-        return is_array($decoded) ? $decoded : null;
+        $decoded = json_decode(base64_decode($payload), TRUE);
+        return is_array($decoded) ? $decoded : NULL;
     }
 
     public function exchangeCodeForToken(string $code): ?array
@@ -341,10 +346,10 @@ class OAuthLoginService
     {
         $parts = explode('.', $idToken);
         if (count($parts) !== 3) {
-            return null;
+            return NULL;
         }
-        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
-        return $payload['sub'] ?? null;
+        $payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), TRUE);
+        return $payload['sub'] ?? NULL;
     }
 
     /**

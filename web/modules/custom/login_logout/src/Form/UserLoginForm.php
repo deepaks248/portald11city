@@ -149,7 +149,7 @@ class UserLoginForm extends FormBase
     if ($request->attributes->get('_ae_logged')) {
       return;
     }
-    $request->attributes->set('_ae_logged', true);
+    $request->attributes->set('_ae_logged', TRUE);
 
     // Keep x-real-ip logic as requested.
     $headers = \Drupal::request()->headers->all();

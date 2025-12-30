@@ -17,6 +17,7 @@ use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 use Drupal\login_logout\Service\PasswordRecoveryService;
 use Drupal\Core\Url;
+use Drupal\active_sessions\Service\ActiveSessionService;
 
 class UserLoginForm extends FormBase
 {
@@ -30,6 +31,7 @@ class UserLoginForm extends FormBase
   protected $database;
   protected $globalVariablesService;
   protected $passwordRecoveryService;
+  protected $activeSessionService;
 
   public function __construct(
     AccountProxyInterface $currentUser,
@@ -40,7 +42,8 @@ class UserLoginForm extends FormBase
     OAuthLoginService $oauthLoginService,
     Connection $database,
     GlobalVariablesService $globalVariablesService,
-    PasswordRecoveryService $passwordRecoveryService
+    PasswordRecoveryService $passwordRecoveryService,
+    ActiveSessionService $activeSessionService
   ) {
     $this->oauthLoginService = $oauthLoginService;
     $this->currentUser = $currentUser;
@@ -51,6 +54,7 @@ class UserLoginForm extends FormBase
     $this->database = $database;
     $this->globalVariablesService = $globalVariablesService;
     $this->passwordRecoveryService = $passwordRecoveryService;
+    $this->activeSessionService = $activeSessionService;
   }
 
   public static function create(ContainerInterface $container)
@@ -64,7 +68,8 @@ class UserLoginForm extends FormBase
       $container->get('login_logout.oauth_login_service'),
       $container->get('database'),
       $container->get('global_module.global_variables'),
-      $container->get('login_logout.password_recovery_service')
+      $container->get('login_logout.password_recovery_service'),
+      $container->get('active_sessions.session_service')
     );
   }
 
@@ -252,6 +257,28 @@ class UserLoginForm extends FormBase
         // Save login timestamp (used later for matching active session)
         $login_time = \Drupal::time()->getRequestTime(); // seconds
         $session->set('login_logout.login_time', $login_time);
+
+        $accessToken = $tokenData['access_token'] ?? '';
+        $activeSessions = $this->activeSessionService->fetchActiveSessions($accessToken);
+        $closestSessionId = NULL;
+        $closestDiff = PHP_INT_MAX;
+        $targetTimeMs = $login_time * 1000;
+
+        if (!empty($activeSessions['sessions'])) {
+          foreach ($activeSessions['sessions'] as $session) {
+            if (!empty($session['loginTime'])) {
+              $diff = abs($session['loginTime'] - $targetTimeMs);
+              if ($diff < $closestDiff) {
+                $closestDiff = $diff;
+                $closestSessionId = $session['id']; // <-- this is what we want
+              }
+            }
+          }
+        }
+
+        // Fallback if nothing matched
+        $session = \Drupal::service('session');
+        $session->set('login_logout.active_session_id_token', $closestSessionId);
 
         // Step 5: Load Drupal user and log in
         $users = \Drupal::entityTypeManager()

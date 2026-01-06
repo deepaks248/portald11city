@@ -388,7 +388,7 @@ class AddFamilyMemberForm extends FormBase
       if ($upload_response instanceof \Symfony\Component\HttpFoundation\JsonResponse) {
 
         // Debug what we really have
-        $response_data = json_decode($upload_response->getContent(), true);
+        $response_data = json_decode($upload_response->getContent(), TRUE);
         if (!empty($response_data['fileName'])) {
           $image_url = $response_data['fileName'];
         } elseif (!empty($response_data['error'])) {
@@ -414,7 +414,7 @@ class AddFamilyMemberForm extends FormBase
       'userId'       => $user_data['userId'] ?? '',
       'imageUrl'     => $image_url,
     ];
-    // dump($payload);
+
     \Drupal::logger('profile')->info('Submitting family member: <pre>@payload</pre>', [
       '@payload' => print_r($payload, TRUE),
     ]);
@@ -432,12 +432,12 @@ class AddFamilyMemberForm extends FormBase
           'Authorization' => 'Bearer ' . $access_token,
         ],
       ]);
-      $data = json_decode($response->getBody()->getContents(), true);
+      $data = json_decode($response->getBody()->getContents(), TRUE);
       \Drupal::logger('profile')->info('API response: <pre>@response</pre>', [
         '@response' => print_r($data, TRUE),
       ]);
 
-      if ($data['status'] && $data['status'] === true) {
+      if ($data['status'] && $data['status'] === TRUE) {
         \Drupal::logger('profile')->info('Redirecting to success route.');
         $form_state->setRedirect('profile.family_success');
       } else {

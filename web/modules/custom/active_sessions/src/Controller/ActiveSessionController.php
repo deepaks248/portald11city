@@ -116,7 +116,7 @@ class ActiveSessionController extends ControllerBase
         $currentUserSessions = [];
         $otherUserSessions = [];
 
-        $closestSessionId = null;
+        $closestSessionId = NULL;
         if (!empty($storedLoginTime) && !empty($apiSessions)) {
             $targetTimeMs = $storedLoginTime * 1000;
             $closestDiff = PHP_INT_MAX;
@@ -169,12 +169,12 @@ class ActiveSessionController extends ControllerBase
         $accessToken = $session->get('login_logout.access_token');
         $active_session_id_token = $session->get('login_logout.active_session_id_token');
 
-        if ($accessToken === null) {
+        if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
             return new RedirectResponse('/my-account');
         }
 
-        [$id, $access_token] = explode('--', $session_id) + [null, null];
+        [$id, $access_token] = explode('--', $session_id) + [NULL, NULL];
 
         try {
             $is_my_session = ($active_session_id_token == $id);
@@ -196,7 +196,7 @@ class ActiveSessionController extends ControllerBase
         $session = \Drupal::service('session');
         $accessToken = $session->get('login_logout.access_token');
 
-        if ($accessToken === null) {
+        if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
             return new RedirectResponse('/my-account');
         }

@@ -12,7 +12,9 @@ use Drupal\global_module\Service\GlobalVariablesService;
  */
 class PasswordRecoveryService
 {
-
+  public const APP_JSON = 'application/json';
+  public const FORM_URLENCODED = 'application/x-www-form-urlencoded';
+  public const SECURE_LINK = 'https://';
   /**
    * HTTP client service.
    *
@@ -64,7 +66,7 @@ class PasswordRecoveryService
       $attributes = "username";
 
       $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-      $url = 'https://' . $idamconfig . '/scim2/Users/?filter=' . rawurlencode($filter)
+      $url = self::SECURE_LINK . $idamconfig . '/scim2/Users/?filter=' . rawurlencode($filter)
         . '&attributes=' . $attributes;
 
       // Prepare headers.
@@ -113,7 +115,7 @@ class PasswordRecoveryService
   {
     $username = $this->get_scim_username_by_email($email);
     $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-    $url = 'https://' . $idamconfig . '/api/users/v2/recovery/password/init';
+    $url = self::SECURE_LINK . $idamconfig . '/api/users/v2/recovery/password/init';
 
     $payload = [
       'claims' => [
@@ -131,8 +133,8 @@ class PasswordRecoveryService
     ];
 
     $headers = [
-      'accept' => 'application/json',
-      'Content-Type' => 'application/json',
+      'accept' => self::APP_JSON,
+      'Content-Type' => self::APP_JSON,
       'Authorization' => 'Basic YWRtaW46VHJpbml0eUAxMjM=',
     ];
 
@@ -172,7 +174,7 @@ class PasswordRecoveryService
   {
 
     $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-    $url = 'https://' . $idamconfig . '/api/users/v2/recovery/password/recover';
+    $url = self::SECURE_LINK . $idamconfig . '/api/users/v2/recovery/password/recover';
 
     $payload = [
       'recoveryCode' => $recovery_code,
@@ -186,8 +188,8 @@ class PasswordRecoveryService
     ];
 
     $headers = [
-      'accept' => 'application/json',
-      'Content-Type' => 'application/json',
+      'accept' => self::APP_JSON,
+      'Content-Type' => self::APP_JSON,
       'Authorization' => 'Basic dHJpbml0eTp0cmluaXR5QDEyMw==',
     ];
 
@@ -227,9 +229,8 @@ class PasswordRecoveryService
       }
 
       // Step 2: Complete recovery using the code.
-      $response = $this->completeRecovery($recovery_code, '1');
+      return $this->completeRecovery($recovery_code, '1');
 
-      return $response;
     } catch (\Exception $e) {
       $this->logger->error('Password recovery process failed: @msg', ['@msg' => $e->getMessage()]);
       return NULL;

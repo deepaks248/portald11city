@@ -10,6 +10,8 @@ use Drupal\global_module\Service\GlobalVariablesService;
 
 class ActiveSessionService
 {
+    public const SECURE_URL = 'https://';
+    public const BEARER = 'Bearer ';
 
     protected ClientInterface $httpClient;
     protected RequestStack $requestStack;
@@ -43,65 +45,65 @@ class ActiveSessionService
 
         // Get cookies from the request (optional if needed).
         $cookies = $request->headers->get('cookie');
-
+        $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        $url = self::SECURE_URL. $idamconfig .'/api/users/v1/me/sessions';
         try {
-            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('GET', 'https://'. $idamconfig .'/api/users/v1/me/sessions', [
+            $response = $this->httpClient->request('GET', $url , [
                 'headers' => [
                     'Accept' => '*/*',
-                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Authorization' => self::BEARER . $accessToken,
                     'Cookie' => $cookies,
                 ],
-                'verify' => false, // Only if self-signed cert; remove in production
+                'verify' => FALSE, // Only if self-signed cert; remove in production
             ]);
 
-            $data = json_decode($response->getBody()->getContents(), true);
+            $data = json_decode($response->getBody()->getContents(), TRUE);
             return $data ?? [];
         } catch (\Exception $e) {
             $this->logger->error('Error fetching active sessions: @message', ['@message' => $e->getMessage()]);
-            return null;
+            return NULL;
         }
     }
 
     public function terminateSession(string $session_id, string $access_token): bool
     {
         $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-        $url = 'https://'. $idamconfig .'/api/users/v1/me/sessions/' . $session_id;
+        $url = self::SECURE_URL . $idamconfig .'/api/users/v1/me/sessions/' . $session_id;
 
         try {
             $this->httpClient->request('DELETE', $url, [
                 'headers' => [
                     'Accept' => '*/*',
-                    'Authorization' => 'Bearer ' . $access_token,
+                    'Authorization' => self::BEARER . $access_token,
                 ],
-                'verify' => false, // if SSL cert is self-signed
+                'verify' => FALSE, // if SSL cert is self-signed
             ]);
 
-            return true;
+            return TRUE;
         } catch (RequestException $e) {
             $this->logger->error('Failed to terminate session: @message', ['@message' => $e->getMessage()]);
-            return false;
+            return FALSE;
         }
     }
 
     public function terminateAllOtherSessions(string $access_token): bool
     {
         $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-        $url = 'https://'. $idamconfig .'/api/users/v1/me/sessions';
+        $url = self::SECURE_URL . $idamconfig .'/api/users/v1/me/sessions';
 
         try {
             $this->httpClient->request('DELETE', $url, [
                 'headers' => [
                     'Accept' => '*/*',
-                    'Authorization' => 'Bearer ' . $access_token,
+                    'Authorization' => self::BEARER . $access_token,
                 ],
-                'verify' => false, // if SSL cert is self-signed
+                'verify' => FALSE, // if SSL cert is self-signed
             ]);
 
-            return true;
+            return TRUE;
         } catch (RequestException $e) {
             $this->logger->error('Failed to terminate all other sessions: @message', ['@message' => $e->getMessage()]);
-            return false;
+            return FALSE;
         }
     }
 }

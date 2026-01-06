@@ -295,15 +295,18 @@ async function fetchJson(url) {
           resetSelect($typeSelect, 'Select a Category', false); // ✅ Matches form
 
           if (Array.isArray(data)) {
-            data.forEach(item => {
+            for (const item of data) {
               const key = item.key ?? Object.keys(item)[0];
               const value = item.value ?? Object.values(item)[0];
-              if (key && value) $typeSelect.append(`<option value="${key}">${value}</option>`);
-            });
-          } else if (typeof data === 'object') {
-            Object.entries(data).forEach(([key, value]) => {
+
+              if (key && value) {
+                $typeSelect.append(`<option value="${key}">${value}</option>`);
+              }
+            }
+          } else if (typeof data === 'object' && data !== null) {
+            for (const [key, value] of Object.entries(data)) {
               $typeSelect.append(`<option value="${key}">${value}</option>`);
-            });
+            }
           } else {
             console.error('Unexpected types response format:', data);
           }
@@ -324,15 +327,18 @@ async function fetchJson(url) {
           resetSelect($subtypeSelect, 'Select Sub Category', false); // ✅ Matches form
 
           if (Array.isArray(data)) {
-            data.forEach(item => {
+            for (const item of data) {
               const key = item.key ?? Object.keys(item)[0];
               const value = item.value ?? Object.values(item)[0];
-              if (key && value) $subtypeSelect.append(`<option value="${key}">${value}</option>`);
-            });
-          } else if (typeof data === 'object') {
-            Object.entries(data).forEach(([key, value]) => {
+
+              if (key && value) {
+                $subtypeSelect.append(`<option value="${key}">${value}</option>`);
+              }
+            }
+          } else if (typeof data === 'object' && data !== null) {
+            for (const [key, value] of Object.entries(data)) {
               $subtypeSelect.append(`<option value="${key}">${value}</option>`);
-            });
+            }
           } else {
             console.error('Unexpected subtypes response format:', data);
           }

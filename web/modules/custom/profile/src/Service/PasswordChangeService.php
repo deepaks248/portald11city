@@ -33,11 +33,9 @@ class PasswordChangeService
 
     public function changePassword(string $oldPass, string $newPass, string $confirmPass): array
     {
-        $result = ['status' => false, 'message' => 'Something went wrong'];
-
         try {
             if ($newPass !== $confirmPass) {
-                return ['status' => false, 'message' => 'New password and confirm password do not match.'];
+                return ['status' => FALSE, 'message' => 'New password and confirm password do not match.'];
             }
 
             $email = $this->currentUser->getEmail();
@@ -49,7 +47,7 @@ class PasswordChangeService
 
             if (empty($responseData['Resources'][0]['id'])) {
                 $this->logger->error('User ID not found for email: @mail', ['@mail' => $email]);
-                return ['status' => false, 'message' => 'User not found in SCIM.'];
+                return ['status' => FALSE, 'message' => 'User not found in SCIM.'];
             }
 
             $idamUserId = $responseData['Resources'][0]['id'];
@@ -66,7 +64,7 @@ class PasswordChangeService
                 $payloadOld
             );
             if (empty($resOld['access_token'])) {
-                return ['status' => false, 'message' => 'Old password not matching!'];
+                return ['status' => FALSE, 'message' => 'Old password not matching!'];
             }
 
             // Step 3: Update password
@@ -86,25 +84,25 @@ class PasswordChangeService
 
             if (!empty($resPass['error'])) {
                 $details = $resPass['details']['detail'] ?? 'Password update failed';
-                return ['status' => false, 'message' => $details];
+                return ['status' => FALSE, 'message' => $details];
             }
 
             if (!empty($resPass['emails'][0]) && $resPass['emails'][0] === $email) {
-                return ['status' => true, 'message' => 'Password changed successfully. Please log in again.'];
+                return ['status' => FALSE, 'message' => 'Password changed successfully. Please log in again.'];
             }
 
             if (!empty($resPass['detail']) && str_contains(strtolower($resPass['detail']), 'password history')) {
-                return ['status' => false, 'message' => 'The password you are trying to use was already used in your last 3 password changes. Please choose a completely new password.'];
+                return ['status' => FALSE, 'message' => 'The password you are trying to use was already used in your last 3 password changes. Please choose a completely new password.'];
             }
 
             if (!empty($resPass['detail'])) {
-                return ['status' => false, 'message' => $resPass['detail']];
+                return ['status' => FALSE, 'message' => $resPass['detail']];
             }
 
-            return ['status' => false, 'message' => 'Password not updated!'];
+            return ['status' => FALSE, 'message' => 'Password not updated!'];
         } catch (\Exception $e) {
             $this->logger->error('Exception during password change: @msg', ['@msg' => $e->getMessage()]);
-            return ['status' => false, 'message' => 'Unexpected error occurred.'];
+            return ['status' => FALSE, 'message' => 'Unexpected error occurred.'];
         }
     }
 }

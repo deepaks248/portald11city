@@ -6,6 +6,7 @@ namespace Drupal\secaudit\Service;
 
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Safer AuditService for XSS detection with reduced false positives.
@@ -197,7 +198,7 @@ class AuditService
         $snapshot = $session->get('secaudit.session_snapshot');
 
         // First request → establish baseline
-        if ($snapshot === null) {
+        if ($snapshot === NULL) {
             $session->set('secaudit.session_snapshot', [
                 'cookies' => $currentCookies,
                 'ip' => $currentIp,
@@ -289,23 +290,43 @@ class AuditService
     public function detectIE1(): array
     {
         $request = $this->requestStack->getCurrentRequest();
-        if ($request->attributes->get('_secaudit_ee1_detected')) {
+
+        if (!$this->shouldScanRequest($request)) {
             return [];
         }
 
+        $inputs = $this->collectInputs($request);
+        $findings = $this->scanInputs($inputs);
+
+        if (!empty($findings)) {
+            $this->logIE1($request, $findings);
+        }
+
+        return $findings;
+    }
+
+    private function shouldScanRequest(?Request $request): bool
+    {
         if (!$request) {
-            return [];
+            return FALSE;
+        }
+
+        if ($request->attributes->get('_secaudit_ee1_detected')) {
+            return FALSE;
         }
 
         $pathInfo = $request->getPathInfo() ?? '/';
         foreach ($this->ignorePathPrefixes as $prefix) {
             if (str_starts_with($pathInfo, $prefix)) {
-                return [];
+                return FALSE;
             }
         }
 
-        $findings = [];
+        return TRUE;
+    }
 
+    private function collectInputs(Request $request): array
+    {
         $inputs = [
             'query' => $request->query->all(),
             'request' => $request->request->all(),
@@ -320,6 +341,13 @@ class AuditService
             }
         }
 
+        return $inputs;
+    }
+
+    private function scanInputs(array $inputs): array
+    {
+        $findings = [];
+
         foreach ($inputs as $type => $values) {
             $this->scanIE1Recursive($type, $values, $findings);
             if (count($findings) >= $this->maxFindings) {
@@ -327,45 +355,61 @@ class AuditService
             }
         }
 
-        if (!empty($findings)) {
-            $this->logIE1($request, $findings);
-        }
-
         return $findings;
     }
 
     protected function scanIE1Recursive(string $type, $values, array &$findings): void
     {
-        if (count($findings) >= $this->maxFindings) {
+        if (!$this->canScanValue($values, $findings)) {
             return;
         }
 
         if (is_array($values)) {
-            foreach ($values as $v) {
-                $this->scanIE1Recursive($type, $v, $findings);
-            }
-            return;
-        }
-
-        if (!is_scalar($values)) {
+            $this->scanArrayValues($type, $values, $findings);
             return;
         }
 
         $value = (string) $values;
-        if (strlen($value) > $this->maxScanLength) {
+
+        if ($this->isValueTooLong($value)) {
             return;
         }
 
-        // Only raw + single decode and double decode
-        $variants = [
-            $value,
-            rawurldecode($value),
-            html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
-            rawurldecode(rawurldecode($value)),  // Double URL decode
-            html_entity_decode(html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES | ENT_HTML5, 'UTF-8')  // Double HTML decode
-        ];
+        $this->scanValueVariants($type, $value, $findings);
+    }
 
-        foreach ($variants as $variant) {
+    private function canScanValue($values, array $findings): bool
+    {
+        if (count($findings) >= $this->maxFindings) {
+            return FALSE;
+        }
+
+        if (is_array($values)) {
+            return TRUE;
+        }
+
+        return is_scalar($values);
+    }
+
+    private function scanArrayValues(string $type, array $values, array &$findings): void
+    {
+        foreach ($values as $v) {
+            $this->scanIE1Recursive($type, $v, $findings);
+
+            if (count($findings) >= $this->maxFindings) {
+                break;
+            }
+        }
+    }
+
+    private function isValueTooLong(string $value): bool
+    {
+        return strlen($value) > $this->maxScanLength;
+    }
+
+    private function scanValueVariants(string $type, string $value, array &$findings): void
+    {
+        foreach ($this->generateVariants($value) as $variant) {
             foreach ($this->xssPatterns as $pattern) {
                 if (preg_match($pattern, $variant)) {
                     $findings[] = [
@@ -377,6 +421,21 @@ class AuditService
                 }
             }
         }
+    }
+
+    private function generateVariants(string $value): array
+    {
+        return [
+            $value,
+            rawurldecode($value),
+            html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+            rawurldecode(rawurldecode($value)),
+            html_entity_decode(
+                html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                ENT_QUOTES | ENT_HTML5,
+                'UTF-8'
+            ),
+        ];
     }
 
     protected function logIE1($request, array $findings): void

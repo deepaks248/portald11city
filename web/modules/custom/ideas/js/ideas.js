@@ -40,12 +40,12 @@
   Drupal.behaviors.ideasFormValidation = {
     attach: function (context, settings) {
       // Ensure jQuery Validate is loaded
-      if (typeof $.validator === 'undefined') {
+      if ($.validator === 'undefined') {
         console.error('jQuery Validate is not loaded!');
         return;
       }
 
-      var $form = $('#ideas-form', context);
+      let $form = $('#ideas-form', context);
 
       // Prevent double initialization
       if ($form.data('validated')) return;
@@ -60,10 +60,12 @@
       // Custom file extension method
       $.validator.addMethod("extensionFile", function (value, element, param) {
         if (element.files.length === 0) return true;
-        var allowed = param.split('|');
-        var fileName = element.files[0].name.toLowerCase();
-        for (var i = 0; i < allowed.length; i++) {
-          if (fileName.endsWith(allowed[i])) return true;
+        let allowed = param.split('|');
+        let fileName = element.files[0].name.toLowerCase();
+        for (const ext of allowed) {
+          if (fileName.endsWith(ext)) {
+            return true;
+          }
         }
         return false;
       }, "Invalid file type");
@@ -99,13 +101,13 @@
       });
 
       // Override Drupal AJAX beforeSubmit
-      if (typeof Drupal.Ajax !== 'undefined') {
+      if (Drupal.Ajax !== 'undefined') {
         Drupal.Ajax.prototype.beforeSubmit = function (form_values, element_settings, options) {
           // Only validate if form has class 'cv-validate-before-ajax' or validateAll is set
-          var validateAll = 1; // or set dynamically if needed
-          if (typeof this.$form !== 'undefined' &&
-              (validateAll === 1 || $(this.$form).hasClass('cv-validate-before-ajax')) &&
-              $(this.element).attr("formnovalidate") === undefined) {
+          let validateAll = 1; // or set dynamically if needed
+          if (this.$form !== 'undefined' &&
+            (validateAll === 1 || $(this.$form).hasClass('cv-validate-before-ajax')) &&
+            $(this.element).attr("formnovalidate") === undefined) {
 
             $(this.$form).removeClass('ajax-submit-prevented');
 

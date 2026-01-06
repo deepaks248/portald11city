@@ -1,9 +1,10 @@
 (function (Drupal, once) {
   Drupal.behaviors.swiperInit = {
-    attach: function (context) {
+    attach(context) {
+
       // Init for .mySwiper
-      once('swiper-init', '.mySwiper.swiper', context).forEach(function (el) {
-        new Swiper(el, {
+      for (const el of once('swiper-init', '.mySwiper.swiper', context)) {
+        el._swiperInstance = new Swiper(el, {
           spaceBetween: 1,
           slidesPerView: 1,
           autoplay: {
@@ -20,11 +21,11 @@
             clickable: true,
           },
         });
-      });
+      }
 
       // Init for .gallerySwiper
-      once('gallery-swiper-init', '.gallerySwiper.swiper', context).forEach(function (el) {
-        new Swiper(el, {
+      for (const el of once('gallery-swiper-init', '.gallerySwiper.swiper', context)) {
+        el._swiperInstance = new Swiper(el, {
           slidesPerView: 'auto',
           spaceBetween: 10,
           loop: true,
@@ -38,7 +39,7 @@
             clickable: true,
           },
         });
-      });
+      }
 
     }
   };

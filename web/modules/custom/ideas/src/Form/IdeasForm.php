@@ -47,8 +47,7 @@ class IdeasForm extends FormBase
     $cid = 'ideas_form:category_options';
     $cache = \Drupal::cache()->get($cid);
     if ($cache) {
-      $options = $cache->data;
-      return $options;
+      return $cache->data;
     }
 
     $options = ['' => $this->t('Select Category')];
@@ -63,7 +62,7 @@ class IdeasForm extends FormBase
     return $options;
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state, $srcId = false)
+  public function buildForm(array $form, FormStateInterface $form_state, $srcId = FALSE)
   {
     $form['#prefix'] = '<div id="ideas-form-wrapper">';
     $form['#suffix'] = '</div>';
@@ -137,15 +136,7 @@ class IdeasForm extends FormBase
         'file_validate_size' => [2 * 1024 * 1024],
       ],
       '#attributes' => [
-        'class' => [
-          'peer',
-          'w-1/2',
-          'lg:max-w-lg',
-          'px-2.5',
-          'py-2.5',
-          // 'pt-4',
-          'text-sm',
-          'text-medium_dark',
+        'class' => ['peer','w-1/2','lg:max-w-lg','px-2.5','py-2.5','text-sm','text-medium_dark',
           'bg-transparent',
           'rounded-lg',
           'text-base',

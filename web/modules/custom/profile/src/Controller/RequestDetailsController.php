@@ -7,7 +7,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\profile\Service\ServiceRequestApiService;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-// use Symfony\Component\HttpFoundation\Request;
 
 class RequestDetailsController extends ControllerBase
 {
@@ -34,8 +33,8 @@ class RequestDetailsController extends ControllerBase
         $api_response = $this->service->getServiceRequestDetails($grievance_id, $requestTypeId);
 
         // Extract values safely
-        $sessionUserId = $session->get('api_redirect_result')['userId'] ?? null;
-        $responseUserId = $api_response['data']['serviceRequestDetails']['userId'] ?? null;
+        $sessionUserId = $session->get('api_redirect_result')['userId'] ?? NULL;
+        $responseUserId = $api_response['data']['serviceRequestDetails']['userId'] ?? NULL;
 
         // ✅ Check userId match
         if (!$sessionUserId || !$responseUserId || $sessionUserId !== $responseUserId) {

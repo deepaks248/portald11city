@@ -9,35 +9,41 @@
     const termLinks = document.querySelectorAll('.term-link');
     console.log("Found term links:", termLinks.length);
 
-    termLinks.forEach(function (link) {
+    for (const link of termLinks) {
       link.addEventListener('click', function (e) {
         e.preventDefault();
 
-        const linkText = link.querySelector('.linktoDet')?.textContent.trim() || '';
-        const searchInput = document.querySelector('#searchkey');
-        searchInput.placeholder = "Search " + linkText;
+        const linkText =
+          link.querySelector('.linktoDet')?.textContent?.trim() || '';
 
-        document.querySelector('.pois-list').classList.remove('hidden');
+        const searchInput = document.querySelector('#searchkey');
+        if (searchInput) {
+          searchInput.placeholder = `Search ${linkText}`;
+        }
+
+        document.querySelector('.pois-list')?.classList.remove('hidden');
         showLoader();
 
-        const termId = link.getAttribute('data-tid');
-        console.log("Term ID:", termId);
+        const termId = link.dataset.tid;
+        console.log('Term ID:', termId);
 
-        fetch('/api/get-content-by-term/' + termId)
-          .then(response => response.json())
-          .then(data => {
-            if (data.count > 0) {
+        fetch(`/api/get-content-by-term/${termId}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data?.count > 0) {
               poiItems = data.items;
               renderPOICards(poiItems);
             } else {
-              document.querySelector('.poi-cards').innerHTML = `<p class="text-center text-gray-500 py-4">No amenities available at the moment.</p>`;
+              document.querySelector('.poi-cards')?.innerHTML =
+                '<p class="text-center text-gray-500 py-4">No amenities available at the moment.</p>';
             }
           })
           .catch(() => {
-            document.getElementById('content-area').innerHTML = '<p>Error loading data.</p>';
+            document.getElementById('content-area')?.innerHTML =
+              '<p>Error loading data.</p>';
           });
       });
-    });
+    }
 
     // Search functionality
     document.querySelector('#searchkey').addEventListener('input', function (e) {
@@ -61,7 +67,7 @@
       return;
     }
 
-    items.forEach(item => {
+    for (const item of items) {
       const html = `
         <div class="lists poiDetl cursor-pointer" data-poiid="${item.id}">
           <div class="grid card card-side border border-gray-300 mb-6 rounded-xl bg-white">
@@ -83,15 +89,20 @@
         </div>
       `;
       container.insertAdjacentHTML('beforeend', html);
-    });
+    }
 
-    document.querySelectorAll('.lists.poiDetl').forEach(card => {
+    const cards = document.querySelectorAll('.lists.poiDetl');
+
+    for (const card of cards) {
       card.addEventListener('click', () => {
-        const itemId = card.getAttribute('data-poiid');
-        const item = items.find(i => i.id == itemId);
-        renderPOIDetails(item);
+        const itemId = card.dataset.poid;
+        const item = items.find((i) => i.id == itemId);
+
+        if (item) {
+          renderPOIDetails(item);
+        }
       });
-    });
+    }
   }
 
   function renderPOIDetails(item) {
@@ -138,26 +149,26 @@
       longitude: item.longitude,
       zoom: 15,
     });
-   const poiDet = {
-  id: item.id,
-  label_color: "#ba5100",
-  img_url: 'themes/custom/engage_theme/images/CityMap/pointer.png',
-  lat: item.latitude,
-  lon: item.longitude,
-  address: item.address,
-  label: item.title,
-};
+    const poiDet = {
+      id: item.id,
+      label_color: "#ba5100",
+      img_url: 'themes/custom/engage_theme/images/CityMap/pointer.png',
+      lat: item.latitude,
+      lon: item.longitude,
+      address: item.address,
+      label: item.title,
+    };
 
-function addMarker(mapPois) {
-  tmpl.Overlay.create({
-    map: Drupal.gmap,
-    features: Array.isArray(mapPois) ? mapPois : [mapPois],
-    layer: "ATMlayer",
-    layerSwitcher: false,
-  });
+    function addMarker(mapPois) {
+      tmpl.Overlay.create({
+        map: Drupal.gmap,
+        features: Array.isArray(mapPois) ? mapPois : [mapPois],
+        layer: "ATMlayer",
+        layerSwitcher: false,
+      });
 
-}
-addMarker(poiDet);
+    }
+    addMarker(poiDet);
 
 
     container.querySelector('.back-to-list').addEventListener('click', () => {

@@ -45,7 +45,7 @@ class UserInfoValidator
           'Content-Type'  => 'application/x-www-form-urlencoded',
           'Authorization' => 'Bearer ' . $accessToken,
         ],
-        'verify' => false,
+        'verify' => FALSE,
       ]);
 
       $data = json_decode($response->getBody()->getContents(), TRUE);

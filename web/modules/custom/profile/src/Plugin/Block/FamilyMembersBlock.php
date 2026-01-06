@@ -43,7 +43,6 @@ class FamilyMembersBlock extends BlockBase implements ContainerFactoryPluginInte
 
     if ($user_id) {
       $members = $this->profileService->fetchFamilyMembers($user_id);
-    //   dump($members);
     }
 
     return [

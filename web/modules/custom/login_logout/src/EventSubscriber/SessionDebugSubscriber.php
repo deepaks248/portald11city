@@ -24,18 +24,18 @@ class SessionDebugSubscriber implements EventSubscriberInterface {
   public function onKernelRequest(RequestEvent $event) {
     // Only log for main requests.
     if (!$event->isMainRequest()) {
-      return;
+      //// return;
     }
 
-    $cookies = session_get_cookie_params();
-    $https_status = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'on' : 'off';
-    $forwarded_proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'NOT SET';
-    $remote_addr = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
+    //// $cookies = session_get_cookie_params();
+    // $https_status = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'on' : 'off';
+    // $forwarded_proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? 'NOT SET';
+    // $remote_addr = $_SERVER['REMOTE_ADDR'] ?? 'UNKNOWN';
 
-    // $this->logger->info('Session debug: $_SERVER[HTTPS] = @https', ['@https' => $https_status]);
-    // $this->logger->info('Session debug: X-Forwarded-Proto = @proto', ['@proto' => $forwarded_proto]);
-    // $this->logger->info('Session debug: REMOTE_ADDR = @addr', ['@addr' => $remote_addr]);
-    // $this->logger->info('Session cookie params: @params', ['@params' => json_encode($cookies)]);
+    // // $this->logger->info('Session debug: $_SERVER[HTTPS] = @https', ['@https' => $https_status]);
+    // // $this->logger->info('Session debug: X-Forwarded-Proto = @proto', ['@proto' => $forwarded_proto]);
+    // // $this->logger->info('Session debug: REMOTE_ADDR = @addr', ['@addr' => $remote_addr]);
+    // // $this->logger->info('Session cookie params: @params', ['@params' => json_encode($cookies)]);
   }
 
   /**

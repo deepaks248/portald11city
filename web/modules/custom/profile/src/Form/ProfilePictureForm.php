@@ -61,11 +61,6 @@ class ProfilePictureForm extends FormBase
         </div>',
     ];
 
-    // $form['user_id'] = [
-    //   '#type' => 'markup',
-    //   '#markup' => '<div class="userId_no"><p class="text-[13px] text-[#646262]">User Id :- ' . ($user_data['userId'] ?? '') . '</p></div>',
-    // ];
-
     $form['edit_label'] = [
       '#type' => 'html_tag',
       '#tag' => 'label',
@@ -154,9 +149,7 @@ class ProfilePictureForm extends FormBase
     ];
 
     try {
-      // $access_token = \Drupal::service('global_module.global_variables')->getApimanAccessToken();
       $access_token = $this->globalVariablesService->getApimanAccessToken();
-      // $globalVariables = \Drupal::service('global_module.global_variables')->getGlobalVariables();
       $globalVariables = $this->globalVariablesService->getGlobalVariables();
       $client = \Drupal::httpClient();
 
@@ -171,12 +164,10 @@ class ProfilePictureForm extends FormBase
         ]
       );
 
-      $data = json_decode($response->getBody(), true);
+      $data = json_decode($response->getBody(), TRUE);
       if (!empty($data['status'])) {
         $session->remove('api_redirect_result');
         \Drupal::logger('profile')->notice('Profile removed successfully.');
-        // $form_state->setRebuild();
-        // $form_state->set('show_success_popup', TRUE);
       } else {
         \Drupal::logger('profile')->notice('Failed to remove profile');
       }

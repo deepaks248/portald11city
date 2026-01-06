@@ -160,7 +160,7 @@ class AddAddressForm extends FormBase
                 ],
             ],
             '#required' => TRUE,
-            '#required_error' => $this->t('Landmark is required') 
+            '#required_error' => $this->t('Landmark is required')
         ];
 
         $form['country'] = [
@@ -234,7 +234,7 @@ class AddAddressForm extends FormBase
             ],
         ];
 
-        // Attach theme and Tailwind-based 
+        // Attach theme and Tailwind-based
         $form['#attributes']['class'][] = 'cv-validate-before-ajax';
         $form['#theme'] = 'add_address_form';
         $form['#attached']['library'][] = 'profile/add_address_form';

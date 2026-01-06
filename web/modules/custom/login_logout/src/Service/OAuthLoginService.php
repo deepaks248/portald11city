@@ -6,10 +6,13 @@ use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\Core\Site\Settings;
 
 class OAuthLoginService
 {
-
+    public const SECURE_LINK = 'https://';
+    public const APP_JSON = 'application/json';
+    public const FORM_URLENCODED = 'application/x-www-form-urlencoded';
     protected $httpClient;
     protected $logger;
     protected $requestStack;
@@ -31,10 +34,10 @@ class OAuthLoginService
     {
         try {
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oauth2/authorize', [
+            $response = $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/authorize', [
                 'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/x-www-form-urlencoded',
+                    'Accept' => self::APP_JSON,
+                    'Content-Type' => self::FORM_URLENCODED,
                 ],
                 'form_params' => [
                     'client_id' => 'hVBu5NSpBJHJ84KF70nfQ8ZMdnQa',
@@ -124,7 +127,7 @@ class OAuthLoginService
             $payload = [
                 "flowId" => $flow_id,
                 "selectedAuthenticator" => [
-                    "authenticatorId" => "QmFzaWNBdXRoZW50aWNhdG9yOkxPQ0FM",
+                    "authenticatorId" => Settings::get('idam_local_authenticator_id'),
                     "params" => [
                         "username" => $email,
                         "password" => $password,
@@ -132,10 +135,10 @@ class OAuthLoginService
                 ],
             ];
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oauth2/authn', [
+            $response = $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/authn', [
                 'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
+                    'Accept' => self::APP_JSON,
+                    'Content-Type' => self::APP_JSON,
                     'User-Agent' => $userAgent,
                 ],
                 'json' => $payload,
@@ -242,9 +245,9 @@ class OAuthLoginService
     {
         try {
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oauth2/token', [
+            $response = $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/token', [
                 'headers' => [
-                    'Content-Type' => 'application/x-www-form-urlencoded',
+                    'Content-Type' => self::FORM_URLENCODED,
                 ],
                 'form_params' => [
                     'client_id' => 'hVBu5NSpBJHJ84KF70nfQ8ZMdnQa',
@@ -272,7 +275,7 @@ class OAuthLoginService
                 'json' => ['userId' => $email],
                 'headers' => [
                     'Authorization' => 'Bearer ' . $access_token,
-                    'Content-Type' => 'application/json',
+                    'Content-Type' => self::APP_JSON,
                 ],
             ]);
             $data = json_decode($response->getBody()->getContents(), TRUE);
@@ -290,9 +293,9 @@ class OAuthLoginService
 
         try {
             $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oidc/logout', [
+            $response = $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oidc/logout', [
                 'headers' => [
-                    'Content-Type' => 'application/x-www-form-urlencoded',
+                    'Content-Type' => self::FORM_URLENCODED,
                     'Cookie' => $cookies,
                 ],
                 'form_params' => [

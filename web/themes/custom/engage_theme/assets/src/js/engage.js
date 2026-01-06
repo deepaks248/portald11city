@@ -5,25 +5,25 @@
 
       // Engage buttons
       const engageButtons = once('modal-engage', '[engage-button]', context);
-      engageButtons.forEach((button) => {
+      for (const button of engageButtons) {
         button.addEventListener('click', function () {
-          const modalId = this.getAttribute('data-modal-toggle');
+          const modalId = this.dataset.modalToggle;
           const modal = document.getElementById(modalId);
 
           if (modal) {
             modal.classList.remove('hidden');
             modal.classList.add('flex');
           } else {
-            // console.warn('Modal with ID', modalId, 'not found.');
+            console.warn('Modal with ID', modalId, 'not found.');
           }
         });
-      });
+      }
 
       // Close buttons
       const hideButtons = once('modal-hide', '[data-modal-hide]', context);
-      hideButtons.forEach((closeBtn) => {
+      for (const closeBtn of hideButtons) {
         closeBtn.addEventListener('click', function () {
-          const targetId = this.getAttribute('data-modal-hide');
+          const targetId = this.dataset.modalHide;
           const targetModal = document.getElementById(targetId);
 
           if (targetModal) {
@@ -31,7 +31,7 @@
             targetModal.classList.remove('flex');
           }
         });
-      });
+      }
     },
   };
 })(Drupal);
@@ -40,34 +40,34 @@ document.addEventListener("DOMContentLoaded", function () {
   // Select all engage buttons
   const engageButtons = document.querySelectorAll("[engage-button]");
 
-  engageButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-      const modalId = this.getAttribute("data-modal-toggle");
+  for (const button of engageButtons) {
+    button.addEventListener('click', function () {
+      const modalId = this.dataset.modalToggle;
       const modal = document.getElementById(modalId);
 
       if (modal) {
         // Show the modal (remove hidden, add flex for Tailwind layout)
-        modal.classList.remove("hidden");
-        modal.classList.add("flex");
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
       } else {
-        // console.warn("Modal with ID", modalId, "not found.");
+        console.warn('Modal with ID', modalId, 'not found.');
       }
     });
-  });
+  }
 
-   // Handle close buttons with [data-modal-hide]
+  // Handle close buttons with [data-modal-hide]
   const hideButtons = document.querySelectorAll("[data-modal-hide]");
-  hideButtons.forEach(function (closeBtn) {
-    closeBtn.addEventListener("click", function () {
-      const targetId = this.getAttribute("data-modal-hide");
+  for (const closeBtn of hideButtons) {
+    closeBtn.addEventListener('click', function () {
+      const targetId = this.dataset.modalHide;
       const targetModal = document.getElementById(targetId);
 
       if (targetModal) {
-        targetModal.classList.add("hidden");
-        targetModal.classList.remove("flex");
+        targetModal.classList.add('hidden');
+        targetModal.classList.remove('flex');
       }
     });
-  });
+  }
 });
 
 (function (Drupal) {
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
     attach: function (context, settings) {
       const faqItems = once('faqToggle', '.collapse-arrow', context);
 
-      faqItems.forEach(item => {
+      for (const item of faqItems) {
         const title = item.querySelector('.collapse-title');
         const content = item.querySelector('.collapse-content');
 
@@ -89,11 +89,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const isActive = item.classList.contains('active');
 
             // Collapse all
-            faqItems.forEach(i => {
+            for (const i of faqItems) {
               i.classList.remove('active');
               const c = i.querySelector('.collapse-content');
               if (c) c.style.maxHeight = '0px';
-            });
+            }
 
             // Expand clicked one
             if (!isActive) {
@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
           });
         }
-      });
+      }
     }
   };
 })(Drupal);
@@ -110,7 +110,11 @@ document.addEventListener("DOMContentLoaded", function () {
 (function (Drupal) {
   Drupal.behaviors.floatingLabels = {
     attach: function (context, settings) {
-      document.querySelectorAll('.js-form-item input, .js-form-item select').forEach((input) => {
+      const inputs = document.querySelectorAll(
+        '.js-form-item input, .js-form-item select'
+      );
+
+      for (const input of inputs) {
         const label = input.closest('.js-form-item')?.querySelector('label');
 
         if (label && !label.classList.contains('no-float-label')) {
@@ -127,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function () {
             label.classList.add('floating');
           }
         }
-      });
+      }
     }
   };
 })(Drupal);
@@ -135,7 +139,7 @@ document.addEventListener("DOMContentLoaded", function () {
 (function ($, Drupal) {
   Drupal.behaviors.scrollBelowBanner = {
     attach: function (context, settings) {
-      if (window.location.pathname !== '/') {
+      if (globalThis.location.pathname !== '/') {
         setTimeout(function () {
           const target = $('#block-engage-theme-homepagesliderbannerblock', context);
           if (target.length) {
@@ -160,30 +164,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (!toggle || !close || !mobileMenu || !backdrop) return;
 
-      // Use once() to avoid double-binding on AJAX calls
-      once('mobile-menu-toggle', toggle).forEach((toggleBtn) => {
+      // Toggle open
+      for (const toggleBtn of once('mobile-menu-toggle', toggle)) {
         toggleBtn.addEventListener('click', () => {
           mobileMenu.classList.remove('translate-x-full');
           mobileMenu.classList.add('translate-x-0');
           backdrop.classList.remove('hidden');
         });
-      });
+      }
 
-      once('mobile-menu-close', close).forEach((closeBtn) => {
+      // Close via close button
+      for (const closeBtn of once('mobile-menu-close', close)) {
         closeBtn.addEventListener('click', () => {
           mobileMenu.classList.add('translate-x-full');
           mobileMenu.classList.remove('translate-x-0');
           backdrop.classList.add('hidden');
         });
-      });
+      }
 
-      once('mobile-menu-backdrop', backdrop).forEach((backdropEl) => {
+      // Close via backdrop
+      for (const backdropEl of once('mobile-menu-backdrop', backdrop)) {
         backdropEl.addEventListener('click', () => {
           mobileMenu.classList.add('translate-x-full');
           mobileMenu.classList.remove('translate-x-0');
           backdrop.classList.add('hidden');
         });
-      });
+      }
     }
   };
 })(Drupal);
@@ -193,12 +199,12 @@ document.addEventListener("DOMContentLoaded", function () {
     attach: function (context, settings) {
       // 'once' ensures it runs only once per element
       const buttons = once('candyMenu', '#candy-button', context);
-      buttons.forEach((button) => {
+      for (const button of buttons) {
         const menu = document.getElementById('candy-menu');
         const wrapper = document.getElementById('candy-wrapper');
 
         if (!menu || !wrapper) {
-          return; // exit if menu or wrapper does not exist
+          continue; // exit this iteration if menu or wrapper does not exist
         }
 
         // Toggle on button click
@@ -213,7 +219,7 @@ document.addEventListener("DOMContentLoaded", function () {
             menu.classList.add('hidden');
           }
         });
-      });
+      }
     }
   };
 })(Drupal, once);

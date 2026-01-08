@@ -21,6 +21,8 @@ class GlobalVariablesService
 
   protected $logger;
   protected $cache;
+  public const APP_JSON = 'application/json' ;
+  public const BEARER = 'Bearer ';
 
   /**
    * HTTP client for making external requests.
@@ -59,7 +61,7 @@ class GlobalVariablesService
 
         $response = $this->httpClient->request('GET', $vaultAPI, [
           'headers' => [
-            'Content-Type' => 'application/json',
+            'Content-Type' => self::APP_JSON,
             'X-Vault-Token' => $vaultToken,
           ],
         ]);
@@ -398,8 +400,8 @@ class GlobalVariablesService
 
       $response = $this->httpClient->request('POST', $url, [
         'headers' => [
-          'Content-Type' => 'application/json',
-          'Authorization' => 'Bearer ' . $access_token,
+          'Content-Type' => self::APP_JSON,
+          'Authorization' => self::BEARER . $access_token,
         ],
         'json' => $payload,
         'timeout' => 10,
@@ -431,9 +433,9 @@ class GlobalVariablesService
 
       $options = [
         'headers' => [
-          'Content-Type' => 'application/json',
-          'Accept' => 'application/json',
-          'Authorization' => 'Bearer ' . $this->getApimanAccessToken(),
+          'Content-Type' => self::APP_JSON,
+          'Accept' => self::APP_JSON,
+          'Authorization' => self::BEARER . $this->getApimanAccessToken(),
         ],
         'json' => $payload,
       ];
@@ -501,7 +503,7 @@ class GlobalVariablesService
       $method = strtoupper($method); // Ensure method is uppercase (POST/PATCH)
       $options = [
         'headers' => [
-          'Accept' => 'application/json',
+          'Accept' => self::APP_JSON,
           'Authorization' => 'Basic ' . base64_encode('trinity:trinity@123'),
         ],
         'json' => $payload,
@@ -552,10 +554,10 @@ class GlobalVariablesService
 
       $response = $client->request('DELETE', $url, [
         'headers' => [
-          'Content-Type' => 'application/json',
-          'Accept' => 'application/json',
+          'Content-Type' => self::APP_JSON,
+          'Accept' => self::APP_JSON,
           // Add Authorization if needed:
-          'Authorization' => 'Bearer ' . $this->getApimanAccessToken(),
+          'Authorization' => self::BEARER . $this->getApimanAccessToken(),
         ],
         'timeout' => 10,
       ]);
@@ -580,7 +582,7 @@ class GlobalVariablesService
 
       $response = $client->request('POST', $url, [
         'headers' => [
-          'Accept' => 'application/json',
+          'Accept' => self::APP_JSON,
         ],
         'verify' => FALSE, // Disable SSL verification (not for production)
       ]);
@@ -603,7 +605,7 @@ class GlobalVariablesService
 
       $response = $client->request('GET', $url, [
         'headers' => [
-          'Accept' => 'application/json',
+          'Accept' => self::APP_JSON,
           'Authorization' => 'Basic ' . base64_encode('trinity:trinity@123'),
           // 'Authorization' => 'Basic ' . base64_encode('admin:admin'),
         ],
@@ -683,8 +685,8 @@ class GlobalVariablesService
         $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotcitizenapp' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'user/update',
         [
           'headers' => [
-            'Authorization' => 'Bearer ' . $access_token,
-            'Content-Type' => 'application/json',
+            'Authorization' => self::BEARER . $access_token,
+            'Content-Type' => self::APP_JSON,
           ],
           'json' => $payload,
         ]

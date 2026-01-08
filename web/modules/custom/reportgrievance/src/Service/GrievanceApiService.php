@@ -8,6 +8,8 @@ use Drupal\global_module\Service\GlobalVariablesService;
 class GrievanceApiService
 {
 
+  public const APP_JSON = 'application/json';
+  public const BEARER = 'Bearer ';
   protected $httpClient;
   protected $secret = 'replace_with_your_secret_key';
   protected $globalVariablesService;
@@ -42,8 +44,8 @@ class GrievanceApiService
         'tenantCode' => $globalVariables['applicationConfig']['config']['ceptenantCode'],
       ],
       'headers' => [
-        'Accept' => 'application/json',
-        'Authorization' => 'Bearer ' . $accessToken,
+        'Accept' => self::APP_JSON,
+        'Authorization' => self::BEARER . $accessToken,
       ],
       'verify' => FALSE,
     ]);
@@ -78,8 +80,8 @@ class GrievanceApiService
         'incidentTypeId' => $incidentTypeId,
       ],
       'headers' => [
-        'Accept' => 'application/json',
-        'Authorization' => 'Bearer ' . $accessToken,
+        'Accept' => self::APP_JSON,
+        'Authorization' => self::BEARER . $accessToken,
       ],
       'verify' => FALSE,
     ]);
@@ -108,8 +110,8 @@ class GrievanceApiService
     try {
       $response = $this->httpClient->request('POST', $grivanceUrl, [
         'headers' => [
-          'Content-Type' => 'application/json',
-          'Authorization' => 'Bearer ' . $accessToken,
+          'Content-Type' => self::APP_JSON,
+          'Authorization' => self::BEARER . $accessToken,
           'X-CSRF-Token' => $csrf_token,
           'X-Checksum' => $checksum,
         ],

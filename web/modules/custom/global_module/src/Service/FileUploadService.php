@@ -28,10 +28,10 @@ class FileUploadService
     public function uploadFile(Request $request)
     {
         define('UPLOAD_FILE', 'uploadedfile1');
-        $file = $_FILES['files']['full_path']['upload_file'] ?? null;
+        $file = $_FILES['files']['full_path']['upload_file'] ?? NULL;
         if (!$file) {
             return new JsonResponse([
-                'status' => false,
+                'status' => FALSE,
                 'message' => 'No file uploaded.',
             ], 400);
         }
@@ -87,14 +87,14 @@ class FileUploadService
         if (strpos($mimeType, 'image/') === 0) {
             // Image validation
             $imgInfo = getimagesize($fileTmp);
-            if ($imgInfo === false) {
+            if ($imgInfo === FALSE) {
                 \Drupal::logger('file_upload')->warning('Invalid image detected for file: @file', ['@file' => $fileTmp]);
                 return new JsonResponse(['status' => FALSE, 'message' => 'Invalid image content!']);
             }
 
             // Re-process image to strip malicious payloads
             $image = imagecreatefromstring(file_get_contents($fileTmp));
-            if ($image !== false) {
+            if ($image !== FALSE) {
                 imagejpeg($image, $fileTmp, 90);
                 imagedestroy($image);
                 \Drupal::logger('file_upload')->info('Image sanitized successfully: @file', ['@file' => $fileTmp]);
@@ -144,7 +144,7 @@ class FileUploadService
             $curl_error = curl_error($curl);
             curl_close($curl);
 
-            if ($response === false) {
+            if ($response === FALSE) {
                 return new JsonResponse(['error' => $curl_error], 500);
             }
 

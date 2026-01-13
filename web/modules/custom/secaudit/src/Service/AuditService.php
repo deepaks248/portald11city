@@ -105,7 +105,7 @@ class AuditService
                         ->warning(
                             'ACE3 Force Browsing attempt detected.',
                             [
-                                'ip' => $request->headers->all()['x-real-ip'][0],
+                                'ip' => $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp(),
                                 'path' => $path,
                                 'method' => $request->getMethod(),
                                 'user_id' => \Drupal::currentUser()->id(),
@@ -142,7 +142,7 @@ class AuditService
                 [
                     'method' => $method,
                     'path' => $request->getPathInfo(),
-                    'ip' => $request->headers->all()['x-real-ip'][0],
+                    'ip' => $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp(),
                     'user_agent' => $request->headers->get('User-Agent'),
                 ]
             );
@@ -170,7 +170,7 @@ class AuditService
             $logger->warning('RE2: Unsupported HTTP method attempt detected.', [
                 'method' => $method,
                 'path' => $request->getPathInfo(),
-                'ip' => $request->headers->all()['x-real-ip'][0],
+                'ip' => $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp(),
                 'user_agent' => $request->headers->get('User-Agent'),
             ]);
         }
@@ -190,7 +190,7 @@ class AuditService
         $logger = $this->loggerFactory->get('secaudit');
 
         $currentCookies = $request->cookies->all();
-        $currentIp = $request->headers->all()['x-real-ip'][0];
+        $currentIp = $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp();
         $currentUa = (string) $request->headers->get('User-Agent');
         $currentSessionId = $session->getId();
 
@@ -443,7 +443,7 @@ class AuditService
         $this->loggerFactory->get('secaudit')->warning(
             'IE1: Cross Site Scripting Attempt detected. IP: @ip, Path: @path, Findings Count: @count',
             [
-                '@ip' => $request->headers->all()['x-real-ip'][0],
+                '@ip' => $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp(),
                 '@path' => $request->getPathInfo(),
                 '@count' => count($findings),
                 '@details' => $findings,
@@ -517,7 +517,7 @@ class AuditService
         $this->loggerFactory->get('secaudit')->warning(
             'EE1: Double Encoded Characters detected. IP: @ip, Path: @path, Reason: @reason, Sample Value: @sample',
             [
-                '@ip' => $request->headers->all()['x-real-ip'][0],
+                '@ip' => $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp(),
                 '@path' => $request->getPathInfo(),
                 '@reason' => $reason,
                 '@sample' => substr($value, 0, 200),  // Log the first 200 chars of the value
@@ -608,7 +608,7 @@ class AuditService
         $this->loggerFactory->get('secaudit')->warning(
             'EE2: Unexpected encoding used. IP: @ip, Path: @path, Reason: @reason, Sample: @sample',
             [
-                '@ip' => $request->headers->all()['x-real-ip'][0],
+                '@ip' => $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp(),
                 '@path' => $request->getPathInfo(),
                 '@reason' => $reason,
                 '@sample' => substr($value, 0, 200),

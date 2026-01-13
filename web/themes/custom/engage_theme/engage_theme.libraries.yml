@@ -4,20 +4,15 @@ global-styling:
       assets/dist/css/styles.css: {}
   js:
     assets/src/js/engage.js: {}
+    assets/src/js/mobile-menu.js: {}
+    assets/src/js/candy-menu.js: {}
+    assets/src/js/faqs.js: {}
 
 flexslider:
   css:
     theme:
-      # "https://cdnjs.cloudflare.com/ajax/libs/flexslider/2.7.2/flexslider.min.css":
-      #   type: external
-      #   minified: true
       assets/src/css/flexslider.min.css: {}
   js:
-    # "https://cdnjs.cloudflare.com/ajax/libs/flexslider/2.7.2/jquery.flexslider-min.js":
-    #   type: external
-    #   minified: true
-    #   attributes:
-    #     defer: true
     assets/src/js/jquery.flexslider-min.js: {}
     assets/src/js/flexslider-init.js: {}
   dependencies:
@@ -27,16 +22,8 @@ flexslider:
 swiper:
   css:
     theme:
-      # "https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.css":
-      #   type: external
-      #   minified: true
       assets/src/css/swiper-bundle.min.css: {}
   js:
-    # "https://cdnjs.cloudflare.com/ajax/libs/Swiper/11.0.5/swiper-bundle.min.js":
-    #   type: external
-    #   minified: true
-    #   attributes:
-    #     defer: true
     assets/src/js/swiper-bundle.min.js: {}
     assets/src/js/swiper-init.js: {}
   dependencies:

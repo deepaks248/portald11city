@@ -17,30 +17,11 @@ function engage_theme_preprocess_page(array &$variables)
   $global_service = \Drupal::service('global_module.global_variables');
 
   $globalVariables = $global_service->getGlobalVariables();
-  // $machine_name = 'openidconnectlogin';
-  // print_r($machine_name);exit;
-  // $block = \Drupal::entityTypeManager()->getStorage('block')->load($machine_name);
-  // print_r("Block",$block);exit;
-  $variables['userLogged'] = \Drupal::currentUser()->isAuthenticated();
-  // if (!empty($block)) {
-  //   $block_content = \Drupal::entityTypeManager()->getViewBuilder('block')->view($block);
-  //   $pre_render = $block_content;
-  //   $variables['idam_integration'] = $block_content;
-  // }
-  // $request_stack = \Drupal::service('request_stack');
-
-  // $session = $request_stack->getCurrentRequest()->getSession();
   
-  // $account = \Drupal::currentUser();
-  // $variables['user'] = [
-  //   'display_name' => $session->get('api_redirect_result') ? $session->get('api_redirect_result')['firstName'] . ' ' . $session->get('api_redirect_result')['lastName'] : $account->getDisplayName(),
-  //   'mail' => $session->get('api_redirect_result')['emailId'] ? $session->get('api_redirect_result')['emailId'] : $account->getEmail(),
-  // ];
-
+  $variables['userLogged'] = \Drupal::currentUser()->isAuthenticated();
+  
   //globalVariables
   $variables['#attached']['drupalSettings']['globalVariables']['webportalUrl'] = $globalVariables['applicationConfig']['config']['siteUrl'];
-  // $variables['#attached']['drupalSettings']['globalVariables']['fileuploadPath'] = $globalVariables['applicationConfig']['config']['fileuploadPath'];
-  // $variables['#attached']['drupalSettings']['globalVariables']['fileuploadUrl'] = $globalVariables['applicationConfig']['config']['fileuploadUrl'];
   $variables['#attached']['drupalSettings']['globalVariables']['siteUrl'] = $globalVariables['applicationConfig']['config']['siteUrl'];
   $variables['#attached']['drupalSettings']['globalVariables']['baseName'] = $globalVariables['applicationConfig']['config']['baseName'];
   $variables['#attached']['drupalSettings']['globalVariables']['ceptenantId'] = $globalVariables['applicationConfig']['config']['ceptenantId'];
@@ -50,19 +31,3 @@ function engage_theme_preprocess_page(array &$variables)
   $variables['#attached']['drupalSettings']['globalVariables']['userLogged'] = \Drupal::currentUser()->isAuthenticated();
   $variables['#attached']['drupalSettings']['globalVariables']['mapConfig'][] = $globalVariables['mapConfig']['config'];
 }
-
-// function engage_theme_preprocess_paragraph__slider_banner(array &$variables)
-// {
-//   // Let Drupal render the field with responsive image style.
-//   $image_field = $variables['content']['field_slider_banner_image'] ?? NULL;
-
-//   if ($image_field) {
-//     // Render the field to extract the 'src' attribute of the largest image.
-//     $rendered = \Drupal::service('renderer')->renderPlain($image_field);
-
-//     // Match first image URL from the rendered <img> or <source>.
-//     if (preg_match('/src="([^"]+)"/', $rendered, $matches)) {
-//       $variables['image_url'] = $matches[1];
-//     }
-//   }
-// }

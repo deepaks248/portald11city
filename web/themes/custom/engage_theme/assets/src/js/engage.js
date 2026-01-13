@@ -10,21 +10,21 @@
   function attachEngageButtons(context) {
     const buttons = once('modal-engage', '[engage-button]', context);
 
-    buttons.forEach((button) => {
+    for (const button of buttons) {
       button.addEventListener('click', () => {
         toggleModal(button.dataset.modalToggle, true);
       });
-    });
+    }
   }
 
   function attachCloseButtons(context) {
     const buttons = once('modal-hide', '[data-modal-hide]', context);
 
-    buttons.forEach((button) => {
+    for (const button of buttons) {
       button.addEventListener('click', () => {
         toggleModal(button.dataset.modalHide, false);
       });
-    });
+    }
   }
 
   function toggleModal(modalId, show) {
@@ -41,24 +41,30 @@
 
 })(Drupal, once);
 
+
 (function ($, Drupal, once) {
+
   Drupal.behaviors.scrollBelowBanner = {
     attach(context) {
       if (globalThis.location.pathname === '/') {
         return;
       }
 
-      once('scroll-banner', 'body', context).forEach(() => {
-        setTimeout(() => {
-          const target = $('#block-engage-theme-homepagesliderbannerblock');
-          if (!target.length) {
-            return;
-          }
+      const bodies = once('scroll-banner', 'body', context);
+      if (!bodies.length) {
+        return;
+      }
 
-          const scrollTo = target.offset().top + target.outerHeight();
-          $('html, body').animate({ scrollTop: scrollTo }, 800);
-        }, 500);
-      });
+      setTimeout(() => {
+        const target = $('#block-engage-theme-homepagesliderbannerblock');
+        if (!target.length) {
+          return;
+        }
+
+        const scrollTo = target.offset().top + target.outerHeight();
+        $('html, body').animate({ scrollTop: scrollTo }, 800);
+      }, 500);
     }
   };
+
 })(jQuery, Drupal, once);

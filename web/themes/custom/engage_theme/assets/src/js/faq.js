@@ -13,31 +13,31 @@
     };
 
     function initializeItems(items) {
-        items.forEach((item) => {
+        for (const item of items) {
             const content = getContent(item);
             if (!content) {
-                return;
+                continue;
             }
 
             content.style.maxHeight = '0px';
             content.style.overflow = 'hidden';
             content.style.transition = 'max-height 0.3s ease';
-        });
+        }
     }
 
     function attachClickHandlers(items) {
-        items.forEach((item) => {
+        for (const item of items) {
             const title = item.querySelector('.collapse-title');
             const content = getContent(item);
 
             if (!title || !content) {
-                return;
+                continue;
             }
 
             title.addEventListener('click', () => {
                 toggleItem(item, content, items);
             });
-        });
+        }
     }
 
     function toggleItem(activeItem, activeContent, items) {
@@ -47,18 +47,18 @@
 
         if (!isActive) {
             activeItem.classList.add('active');
-            activeContent.style.maxHeight = `${activeContent.scrollHeight}px`;
+            activeContent.style.maxHeight = activeContent.scrollHeight + 'px';
         }
     }
 
     function collapseAll(items) {
-        items.forEach((item) => {
+        for (const item of items) {
             item.classList.remove('active');
             const content = getContent(item);
             if (content) {
                 content.style.maxHeight = '0px';
             }
-        });
+        }
     }
 
     function getContent(item) {

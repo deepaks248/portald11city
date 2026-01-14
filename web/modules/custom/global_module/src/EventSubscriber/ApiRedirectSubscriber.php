@@ -9,116 +9,167 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Core\Url;
 
 /**
- * Subscribes to kernel request event to call an API once per session for logged-in users.
+ * Subscribes to kernel request event to call an API once per session.
  */
-class ApiRedirectSubscriber implements EventSubscriberInterface
-{
+class ApiRedirectSubscriber implements EventSubscriberInterface {
 
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents()
-  {
+  public static function getSubscribedEvents(): array {
     return [
-      KernelEvents::REQUEST => ['checkApiAndRedirect', 30],
+      KernelEvents::REQUEST => ['onKernelRequest', 30],
     ];
   }
 
   /**
-   * Call the API once per session and optionally redirect.
+   * Kernel request handler.
    */
-  public function checkApiAndRedirect(RequestEvent $event)
-  {
-    $request = $event->getRequest();
-    $session = $request->getSession();
-    $current_user = \Drupal::currentUser();
-
-    // Run only for authenticated users
-    if (!$current_user->isAuthenticated()) {
+  public function onKernelRequest(RequestEvent $event): void {
+    if (!$this->shouldProcess($event)) {
       return;
     }
 
-    // Run only on HTML main requests, skip AJAX, JSON, etc.
-    if (!$request->isXmlHttpRequest() && $request->getRequestFormat() === 'html') {
-      // Skip admin pages
-      $current_path = \Drupal::service('path.current')->getPath();
-      $path_alias = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
-      if (strpos($path_alias, '/admin') === 0) {
-        return;
-      }
+    $session = $event->getRequest()->getSession();
 
-      // Only call API once per session
-      //   $session = \Drupal::request()->getSession();
-      // $session->remove('api_redirect_result');
-      //     dump($session->all(), 'Session contents');
-      if (!$session->has('api_redirect_result')) {
-        $result = $this->callYourApi();
+    if ($session->has('api_redirect_result')) {
+      return;
+    }
 
-        // Defensive check if result is array
-        if (is_array($result)) {
-          $global_service = \Drupal::service('global_module.global_variables');
-          $result['emailId'] = $global_service->decrypt($result['emailId']);
-          $result['mobileNumber'] = $global_service->decrypt($result['mobileNumber']);
+    $result = $this->callYourApi();
+    $this->processApiResult($result, $session);
 
-          // Check if userId is present
-          if (!empty($result['userId'])) {
-            $session->set('api_redirect_result', $result);
-            \Drupal::logger('api_subscriber')->info('API data stored in session for userId: @uid', ['@uid' => $result['userId']]);
-          } else {
-            // Remove incomplete data
-            $session->remove('api_redirect_result');
-            \Drupal::logger('api_subscriber')->warning('API response missing userId. Session data not stored.');
-          }
-        } else {
-          \Drupal::logger('api_subscriber')->error('Invalid API response format.');
-        }
-
-        // Optional redirect condition
-        if ($result === 'redirect_me') {
-          $url = Url::fromRoute('<front>')->toString();
-          $event->setResponse(new RedirectResponse($url));
-        }
-      }
+    if ($this->shouldRedirect($result)) {
+      $this->redirectToFront($event);
     }
   }
 
-  /**
-   * Make the actual API call.
-   *
-   * @return mixed
-   *   API result (array, string, etc.) depending on your API.
-   */
-  private function callYourApi()
-  {
+  /* ============================================================
+   * DECISION HELPERS
+   * ============================================================ */
+
+  private function shouldProcess(RequestEvent $event): bool {
+    $request = $event->getRequest();
+
+    if (!\Drupal::currentUser()->isAuthenticated()) {
+      return FALSE;
+    }
+
+    if ($request->isXmlHttpRequest()) {
+      return FALSE;
+    }
+
+    if ($request->getRequestFormat() !== 'html') {
+      return FALSE;
+    }
+
+    return !$this->isAdminPath();
+  }
+
+  private function isAdminPath(): bool {
+    $current_path = \Drupal::service('path.current')->getPath();
+    $alias = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+
+    return str_starts_with($alias, '/admin');
+  }
+
+  private function shouldRedirect($result): bool {
+    return $result === 'redirect_me';
+  }
+
+  /* ============================================================
+   * API RESULT HANDLING
+   * ============================================================ */
+
+  private function processApiResult($result, $session): void {
+    if (!is_array($result)) {
+      $this->logError('Invalid API response format.');
+      return;
+    }
+
+    $processed = $this->decryptSensitiveFields($result);
+
+    if (empty($processed['userId'])) {
+      $session->remove('api_redirect_result');
+      $this->logWarning('API response missing userId.');
+      return;
+    }
+
+    $session->set('api_redirect_result', $processed);
+    $this->logInfo('API data stored for userId: @uid', ['@uid' => $processed['userId']]);
+  }
+
+  private function decryptSensitiveFields(array $data): array {
+    $globalService = \Drupal::service('global_module.global_variables');
+
+    if (!empty($data['emailId'])) {
+      $data['emailId'] = $globalService->decrypt($data['emailId']);
+    }
+
+    if (!empty($data['mobileNumber'])) {
+      $data['mobileNumber'] = $globalService->decrypt($data['mobileNumber']);
+    }
+
+    return $data;
+  }
+
+  /* ============================================================
+   * REDIRECT
+   * ============================================================ */
+
+  private function redirectToFront(RequestEvent $event): void {
+    $url = Url::fromRoute('<front>')->toString();
+    $event->setResponse(new RedirectResponse($url));
+  }
+
+  /* ============================================================
+   * API CALL
+   * ============================================================ */
+
+  private function callYourApi() {
     try {
+      $globalService = \Drupal::service('global_module.global_variables');
+      $globals = $globalService->getGlobalVariables();
 
-      $global_service = \Drupal::service('global_module.global_variables');
-
-      $globalVariables = $global_service->getGlobalVariables();
-      $access_token = $global_service->getApimanAccessToken();
-      $client = \Drupal::httpClient();
-      $email = \Drupal::currentUser()->getEmail();
-      $payload = [
-        'userId' => $email
-      ];
-      $response = $client->post(
-        $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotcitizenapp' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'user/details',
+      $response = \Drupal::httpClient()->post(
+        $globals['apiManConfig']['config']['apiUrl']
+        . 'tiotcitizenapp'
+        . $globals['apiManConfig']['config']['apiVersion']
+        . 'user/details',
         [
           'headers' => [
-            'Authorization' => 'Bearer ' . $access_token,
+            'Authorization' => 'Bearer ' . $globalService->getApimanAccessToken(),
             'Content-Type' => 'application/json',
           ],
-          'json' => $payload,
+          'json' => [
+            'userId' => \Drupal::currentUser()->getEmail(),
+          ],
         ]
       );
-      $data = json_decode($response->getBody(), TRUE);
-      // dump("Data",$data);
-      return $data['data'] ?? NULL; // adjust key as per your API
+
+      $decoded = json_decode($response->getBody(), TRUE);
+      return $decoded['data'] ?? NULL;
+
     } catch (\Exception $e) {
-      \Drupal::logger('global_module')->error('API call failed: @message', [
-        '@message' => $e->getMessage(),
-      ]);
+      $this->logError('API call failed: @msg', ['@msg' => $e->getMessage()]);
       return NULL;
     }
   }
+
+  /* ============================================================
+   * LOGGING HELPERS
+   * ============================================================ */
+
+  private function logInfo(string $message, array $context = []): void {
+    \Drupal::logger('api_subscriber')->info($message, $context);
+  }
+
+  private function logWarning(string $message): void {
+    \Drupal::logger('api_subscriber')->warning($message);
+  }
+
+  private function logError(string $message, array $context = []): void {
+    \Drupal::logger('api_subscriber')->error($message, $context);
+  }
+
 }

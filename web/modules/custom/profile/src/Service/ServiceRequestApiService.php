@@ -13,7 +13,7 @@ class ServiceRequestApiService
     protected LoggerChannelFactoryInterface $loggerFactory;
 
     public function __construct(
-        ClientInterface $http_client, 
+        ClientInterface $http_client,
         GlobalVariablesService $global_variables_service,
         LoggerChannelFactoryInterface $loggerFactory
     ) {

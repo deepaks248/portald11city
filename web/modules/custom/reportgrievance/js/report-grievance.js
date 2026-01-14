@@ -1,22 +1,22 @@
-(function ($, Drupal) {
+(function ($, Drupal, drupalSettings) {
   'use strict';
+
+  /* ---------------- CONSTANTS ---------------- */
 
   const MAP_TARGET = 'mapDiv';
   const INCIDENT_LAYER = 'Incident_Layer';
   const DEFAULT_ZOOM = 15;
   const MAP_DELAY_MS = 2500;
+  const MARKER_ICON = './themes/custom/engage_theme/images/user-location-50.png';
 
   let gmap = null;
 
+  /* ---------------- BOOTSTRAP ---------------- */
+
   initializeEnvSettings();
+  window.onload = createMap;
 
-  /* ---------------- INITIALIZATION ---------------- */
-
-  window.onload = function () {
-    createMap();
-  };
-
-  $(document).on('click', '.get_lat_lang', function () {
+  $(document).on('click', '.get_lat_lang', () => {
     if (gmap) {
       addPoint(gmap);
     }
@@ -25,26 +25,31 @@
   /* ---------------- ENV SETTINGS ---------------- */
 
   function initializeEnvSettings() {
-    const config = drupalSettings.globalVariables.mapConfig?.[0];
+    const config = drupalSettings.globalVariables?.mapConfig?.[0];
     if (!config) {
       console.warn('Map configuration missing');
       return;
     }
 
-    envSettings.gKey = config.gKey;
-    envSettings.mapDimension = config.mapDimension;
-    envSettings.mapLib = config.mapLib;
-    envSettings.type = config.type;
-    envSettings.mapData = config.mapData;
-    envSettings.gwc = config.gwc;
-    envSettings.offline = config.offline;
+    applyEnvSettings(config);
+  }
 
-    envSettings.extent1 = Number.parseFloat(config.extent1);
-    envSettings.extent2 = Number.parseFloat(config.extent2);
-    envSettings.extent3 = Number.parseFloat(config.extent3);
-    envSettings.extent4 = Number.parseFloat(config.extent4);
-    envSettings.lat = Number.parseFloat(config.lat);
-    envSettings.lon = Number.parseFloat(config.lon);
+  function applyEnvSettings(config) {
+    Object.assign(envSettings, {
+      gKey: config.gKey,
+      mapDimension: config.mapDimension,
+      mapLib: config.mapLib,
+      type: config.type,
+      mapData: config.mapData,
+      gwc: config.gwc,
+      offline: config.offline,
+      extent1: Number.parseFloat(config.extent1),
+      extent2: Number.parseFloat(config.extent2),
+      extent3: Number.parseFloat(config.extent3),
+      extent4: Number.parseFloat(config.extent4),
+      lat: Number.parseFloat(config.lat),
+      lon: Number.parseFloat(config.lon),
+    });
   }
 
   /* ---------------- MAP CREATION ---------------- */
@@ -56,15 +61,16 @@
     });
   }
 
-  function onMapReady(maps, response) {
-    gmap = maps;
+  function onMapReady(mapInstance, response) {
+    gmap = mapInstance;
 
-    setTimeout(() => {
-      addSearchBox();
-      zoomToExtent(gmap);
-    }, MAP_DELAY_MS);
-
+    setTimeout(initializeMapUI, MAP_DELAY_MS);
     console.debug('Map initialized', response);
+  }
+
+  function initializeMapUI() {
+    addSearchBox();
+    zoomToExtent(gmap);
   }
 
   /* ---------------- SEARCH ---------------- */
@@ -72,7 +78,7 @@
   function addSearchBox() {
     tmpl.Search.addSearchBox({
       map: gmap,
-      img_url: './themes/custom/engage_theme/images/user-location-50.png',
+      img_url: MARKER_ICON,
       height: 50,
       width: 25,
       zoom_button: false,
@@ -81,75 +87,15 @@
 
   /* ---------------- ZOOM ---------------- */
 
-  function zoomToExtent(mapData) {
-    if (!mapData) {
-      return;
-    }
+  function zoomToExtent(map) {
+    if (!map) return;
 
-    try {
+    safeExecute(() =>
       tmpl.Zoom.toExtent({
-        map: mapData,
-        extent: [
-          envSettings.extent1,
-          envSettings.extent2,
-          envSettings.extent3,
-          envSettings.extent4,
-        ],
-      });
-    } catch (error) {
-      console.error('Zoom error', error);
-    }
-  }
-
-  /* ---------------- DRAW POINT ---------------- */
-
-  function addPoint(mapData) {
-    tmpl.Draw.draw({
-      map: mapData,
-      type: 'Point',
-      callbackFunc: handlePointDrawn,
-    });
-  }
-
-  function handlePointDrawn(coord) {
-    if (!coord || coord.length < 2) {
-      return;
-    }
-
-    clearIncidentLayer();
-    addIncidentMarker(coord);
-    zoomToPoint(coord);
-    geocodePoint(coord);
-    updateLatLngInputs(coord);
-  }
-
-  /* ---------------- MAP HELPERS ---------------- */
-
-  function clearIncidentLayer() {
-    tmpl.Layer.clearData({
-      map: gmap,
-      layer: INCIDENT_LAYER,
-    });
-  }
-
-  function addIncidentMarker(coord) {
-    tmpl.Overlay.create({
-      map: gmap,
-      features: [{
-        id: 1,
-        img_url: './themes/custom/engage_theme/images/user-location-50.png',
-        lat: coord[1],
-        lon: coord[0],
-      }],
-      layer: INCIDENT_LAYER,
-      layerSwitcher: false,
-    });
-
-    tmpl.Layer.changeVisibility({
-      map: gmap,
-      visible: true,
-      layer: INCIDENT_LAYER,
-    });
+        map,
+        extent: getExtent(),
+      })
+    );
   }
 
   function zoomToPoint(coord) {
@@ -161,98 +107,192 @@
     });
   }
 
+  function getExtent() {
+    return [
+      envSettings.extent1,
+      envSettings.extent2,
+      envSettings.extent3,
+      envSettings.extent4,
+    ];
+  }
+
+  /* ---------------- DRAW POINT ---------------- */
+
+  function addPoint(map) {
+    tmpl.Draw.draw({
+      map,
+      type: 'Point',
+      callbackFunc: handlePointDrawn,
+    });
+  }
+
+  function handlePointDrawn(coord) {
+    if (!isValidCoord(coord)) return;
+
+    resetIncidentLayer();
+    renderIncident(coord);
+    zoomToPoint(coord);
+    geocodePoint(coord);
+    updateLatLngInputs(coord);
+  }
+
+  function isValidCoord(coord) {
+    return Array.isArray(coord) && coord.length >= 2;
+  }
+
+  /* ---------------- INCIDENT MARKER ---------------- */
+
+  function resetIncidentLayer() {
+    tmpl.Layer.clearData({
+      map: gmap,
+      layer: INCIDENT_LAYER,
+    });
+  }
+
+  function renderIncident(coord) {
+    tmpl.Overlay.create({
+      map: gmap,
+      features: [createMarker(coord)],
+      layer: INCIDENT_LAYER,
+      layerSwitcher: false,
+    });
+
+    tmpl.Layer.changeVisibility({
+      map: gmap,
+      visible: true,
+      layer: INCIDENT_LAYER,
+    });
+  }
+
+  function createMarker(coord) {
+    return {
+      id: 1,
+      img_url: MARKER_ICON,
+      lat: coord[1],
+      lon: coord[0],
+    };
+  }
+
   /* ---------------- GEOCODING ---------------- */
 
   function geocodePoint(coord) {
     tmpl.Geocode.getGeocode({
-      point: [coord[0], coord[1]],
+      point: coord,
       callbackFunc: handleGeocode,
     });
   }
 
   function handleGeocode(data) {
-    if (!data || !data.address) {
-      return;
-    }
+    const address = data?.address;
+    if (!address) return;
 
-    sessionStorage.setItem('grievanceAddress', data.address);
-
-    const addressInput = document.querySelector('#edit-address');
-    if (addressInput) {
-      addressInput.value = data.address;
-      addressInput.setAttribute('value', data.address);
-    }
+    sessionStorage.setItem('grievanceAddress', address);
+    setInputValue('#edit-address', address);
   }
 
   /* ---------------- FORM HELPERS ---------------- */
 
   function updateLatLngInputs(coord) {
-    const latInput = document.querySelector('.lat-input');
-    const lngInput = document.querySelector('.lng-input');
-
-    if (latInput) latInput.value = coord[0];
-    if (lngInput) lngInput.value = coord[1];
+    setInputValue('.lat-input', coord[0]);
+    setInputValue('.lng-input', coord[1]);
   }
 
-})(jQuery, Drupal);
+  function setInputValue(selector, value) {
+    const input = document.querySelector(selector);
+    if (input) {
+      input.value = value;
+      input.setAttribute('value', value);
+    }
+  }
+
+  /* ---------------- UTIL ---------------- */
+
+  function safeExecute(fn) {
+    try {
+      fn();
+    } catch (error) {
+      console.error('Map operation failed', error);
+    }
+  }
+
+})(jQuery, Drupal, drupalSettings);
+
 
 (function ($, Drupal) {
   'use strict';
 
   Drupal.behaviors.reportGrievanceValidation = {
     attach(context) {
-      if (!isValidatorAvailable()) {
-        console.error('jQuery Validate is not loaded!');
+      if (!canAttach(context)) {
         return;
       }
 
       const $form = $('#report-grievance', context);
-      if (!$form.length || $form.data('validated')) {
-        return;
-      }
-      $form.data('validated', true);
+      markAttached($form);
 
-      registerCustomValidators();
+      ensureValidatorsRegistered();
       initializeValidation($form);
     }
   };
+
+  /* ---------------- GUARDS ---------------- */
+
+  function canAttach(context) {
+    if (!isValidatorAvailable()) {
+      console.error('jQuery Validate is not loaded!');
+      return false;
+    }
+
+    const $form = $('#report-grievance', context);
+    return $form.length && !$form.data('validated');
+  }
+
+  function markAttached($form) {
+    $form.data('validated', true);
+  }
 
   function isValidatorAvailable() {
     return typeof $.fn.validate === 'function';
   }
 
-  function registerCustomValidators() {
+  /* ---------------- VALIDATORS ---------------- */
+
+  function ensureValidatorsRegistered() {
     if ($.validator.methods.filesize) {
-      return; // already registered
+      return;
     }
 
+    registerFileSizeValidator();
+    registerExtensionValidator();
+  }
+
+  function registerFileSizeValidator() {
     $.validator.addMethod(
       'filesize',
-      function (_, element, maxSize) {
-        return !element.files.length || element.files[0].size <= maxSize;
-      },
+      (_, element, maxSize) =>
+        !element.files.length || element.files[0].size <= maxSize,
       'File size must be less than 2MB'
     );
+  }
 
+  function registerExtensionValidator() {
     $.validator.addMethod(
       'extensionFile',
-      function (_, element, allowedExt) {
-        if (!element.files.length) {
-          return true;
-        }
-        const fileName = element.files[0].name.toLowerCase();
-        const extensions = allowedExt.split('|');
-
-        for (const ext of extensions) {
-          if (fileName.endsWith(ext)) {
-            return true;
-          }
-        }
-        return false;
-      },
+      (_, element, allowedExt) =>
+        !element.files.length ||
+        isAllowedExtension(element.files[0].name, allowedExt),
       'Invalid file type'
     );
   }
+
+  function isAllowedExtension(fileName, allowedExt) {
+    const lower = fileName.toLowerCase();
+    return allowedExt
+      .split('|')
+      .some(ext => lower.endsWith(ext));
+  }
+
+  /* ---------------- FORM INIT ---------------- */
 
   function initializeValidation($form) {
     $form.validate({
@@ -260,26 +300,30 @@
       messages: getValidationMessages(),
       errorClass: 'text-red-500 text-sm mt-1 block',
       errorPlacement: placeError,
-      highlight: addErrorHighlight,
-      unhighlight: removeErrorHighlight
+      highlight: toggleErrorHighlight(true),
+      unhighlight: toggleErrorHighlight(false)
     });
   }
 
+  /* ---------------- UI HELPERS ---------------- */
+
   function placeError(error, element) {
-    if (element.attr('type') === 'checkbox') {
-      error.insertAfter(element.closest('label'));
-    } else {
-      error.insertAfter(element);
-    }
+    const target = isCheckbox(element)
+      ? element.closest('label')
+      : element;
+    error.insertAfter(target);
   }
 
-  function addErrorHighlight(element) {
-    $(element).addClass('border-red-500');
+  function isCheckbox(element) {
+    return element.attr('type') === 'checkbox';
   }
 
-  function removeErrorHighlight(element) {
-    $(element).removeClass('border-red-500');
+  function toggleErrorHighlight(add) {
+    return element =>
+      $(element).toggleClass('border-red-500', add);
   }
+
+  /* ---------------- RULES ---------------- */
 
   function getValidationRules() {
     return {
@@ -320,9 +364,13 @@
 
 })(jQuery, Drupal);
 
+/* ---------------- SHARED HELPERS ---------------- */
+
 function resetSelect($select, placeholder, disabled = false) {
-  $select.empty().append(`<option value="">${placeholder}</option>`);
-  $select.prop('disabled', disabled);
+  $select
+    .empty()
+    .append(`<option value="">${placeholder}</option>`)
+    .prop('disabled', disabled);
 }
 
 async function fetchJson(url) {
@@ -338,21 +386,23 @@ async function fetchJson(url) {
 
   Drupal.behaviors.reportGrievanceForm = {
     attach(context) {
-      const $context = $(context);
-      const $typeSelect = $context.find('.grievance-type-select');
-      const $subtypeSelect = $context.find('.grievance-subtype-select');
+      const $typeSelect = $('.grievance-type-select', context);
+      const $subtypeSelect = $('.grievance-subtype-select', context);
 
-      if (!shouldAttach($typeSelect, $subtypeSelect)) {
+      if (!canAttach($typeSelect, $subtypeSelect)) {
         return;
       }
 
-      const endpoints = getEndpoints(drupalSettings);
-      attachHandlers($typeSelect, $subtypeSelect, endpoints);
+      const endpoints = resolveEndpoints(drupalSettings);
+
+      bindTypeChange($typeSelect, $subtypeSelect, endpoints.subtypes);
       loadTypes($typeSelect, $subtypeSelect, endpoints.types);
     }
   };
 
-  function shouldAttach($type, $subtype) {
+  /* ---------------- GUARD ---------------- */
+
+  function canAttach($type, $subtype) {
     if (!$type.length || !$subtype.length || $type.data('attached')) {
       return false;
     }
@@ -360,64 +410,64 @@ async function fetchJson(url) {
     return true;
   }
 
-  function getEndpoints(settings) {
+  /* ---------------- CONFIG ---------------- */
+
+  function resolveEndpoints(settings) {
+    const cfg = settings?.reportgrievance?.endpoints || {};
     return {
-      types: settings?.reportgrievance?.endpoints?.types || '/grievance/types',
-      subtypes: settings?.reportgrievance?.endpoints?.subtypes || '/grievance/subtypes/'
+      types: cfg.types || '/grievance/types',
+      subtypes: cfg.subtypes || '/grievance/subtypes/'
     };
   }
 
-  function attachHandlers($typeSelect, $subtypeSelect, endpoints) {
-    $typeSelect.on('change', function () {
-      const selected = $(this).val();
-      if (selected) {
-        loadSubtypes($subtypeSelect, endpoints.subtypes, selected);
-      } else {
-        resetSelect($subtypeSelect, 'Select Sub Category', true);
-      }
+  /* ---------------- EVENTS ---------------- */
+
+  function bindTypeChange($type, $subtype, subtypesUrl) {
+    $type.on('change', () => {
+      const value = $type.val();
+      value
+        ? loadSubtypes($subtype, subtypesUrl, value)
+        : resetSelect($subtype, 'Select Sub Category', true);
     });
   }
 
-  async function loadTypes($typeSelect, $subtypeSelect, url) {
-    resetSelect($typeSelect, 'Loading categories...', true);
-    resetSelect($subtypeSelect, 'Select Sub Category', true);
+  /* ---------------- LOADERS ---------------- */
 
+  function loadTypes($type, $subtype, url) {
+    resetSelect($type, 'Loading categories...', true);
+    resetSelect($subtype, 'Select Sub Category', true);
+    loadOptions(url, $type, 'Select a Category');
+  }
+
+  function loadSubtypes($subtype, baseUrl, key) {
+    resetSelect($subtype, 'Loading subcategories...', true);
+    loadOptions(baseUrl + encodeURIComponent(key), $subtype, 'Select Sub Category');
+  }
+
+  /* ---------------- SHARED ASYNC ---------------- */
+
+  async function loadOptions(url, $select, placeholder) {
     try {
       const data = await fetchJson(url);
-      resetSelect($typeSelect, 'Select a Category', false);
-      appendOptions($typeSelect, data);
+      resetSelect($select, placeholder, false);
+      appendOptions($select, data);
     } catch (error) {
-      console.error('Failed to load types:', error);
-      resetSelect($typeSelect, 'Failed to load', true);
+      console.error('Failed to load options:', error);
+      resetSelect($select, 'Failed to load', true);
     }
   }
 
-  async function loadSubtypes($subtypeSelect, baseUrl, typeKey) {
-    resetSelect($subtypeSelect, 'Loading subcategories...', true);
-
-    try {
-      const data = await fetchJson(baseUrl + encodeURIComponent(typeKey));
-      resetSelect($subtypeSelect, 'Select Sub Category', false);
-      appendOptions($subtypeSelect, data);
-    } catch (error) {
-      console.error('Failed to load subtypes:', error);
-      resetSelect($subtypeSelect, 'Failed to load', true);
-    }
-  }
+  /* ---------------- OPTIONS ---------------- */
 
   function appendOptions($select, data) {
     if (Array.isArray(data)) {
       for (const item of data) {
-        const key = item.key ?? Object.keys(item)[0];
-        const value = item.value ?? Object.values(item)[0];
-        if (key && value) {
-          $select.append(`<option value="${key}">${value}</option>`);
-        }
+        addOption($select, item);
       }
       return;
     }
 
-    if (typeof data === 'object' && data !== null) {
+    if (isObject(data)) {
       for (const [key, value] of Object.entries(data)) {
         $select.append(`<option value="${key}">${value}</option>`);
       }
@@ -425,6 +475,19 @@ async function fetchJson(url) {
     }
 
     console.error('Unexpected response format:', data);
+  }
+
+  function addOption($select, item) {
+    const key = item?.key ?? Object.keys(item || {})[0];
+    const value = item?.value ?? Object.values(item || {})[0];
+
+    if (key && value) {
+      $select.append(`<option value="${key}">${value}</option>`);
+    }
+  }
+
+  function isObject(value) {
+    return typeof value === 'object' && value !== null;
   }
 
 })(jQuery, Drupal, drupalSettings);

@@ -5,10 +5,8 @@ report_grievance_form:
       css/report-grievance.css: {}
   js:
     # https://hcsjointstackportal.trinityiot.in/GISClientServices/v4.0.0/appconfig-security.js: {}
-    http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: { type: external }
-    https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.21.0/jquery.validate.min.js:
-      type: external
-      minified: true
+    http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {}
+    js/jquery.validate.min.js: {}
     js/report-grievance.js: {}
   dependencies:
     - core/jquery

@@ -25,143 +25,164 @@ class FileUploadService
     /**
      * Uploads a file to a remote server.
      */
-    public function uploadFile(Request $request)
+    public function uploadFile(Request $request): JsonResponse
     {
         define('UPLOAD_FILE', 'uploadedfile1');
-        $file = $_FILES['files']['full_path']['upload_file'] ?? NULL;
-        if (!$file) {
-            return new JsonResponse([
-                'status' => FALSE,
-                'message' => 'No file uploaded.',
-            ], 400);
-        }
-        $extension = pathinfo($_FILES['files']['name']['upload_file'], PATHINFO_EXTENSION);
-        $extn = explode(".", $_FILES['files']['name']['upload_file']);
-        $fileMime = mime_content_type($_FILES['files']['tmp_name']['upload_file']);
 
-        $allowedTypes = [
+        $fileInfo = $this->getUploadedFileInfo();
+        if (!$fileInfo) {
+            return $this->errorResponse('No file uploaded.', 400);
+        }
+
+        [$tmpFile, $originalName, $mimeType] = $fileInfo;
+
+        if (!$this->isMimeAllowed($mimeType)) {
+            return $this->errorResponse('File content not allowed!');
+        }
+
+        if ($this->hasMultipleExtensions($originalName)) {
+            return $this->errorResponse('Multiple file extensions not allowed');
+        }
+
+        $fileType = $this->detectFileType($originalName);
+        if (!$fileType) {
+            return $this->errorResponse('Selected file not allowed!');
+        }
+
+        if (!$this->validateFileContent($tmpFile)) {
+            return $this->errorResponse('Malicious file detected!');
+        }
+
+        return $this->uploadToRemote($tmpFile, $originalName, $fileType);
+    }
+
+    private function getUploadedFileInfo(): ?array
+    {
+        if (empty($_FILES['files']['tmp_name']['upload_file'])) {
+            return NULL;
+        }
+
+        return [
+            $_FILES['files']['tmp_name']['upload_file'],
+            $_FILES['files']['name']['upload_file'],
+            mime_content_type($_FILES['files']['tmp_name']['upload_file']),
+        ];
+    }
+
+    private function isMimeAllowed(string $mime): bool
+    {
+        return in_array($mime, [
             'image/jpeg',
             'image/png',
             'application/pdf',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'video/mp4',
-        ];
+        ], TRUE);
+    }
 
-        if (!in_array($fileMime, $allowedTypes)) {
-            return new JsonResponse([
-                'status' => FALSE,
-                'message' => 'File content not allowed!',
-            ]);
-        }
+    private function hasMultipleExtensions(string $filename): bool
+    {
+        return substr_count($filename, '.') > 1;
+    }
 
-        if (count($extn) > 2) {
-            return new JsonResponse([
-                'message' => 'Multiple file extensions not allowed',
-                'status' => FALSE,
-            ]);
-        }
+    private function detectFileType(string $filename): ?array
+    {
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-        $ext = strtolower($extn[1] ?? '');
-        $fileTypeVal = NULL;
-        $fileTypeType = '';
-        $fileTypeValid = FALSE;
+        return match (TRUE) {
+            in_array($ext, ['jpg', 'jpeg', 'png']) =>
+            ['id' => 2, 'type' => 'image'],
+            in_array($ext, ['pdf', 'doc', 'docx', 'mp3', 'xlsx']) =>
+            ['id' => 4, 'type' => 'file'],
+            $ext === 'mp4' =>
+            ['id' => 1, 'type' => 'video'],
+            default => NULL,
+        };
+    }
 
-        if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
-            $fileTypeVal = 2;
-            $fileTypeType = "image";
-            $fileTypeValid = TRUE;
-        } elseif (in_array($ext, ['pdf', 'doc', 'docx', 'mp3', 'xlsx'])) {
-            $fileTypeVal = 4;
-            $fileTypeType = "file";
-            $fileTypeValid = TRUE;
-        } elseif ($ext == 'mp4') {
-            $fileTypeVal = 1;
-            $fileTypeType = "video";
-            $fileTypeValid = TRUE;
-        }
-        $fileTmp = $_FILES['files']['tmp_name']['upload_file'];
+    private function validateFileContent(string $tmpFile): bool
+    {
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->file($fileTmp);
-        \Drupal::logger('file_upload')->info('Detected MIME type: @mime', ['@mime' => $mimeType]);
-        // ✅ Content validation
-        if (strpos($mimeType, 'image/') === 0) {
-            // Image validation
-            $imgInfo = getimagesize($fileTmp);
-            if ($imgInfo === FALSE) {
-                \Drupal::logger('file_upload')->warning('Invalid image detected for file: @file', ['@file' => $fileTmp]);
-                return new JsonResponse(['status' => FALSE, 'message' => 'Invalid image content!']);
-            }
+        $mimeType = $finfo->file($tmpFile);
 
-            // Re-process image to strip malicious payloads
-            $image = imagecreatefromstring(file_get_contents($fileTmp));
-            if ($image !== FALSE) {
-                imagejpeg($image, $fileTmp, 90);
-                imagedestroy($image);
-                \Drupal::logger('file_upload')->info('Image sanitized successfully: @file', ['@file' => $fileTmp]);
-            }
-        } elseif ($mimeType === 'application/pdf') {
-
-            // PDF validation
-            $content = file_get_contents($fileTmp);
-            \Drupal::logger('file_upload')->debug('PDF first 200 chars: @snippet', [
-                '@snippet' => substr($content, 0, 200),
-            ]);
-            if (preg_match('/\/(JS|JavaScript|AA)/i', $content)) {
-                \Drupal::logger('file_upload')->error('Malicious PDF detected for file: @file', ['@file' => $fileTmp]);
-                return new JsonResponse(['status' => FALSE, 'message' => 'Malicious PDF detected!']);
-            }
-            \Drupal::logger('file_upload')->info('PDF passed validation: @file', ['@file' => $fileTmp]);
+        if (str_starts_with($mimeType, 'image/')) {
+            return $this->validateImage($tmpFile);
         }
 
-        $uuidFilename = $this->uuidService->generate() . '.' . $extension;
-        if ($fileTypeValid) {
-            $cfile = curl_file_create($_FILES['files']['tmp_name']['upload_file'], $_FILES['files']['type']['upload_file'], $uuidFilename);
-            $postRequest = [
+        if ($mimeType === 'application/pdf') {
+            return $this->validatePdf($tmpFile);
+        }
+
+        return TRUE;
+    }
+
+    private function validateImage(string $file): bool
+    {
+        if (!getimagesize($file)) {
+            return FALSE;
+        }
+
+        $image = imagecreatefromstring(file_get_contents($file));
+        if ($image) {
+            imagejpeg($image, $file, 90);
+            imagedestroy($image);
+        }
+
+        return TRUE;
+    }
+
+    private function validatePdf(string $file): bool
+    {
+        $content = file_get_contents($file);
+
+        return !preg_match('/\/(JS|JavaScript|AA)/i', $content);
+    }
+
+    private function uploadToRemote(string $tmpFile, string $originalName, array $fileType): JsonResponse
+    {
+        $uuidFilename = $this->uuidService->generate() . '.' . pathinfo($originalName, PATHINFO_EXTENSION);
+
+        $globals = $this->globalVariablesService->getGlobalVariables();
+        $fileUplPath = $globals['applicationConfig']['config']['fileuploadPath'] ?? NULL;
+
+        if (!$fileUplPath) {
+            return $this->errorResponse('Upload path not configured in Vault.', 500);
+        }
+
+        $cfile = curl_file_create($tmpFile, mime_content_type($tmpFile), $uuidFilename);
+
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => $fileUplPath . 'upload_media_test1.php',
+            CURLOPT_RETURNTRANSFER => TRUE,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => [
                 UPLOAD_FILE => $cfile,
                 'success_action_status' => 200,
-            ];
-            $globals = $this->globalVariablesService->getGlobalVariables();
-            $fileUplPath = $globals['applicationConfig']['config']['fileuploadPath'] ?? NULL;
+            ],
+            CURLOPT_SSL_VERIFYHOST => FALSE,
+            CURLOPT_SSL_VERIFYPEER => FALSE,
+        ]);
 
-            if (!$fileUplPath) {
-                return new JsonResponse(['error' => 'Upload path not configured in Vault.'], 500);
-            }
+        $response = curl_exec($curl);
+        curl_close($curl);
 
-
-            $curl = curl_init();
-            curl_setopt_array($curl, [
-                CURLOPT_URL => $fileUplPath . 'upload_media_test1.php',
-                CURLOPT_RETURNTRANSFER => TRUE,
-                CURLOPT_FOLLOWLOCATION => TRUE,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => $postRequest,
-                CURLOPT_SSL_VERIFYHOST => FALSE,
-                CURLOPT_SSL_VERIFYPEER => FALSE,
-            ]);
-
-            $response = curl_exec($curl);
-            $curl_error = curl_error($curl);
-            curl_close($curl);
-
-            if ($response === FALSE) {
-                return new JsonResponse(['error' => $curl_error], 500);
-            }
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return new JsonResponse(['error' => 'Invalid JSON response'], 500);
-            }
-
-            return new JsonResponse([
-                'fileName' => $fileUplPath . $uuidFilename,
-                'fileTypeId' => $fileTypeVal,
-                'fileTypeVal' => $fileTypeType,
-            ]);
+        if ($response === FALSE || json_last_error() !== JSON_ERROR_NONE) {
+            return $this->errorResponse('Upload failed.', 500);
         }
 
         return new JsonResponse([
-            'message' => 'Selected file not allowed!',
-            'status' => FALSE,
+            'fileName' => $fileUplPath . $uuidFilename,
+            'fileTypeId' => $fileType['id'],
+            'fileTypeVal' => $fileType['type'],
         ]);
+    }
+
+    private function errorResponse(string $message, int $status = 200): JsonResponse
+    {
+        return new JsonResponse([
+            'status' => FALSE,
+            'message' => $message,
+        ], $status);
     }
 }

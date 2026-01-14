@@ -13,6 +13,7 @@ use Drupal\Core\Session\AccountInterface;
 
 class PasswordChangeService
 {
+    public const SECURE_LINK = "https://";
 
     protected $globalVariables;
     protected $logger;
@@ -42,7 +43,7 @@ class PasswordChangeService
 
             // Step 1: Lookup in SCIM
             $idamconfig = $this->globalVariables->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $url = 'https://' . $idamconfig . '/scim2/Users?filter=' . urlencode("emails eq \"$email\"");
+            $url = self::SECURE_LINK . $idamconfig . '/scim2/Users?filter=' . urlencode("emails eq \"$email\"");
             $responseData = $this->globalVariables->curl_get_api($url);
 
             if (empty($responseData['Resources'][0]['id'])) {
@@ -60,7 +61,7 @@ class PasswordChangeService
                 "username" => $email,
             ];
             $resOld = $this->globalVariables->curl_post_idam(
-                'https://' . $idamconfig . '/oauth2/token/',
+                self::SECURE_LINK . $idamconfig . '/oauth2/token/',
                 $payloadOld
             );
             if (empty($resOld['access_token'])) {
@@ -77,7 +78,7 @@ class PasswordChangeService
                 ]],
             ];
             $resPass = $this->globalVariables->curl_post_idam_auth(
-                'https://' . $idamconfig . '/scim2/Users/' . $idamUserId,
+                self::SECURE_LINK . $idamconfig . '/scim2/Users/' . $idamUserId,
                 $payloadPass,
                 'PATCH'
             );

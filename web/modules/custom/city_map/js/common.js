@@ -15,12 +15,14 @@
    * Term click handling
    * ------------------------- */
   function bindTermLinks() {
-    document.querySelectorAll('.term-link').forEach((link) => {
+    const termLinks = document.querySelectorAll('.term-link');
+
+    for (const link of termLinks) {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         handleTermClick(link);
       });
-    });
+    }
   }
 
   function handleTermClick(link) {
@@ -101,11 +103,14 @@
       return;
     }
 
-    items.forEach((item) => {
+    for (const item of items) {
       container.insertAdjacentHTML('beforeend', buildPOICard(item));
-    });
+    }
 
-    container.querySelectorAll('.poiDetl').forEach(attachPOICardHandler);
+    const poiCards = container.querySelectorAll('.poiDetl');
+    for (const card of poiCards) {
+      attachPOICardHandler(card);
+    }
 
     function attachPOICardHandler(card) {
       card.addEventListener('click', () => handlePOICardClick(card));

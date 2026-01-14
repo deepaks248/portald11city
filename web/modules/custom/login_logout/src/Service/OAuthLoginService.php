@@ -58,157 +58,186 @@ class OAuthLoginService
         }
     }
 
-    public function format_user_agent($userAgent)
+    public function format_user_agent(string $userAgent): string
     {
-        $browser = $userAgent;
-        $device  = $userAgent;
+        $browser = $this->detectFromRules($userAgent, [
+            'Microsoft Edge' => ['Edg'],
+            'Chrome'         => ['Chrome', '!Chromium'],
+            'Firefox'        => ['Firefox'],
+            'Safari'         => ['Safari', '!Chrome'],
+            'Opera'          => ['Opera', 'OPR'],
+        ], 'Unknown Browser');
 
-        // Detect browser
-        switch (TRUE) {
-            case stripos($browser, 'Edg') !== FALSE:
-                $browser = 'Microsoft Edge';
-                break;
-            case stripos($browser, 'Chrome') !== FALSE && stripos($browser, 'Chromium') === FALSE:
-                $browser = 'Chrome';
-                break;
-            case stripos($browser, 'Firefox') !== FALSE:
-                $browser = 'Firefox';
-                break;
-            case stripos($browser, 'Safari') !== FALSE && stripos($browser, 'Chrome') === FALSE:
-                $browser = 'Safari';
-                break;
-            case stripos($browser, 'Opera') !== FALSE || stripos($browser, 'OPR') !== FALSE:
-                $browser = 'Opera';
-                break;
-            default:
-                $browser = 'Unknown Browser';
-                break;
-        }
+        $device = $this->detectFromRules($userAgent, [
+            'Desktop (Windows)' => ['Windows'],
+            'Desktop (Mac)'     => ['Macintosh', 'Mac OS X'],
+            'Mobile (iPhone)'   => ['iPhone'],
+            'Tablet (iPad)'     => ['iPad'],
+            'Mobile (Android)'  => ['Android', 'Mobile'],
+            'Tablet (Android)'  => ['Android'],
+            'Linux'             => ['Linux'],
+        ], 'Unknown Device/OS');
 
-        // Detect device/OS
-        switch (TRUE) {
-            case stripos($device, 'Windows') !== FALSE:
-                $device = 'Desktop (Windows)';
-                break;
-            case stripos($device, 'Macintosh') !== FALSE || stripos($device, 'Mac OS X') !== FALSE:
-                $device = 'Desktop (Mac)';
-                break;
-            case stripos($device, 'iPhone') !== FALSE:
-                $device = 'Mobile (iPhone)';
-                break;
-            case stripos($device, 'iPad') !== FALSE:
-                $device = 'Tablet (iPad)';
-                break;
-            case stripos($device, 'Android') !== FALSE && stripos($device, 'Mobile') !== FALSE:
-                $device = 'Mobile (Android)';
-                break;
-            case stripos($device, 'Android') !== FALSE:
-                $device = 'Tablet (Android)';
-                break;
-            case stripos($device, 'Linux') !== FALSE:
-                $device = 'Linux';
-                break;
-            default:
-                $device = 'Unknown Device/OS';
-                break;
-        }
-
-        if ($browser === $userAgent && $device === $userAgent) {
+        if ($browser === 'Unknown Browser' && $device === 'Unknown Device/OS') {
             return $userAgent;
         }
+
         return "{$browser}, {$device}";
+    }
+
+    private function detectFromRules(string $agent, array $rules, string $default): string
+    {
+        foreach ($rules as $label => $conditions) {
+            if ($this->matchesConditions($agent, (array) $conditions)) {
+                return $label;
+            }
+        }
+
+        return $default;
+    }
+
+    private function matchesConditions(string $agent, array $conditions): bool
+    {
+        foreach ($conditions as $condition) {
+            $negate = $condition[0] === '!';
+            $token  = ltrim($condition, '!');
+
+            $found = stripos($agent, $token) !== FALSE;
+
+            if ($negate && $found) {
+                return FALSE;
+            }
+
+            if (!$negate && !$found) {
+                return FALSE;
+            }
+        }
+
+        return TRUE;
     }
 
     public function authenticateUser(string $flow_id, string $email, string $password): ?array
     {
         $userAgent = $this->requestStack->getCurrentRequest()->headers->get('User-Agent');
+        $payload = $this->prepareAuthPayload($flow_id, $email, $password);
+        $idamconfig = $this->getIdamConfig();
 
         try {
-            $payload = [
-                "flowId" => $flow_id,
-                "selectedAuthenticator" => [
-                    "authenticatorId" => Settings::get('idam_local_authenticator_id'),
-                    "params" => [
-                        "username" => $email,
-                        "password" => $password,
-                    ],
-                ],
-            ];
-            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/authn', [
-                'headers' => [
-                    'Accept' => self::APP_JSON,
-                    'Content-Type' => self::APP_JSON,
-                    'User-Agent' => $userAgent,
-                ],
-                'json' => $payload,
-                'verify' => FALSE,
-            ]);
+            $response = $this->sendAuthenticationRequest($idamconfig, $payload, $userAgent);
+            $result = $this->parseResponse($response);
 
-            $result = json_decode($response->getBody()->getContents(), TRUE);
-            $this->logger->notice('Authn response: <pre>@data</pre>', ['@data' => print_r($result, TRUE)]);
-            $this->logger->notice('User Login Detected. User-Agent: @ua', ['@ua' => $this->format_user_agent($userAgent)]);
-            // Success: return code
-            if (!empty($result['authData']['code'])) {
-                return [
-                    'success' => TRUE,
-                    'code' => $result['authData']['code'],
-                    'message' => NULL,
-                ];
+            if ($this->isAuthSuccess($result)) {
+                return $this->handleAuthSuccess($result);
             }
 
-            // Active session limit reached
-            if (
-                !empty($result['nextStep']['authenticators'][0]['authenticator']) &&
-                $result['nextStep']['authenticators'][0]['authenticator'] === 'Active Sessions Limit'
-            ) {
-                $maxSessions = $result['nextStep']['authenticators'][0]['metadata']['additionalData']['MaxSessionCount'] ?? 'unknown';
-                $sessions = $result['nextStep']['authenticators'][0]['metadata']['additionalData']['sessions'] ?? '[]';
-                $sessions = json_decode($sessions, TRUE);
-
-                $sessionList = '';
-                foreach ($sessions as $s) {
-                    $sessionList .= "- Browser: {$s['browser']}, Device: {$s['device']}, Last Active: " .
-                        date('Y-m-d H:i:s', $s['lastAccessTime'] / 1000) . "\n";
-                }
-
-                $this->logger->notice('Active sessions for user @email: @sessions', [
-                    '@email' => $email,
-                    '@sessions' => $sessionList,
-                ]);
-
-                $message = "You have reached the maximum active sessions ($maxSessions).";
-
-                return [
-                    'success' => FALSE,
-                    'code' => NULL,
-                    'message' => $message,
-                ];
+            if ($this->isActiveSessionLimitReached($result)) {
+                return $this->handleSessionLimit($result, $email);
             }
 
-            // Generic error message from nextStep messages
-            if (!empty($result['nextStep']['messages'][0]['message'])) {
-                return [
-                    'success' => FALSE,
-                    'code' => NULL,
-                    'message' => $result['nextStep']['messages'][0]['message'],
-                ];
-            }
-
-            // Generic failure
-            return [
-                'success' => FALSE,
-                'code' => NULL,
-                'message' => 'Authentication failed. Please try again.',
-            ];
+            return $this->handleErrorResponse($result);
         } catch (\Exception $e) {
-            $this->logger->error('Error authenticating user: @msg', ['@msg' => $e->getMessage()]);
+            $this->logError($e->getMessage());
+            return $this->generateErrorResponse();
+        }
+    }
+
+    private function prepareAuthPayload($flow_id, $email, $password)
+    {
+        return [
+            "flowId" => $flow_id,
+            "selectedAuthenticator" => [
+                "authenticatorId" => Settings::get('idam_local_authenticator_id'),
+                "params" => ["username" => $email, "password" => $password],
+            ],
+        ];
+    }
+
+    private function sendAuthenticationRequest($idamconfig, $payload, $userAgent)
+    {
+        return $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/authn', [
+            'headers' => [
+                'Accept' => self::APP_JSON,
+                'Content-Type' => self::APP_JSON,
+                'User-Agent' => $userAgent,
+            ],
+            'json' => $payload,
+            'verify' => FALSE,
+        ]);
+    }
+
+    private function parseResponse($response)
+    {
+        return json_decode($response->getBody()->getContents(), TRUE);
+    }
+
+    private function isAuthSuccess($result)
+    {
+        return !empty($result['authData']['code']);
+    }
+
+    private function handleAuthSuccess($result)
+    {
+        return ['success' => TRUE, 'code' => $result['authData']['code'], 'message' => NULL];
+    }
+
+    private function isActiveSessionLimitReached($result)
+    {
+        return !empty($result['nextStep']['authenticators'][0]['authenticator']) &&
+            $result['nextStep']['authenticators'][0]['authenticator'] === 'Active Sessions Limit';
+    }
+
+    private function handleSessionLimit($result, $email)
+    {
+        $maxSessions = $result['nextStep']['authenticators'][0]['metadata']['additionalData']['MaxSessionCount'] ?? 'unknown';
+        $sessions = json_decode($result['nextStep']['authenticators'][0]['metadata']['additionalData']['sessions'] ?? '[]', TRUE);
+        $sessionList = $this->formatSessions($sessions);
+
+        $this->logger->notice('Active sessions for user @email: @sessions', [
+            '@email' => $email,
+            '@sessions' => $sessionList,
+        ]);
+
+        return [
+            'success' => FALSE,
+            'code' => NULL,
+            'message' => "You have reached the maximum active sessions ($maxSessions).",
+        ];
+    }
+
+    private function formatSessions($sessions)
+    {
+        $sessionList = '';
+        foreach ($sessions as $s) {
+            $sessionList .= "- Browser: {$s['browser']}, Device: {$s['device']}, Last Active: " .
+                date('Y-m-d H:i:s', $s['lastAccessTime'] / 1000) . "\n";
+        }
+        return $sessionList;
+    }
+
+    private function handleErrorResponse($result)
+    {
+        if (!empty($result['nextStep']['messages'][0]['message'])) {
             return [
                 'success' => FALSE,
                 'code' => NULL,
-                'message' => 'An error occurred during authentication. Please try again later.',
+                'message' => $result['nextStep']['messages'][0]['message'],
             ];
         }
+        return ['success' => FALSE, 'code' => NULL, 'message' => 'Authentication failed. Please try again.'];
+    }
+
+    private function logError($message)
+    {
+        $this->logger->error('Error authenticating user: @msg', ['@msg' => $message]);
+    }
+
+    private function generateErrorResponse()
+    {
+        return [
+            'success' => FALSE,
+            'code' => NULL,
+            'message' => 'An error occurred during authentication. Please try again later.',
+        ];
     }
 
 
@@ -223,13 +252,26 @@ class OAuthLoginService
      */
     public function decodeJwt(string $jwt): ?array
     {
-        $parts = explode('.', $jwt);
-        if (count($parts) !== 3) {
+        if (!$this->isValidJwtFormat($jwt)) {
             return NULL; // Invalid token format
         }
 
-        $payload = $parts[1];
+        $payload = $this->extractPayloadFromJwt($jwt);
+        return $this->decodeBase64Url($payload);
+    }
 
+    private function isValidJwtFormat($jwt)
+    {
+        return count(explode('.', $jwt)) === 3;
+    }
+
+    private function extractPayloadFromJwt($jwt)
+    {
+        return explode('.', $jwt)[1];
+    }
+
+    private function decodeBase64Url($payload)
+    {
         // Decode Base64Url (replace -_ with +/ and pad with =)
         $payload = strtr($payload, '-_', '+/');
         $mod4 = strlen($payload) % 4;
@@ -237,34 +279,38 @@ class OAuthLoginService
             $payload .= str_repeat('=', 4 - $mod4);
         }
 
-        $decoded = json_decode(base64_decode($payload), TRUE);
-        return is_array($decoded) ? $decoded : NULL;
+        return json_decode(base64_decode($payload), TRUE);
     }
 
     public function exchangeCodeForToken(string $code): ?array
     {
         try {
-            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $response = $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/token', [
-                'headers' => [
-                    'Content-Type' => self::FORM_URLENCODED,
-                ],
-                'form_params' => [
-                    'client_id' => 'hVBu5NSpBJHJ84KF70nfQ8ZMdnQa',
-                    'grant_type' => 'authorization_code',
-                    'redirect_uri' => 'https://cityportal.ddev.site/',
-                    'code' => $code,
-                ],
-                'verify' => FALSE,
-            ]);
-
-            $result = json_decode($response->getBody()->getContents(), TRUE);
-            $this->logger->notice('Token response: <pre>@data</pre>', ['@data' => print_r($result, TRUE)]);
-            return $result;
+            $idamconfig = $this->getIdamConfig();
+            $response = $this->sendTokenRequest($idamconfig, $code);
+            return $this->parseResponse($response);
         } catch (\Exception $e) {
-            $this->logger->error('Error exchanging code for token: @msg', ['@msg' => $e->getMessage()]);
+            $this->logError($e->getMessage());
             return NULL;
         }
+    }
+
+    private function sendTokenRequest($idamconfig, $code)
+    {
+        return $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/token', [
+            'headers' => ['Content-Type' => self::FORM_URLENCODED],
+            'form_params' => [
+                'client_id' => 'hVBu5NSpBJHJ84KF70nfQ8ZMdnQa',
+                'grant_type' => 'authorization_code',
+                'redirect_uri' => 'https://cityportal.ddev.site/',
+                'code' => $code,
+            ],
+            'verify' => FALSE,
+        ]);
+    }
+    
+    private function getIdamConfig(): string
+    {
+        return $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
     }
 
     public function checkEmailExists(string $email, string $access_token, string $api_url, string $api_version): bool

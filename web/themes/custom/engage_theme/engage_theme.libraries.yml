@@ -6,7 +6,7 @@ global-styling:
     assets/src/js/engage.js: {}
     assets/src/js/mobile-menu.js: {}
     assets/src/js/candy-menu.js: {}
-    assets/src/js/faqs.js: {}
+    assets/src/js/faq.js: {}
 
 flexslider:
   css:

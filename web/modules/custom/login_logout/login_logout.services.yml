@@ -14,6 +14,8 @@ services:
       - '@logger.channel.login_logout'
       - '@request_stack'
       - '@global_module.global_variables'
+      - '@global_module.vault_config_service'
+      - '@global_module.apiman_token_service'
 
 
   login_logout.no_cache_subscriber:
@@ -29,6 +31,7 @@ services:
       - "@logger.channel.login_logout" 
       - "@session"
       - "@global_module.global_variables"
+      - "@global_module.vault_config_service"
 
   login_logout.userinfo_check_subscriber:
     class: Drupal\login_logout\EventSubscriber\UserInfoCheckSubscriber
@@ -39,13 +42,15 @@ services:
       - '@logger.channel.login_logout'
       - '@path.current'
       - '@global_module.global_variables'
+      - '@global_module.vault_config_service'
     tags:
       - { name: event_subscriber }
 
   login_logout.userinfo_cron_healthcheck:
     class: Drupal\login_logout\Service\UserInfoCronHealthCheck
     arguments:
-      ["@login_logout.userinfo_validator", "@logger.channel.login_logout"]
+      - "@login_logout.userinfo_validator"
+      - "@logger.channel.login_logout"
 
   logger.channel.login_logout:
     parent: logger.channel_base
@@ -71,4 +76,7 @@ services:
 
   login_logout.password_recovery_service:
     class: Drupal\login_logout\Service\PasswordRecoveryService
-    arguments: ['@http_client','@global_module.global_variables', '@logger.channel.login_logout']
+    arguments: 
+      - '@http_client'
+      - '@global_module.vault_config_service'
+      - '@logger.channel.login_logout'

@@ -14,7 +14,7 @@ function engage_theme_preprocess_page(array &$variables)
   if (!empty($variables['user'])) {
     $variables['user_display_name'] = $variables['user']->getDisplayName();
   }
-  $global_service = \Drupal::service('global_module.global_variables');
+  $global_service = \Drupal::service('global_module.vault_config_service');
 
   $globalVariables = $global_service->getGlobalVariables();
   

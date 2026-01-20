@@ -6,6 +6,7 @@ use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
 
 class UserInfoValidator
 {
@@ -14,13 +15,15 @@ class UserInfoValidator
   protected $logger;
   protected $session;
   protected $globalVariablesService;
+  protected $vaultConfigService;
 
-  public function __construct(ClientInterface $http_client, LoggerInterface $logger, SessionInterface $session, GlobalVariablesService $globalVariablesService)
+  public function __construct(ClientInterface $http_client, LoggerInterface $logger, SessionInterface $session, GlobalVariablesService $globalVariablesService, VaultConfigService $vaultConfigService)
   {
     $this->httpClient = $http_client;
     $this->logger = $logger;
     $this->session = $session;
     $this->globalVariablesService = $globalVariablesService;
+    $this->vaultConfigService = $vaultConfigService;
   }
 
   /**
@@ -39,7 +42,7 @@ class UserInfoValidator
     }
 
     try {
-      $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+      $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
       $response = $this->httpClient->request('POST', 'https://' . $idamconfig . '/oauth2/userinfo', [
         'headers' => [
           'Content-Type'  => 'application/x-www-form-urlencoded',

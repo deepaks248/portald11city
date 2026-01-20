@@ -6,3 +6,4 @@ services:
       - '@request_stack'
       - '@logger.channel.default'
       - '@global_module.global_variables'
+      - '@global_module.vault_config_service'

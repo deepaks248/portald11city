@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Psr\Log\LoggerInterface;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
 
 class ActiveSessionService
 {
@@ -17,17 +18,20 @@ class ActiveSessionService
     protected RequestStack $requestStack;
     protected LoggerInterface $logger;
     protected GlobalVariablesService $globalVariablesService;
+    protected VaultConfigService $vaultConfigService;
 
     public function __construct(
         ClientInterface $httpClient,
         RequestStack $requestStack,
         LoggerInterface $logger,
-        GlobalVariablesService $globalVariablesService
+        GlobalVariablesService $globalVariablesService,
+        VaultConfigService $vaultConfigService
     ) {
         $this->httpClient = $httpClient;
         $this->requestStack = $requestStack;
         $this->logger = $logger;
         $this->globalVariablesService = $globalVariablesService;
+        $this->vaultConfigService = $vaultConfigService;
     }
 
     /**
@@ -45,7 +49,7 @@ class ActiveSessionService
 
         // Get cookies from the request (optional if needed).
         $cookies = $request->headers->get('cookie');
-        $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
         $url = self::SECURE_URL. $idamconfig .'/api/users/v1/me/sessions';
         try {
             $response = $this->httpClient->request('GET', $url , [
@@ -67,7 +71,7 @@ class ActiveSessionService
 
     public function terminateSession(string $session_id, string $access_token): bool
     {
-        $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
         $url = self::SECURE_URL . $idamconfig .'/api/users/v1/me/sessions/' . $session_id;
 
         try {
@@ -88,7 +92,7 @@ class ActiveSessionService
 
     public function terminateAllOtherSessions(string $access_token): bool
     {
-        $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
         $url = self::SECURE_URL . $idamconfig .'/api/users/v1/me/sessions';
 
         try {

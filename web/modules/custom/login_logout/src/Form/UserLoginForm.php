@@ -18,6 +18,8 @@ use Drupal\user\UserInterface;
 use Drupal\login_logout\Service\PasswordRecoveryService;
 use Drupal\Core\Url;
 use Drupal\active_sessions\Service\ActiveSessionService;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class UserLoginForm extends FormBase
 {
@@ -32,6 +34,8 @@ class UserLoginForm extends FormBase
   protected $globalVariablesService;
   protected $passwordRecoveryService;
   protected $activeSessionService;
+  protected $vaultConfigService;
+  protected $apimanTokenService;
 
   public function __construct(
     AccountProxyInterface $currentUser,
@@ -43,7 +47,9 @@ class UserLoginForm extends FormBase
     Connection $database,
     GlobalVariablesService $globalVariablesService,
     PasswordRecoveryService $passwordRecoveryService,
-    ActiveSessionService $activeSessionService
+    ActiveSessionService $activeSessionService,
+    VaultConfigService $vaultConfigService,
+    ApimanTokenService $apimanTokenService
   ) {
     $this->oauthLoginService = $oauthLoginService;
     $this->currentUser = $currentUser;
@@ -55,6 +61,8 @@ class UserLoginForm extends FormBase
     $this->globalVariablesService = $globalVariablesService;
     $this->passwordRecoveryService = $passwordRecoveryService;
     $this->activeSessionService = $activeSessionService;
+    $this->vaultConfigService = $vaultConfigService;
+    $this->apimanTokenService = $apimanTokenService;
   }
 
   public static function create(ContainerInterface $container)
@@ -69,7 +77,9 @@ class UserLoginForm extends FormBase
       $container->get('database'),
       $container->get('global_module.global_variables'),
       $container->get('login_logout.password_recovery_service'),
-      $container->get('active_sessions.session_service')
+      $container->get('active_sessions.session_service'),
+      $container->get('global_module.vault_config_service'),
+      $container->get('global_module.apiman_token_service')
     );
   }
 
@@ -300,8 +310,8 @@ class UserLoginForm extends FormBase
     } else {
       // Step 0: First-time email validation
       try {
-        $accessToken = $this->globalVariablesService->getApimanAccessToken();
-        $globals = $this->globalVariablesService->getGlobalVariables();
+        $accessToken = $this->apimanTokenService->getApimanAccessToken();
+        $globals = $this->vaultConfigService->getGlobalVariables();
 
         $apiUrl = $globals['apiManConfig']['config']['apiUrl'] ?? '';
         $apiVersion = $globals['apiManConfig']['config']['apiVersion'] ?? '';

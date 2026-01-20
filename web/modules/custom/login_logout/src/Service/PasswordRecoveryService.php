@@ -6,6 +6,7 @@ use GuzzleHttp\ClientInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
 
 /**
  * Service for handling password recovery related API calls.
@@ -35,18 +36,19 @@ class PasswordRecoveryService
    * @var \Drupal\global_module\Service\GlobalVariablesService
    */
   protected $globalVariablesService;
+  protected $vaultConfigService;
 
   /**
    * Constructs a PasswordRecoveryService object.
    */
   public function __construct(
     ClientInterface $http_client,
-    GlobalVariablesService $globalVariablesService,
+    VaultConfigService $vaultConfigService,
     LoggerChannelInterface $logger
   ) {
     $this->httpClient = $http_client;
-    $this->globalVariablesService = $globalVariablesService;
     $this->logger = $logger;
+    $this->vaultConfigService = $vaultConfigService;
   }
 
   /**
@@ -65,7 +67,7 @@ class PasswordRecoveryService
       $filter = sprintf("emails eq %s", $email);
       $attributes = "username";
 
-      $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+      $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
       $url = self::SECURE_LINK . $idamconfig . '/scim2/Users/?filter=' . rawurlencode($filter)
         . '&attributes=' . $attributes;
 
@@ -114,7 +116,7 @@ class PasswordRecoveryService
   public function initiateRecovery(string $email): ?string
   {
     $username = $this->get_scim_username_by_email($email);
-    $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+    $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
     $url = self::SECURE_LINK . $idamconfig . '/api/users/v2/recovery/password/init';
 
     $payload = [
@@ -173,7 +175,7 @@ class PasswordRecoveryService
   public function completeRecovery(string $recovery_code, string $channel_id = '1'): ?array
   {
 
-    $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+    $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
     $url = self::SECURE_LINK . $idamconfig . '/api/users/v2/recovery/password/recover';
 
     $payload = [

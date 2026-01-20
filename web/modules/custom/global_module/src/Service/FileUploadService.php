@@ -5,21 +5,21 @@ namespace Drupal\global_module\Service;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Component\Uuid\UuidInterface;
-use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
 
 class FileUploadService
 {
 
     protected $uuidService;
-    protected $globalVariablesService;
+    protected $vaultConfigService;
 
     /**
      * Constructor.
      */
-    public function __construct(UuidInterface $uuid_service, GlobalVariablesService $global_variables_service)
+    public function __construct(UuidInterface $uuid_service, VaultConfigService $vault_config_service)
     {
         $this->uuidService = $uuid_service;
-        $this->globalVariablesService = $global_variables_service;
+        $this->vaultConfigService = $vault_config_service;
     }
 
     /**
@@ -142,7 +142,7 @@ class FileUploadService
     {
         $uuidFilename = $this->uuidService->generate() . '.' . pathinfo($originalName, PATHINFO_EXTENSION);
 
-        $globals = $this->globalVariablesService->getGlobalVariables();
+        $globals = $this->vaultConfigService->getGlobalVariables();
         $fileUplPath = $globals['applicationConfig']['config']['fileuploadPath'] ?? NULL;
 
         if (!$fileUplPath) {

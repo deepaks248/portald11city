@@ -5,21 +5,29 @@ namespace Drupal\profile\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class ProfilePictureForm extends FormBase
 {
 
   protected $globalVariablesService;
+  protected $vaultConfigService;
+  protected $apimanTokenService;
 
-  public function __construct(GlobalVariablesService $globalVariablesService)
+  public function __construct(GlobalVariablesService $globalVariablesService, VaultConfigService $vaultConfigService, ApimanTokenService $apimanTokenService)
   {
     $this->globalVariablesService = $globalVariablesService;
+    $this->vaultConfigService = $vaultConfigService;
+    $this->apimanTokenService = $apimanTokenService;
   }
 
   public static function create($container)
   {
     return new static(
-      $container->get('global_module.global_variables')
+      $container->get('global_module.global_variables'),
+      $container->get('global_module.vault_config_service'),
+      $container->get('global_module.apiman_token_service')
     );
   }
 
@@ -149,8 +157,8 @@ class ProfilePictureForm extends FormBase
     ];
 
     try {
-      $access_token = $this->globalVariablesService->getApimanAccessToken();
-      $globalVariables = $this->globalVariablesService->getGlobalVariables();
+      $access_token = $this->apimanTokenService->getApimanAccessToken();
+      $globalVariables = $this->vaultConfigService->getGlobalVariables();
       $client = \Drupal::httpClient();
 
       $response = $client->post(

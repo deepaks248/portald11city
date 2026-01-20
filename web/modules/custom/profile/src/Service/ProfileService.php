@@ -7,32 +7,40 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class ProfileService
 {
 
     protected ClientInterface $httpClient;
     protected GlobalVariablesService $globalVariablesService;
+    protected VaultConfigService $vaultConfigService;
+    protected ApimanTokenService $apimanTokenService;
 
-    public function __construct(ClientInterface $http_client, GlobalVariablesService $globalVariablesService)
+    public function __construct(ClientInterface $http_client, GlobalVariablesService $globalVariablesService, VaultConfigService $vaultConfigService, ApimanTokenService $apimanTokenService)
     {
         $this->httpClient = $http_client;
         $this->globalVariablesService = $globalVariablesService;
+        $this->vaultConfigService = $vaultConfigService;
+        $this->apimanTokenService = $apimanTokenService;
     }
 
     public static function create(ContainerInterface $container): self
     {
         return new static(
             $container->get('http_client'),
-            $container->get('global_module.global_variables') // ✅ matches your services.yml
+            $container->get('global_module.global_variables'),
+            $container->get('global_module.vault_config_service'),
+            $container->get('global_module.apiman_token_service')
         );
     }
 
     public function fetchFamilyMembers($user_id): array
     {
         try {
-            $globalVariables = $this->globalVariablesService->getGlobalVariables();
-            $access_token = $this->globalVariablesService->getApimanAccessToken();
+            $globalVariables = $this->vaultConfigService->getGlobalVariables();
+            $access_token = $this->apimanTokenService->getApimanAccessToken();
 
             $url = $globalVariables['apiManConfig']['config']['apiUrl'] .
                 'tiotcitizenapp' .

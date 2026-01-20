@@ -128,8 +128,9 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
 
   private function callYourApi() {
     try {
-      $globalService = \Drupal::service('global_module.global_variables');
+      $globalService = \Drupal::service('global_module.vault_config_service');
       $globals = $globalService->getGlobalVariables();
+      $tokenService = \Drupal::service('global_module.apiman_token_service');
 
       $response = \Drupal::httpClient()->post(
         $globals['apiManConfig']['config']['apiUrl']
@@ -138,7 +139,7 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
         . 'user/details',
         [
           'headers' => [
-            'Authorization' => 'Bearer ' . $globalService->getApimanAccessToken(),
+            'Authorization' => 'Bearer ' . $tokenService->getApimanAccessToken(),
             'Content-Type' => 'application/json',
           ],
           'json' => [

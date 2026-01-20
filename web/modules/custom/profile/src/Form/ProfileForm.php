@@ -7,21 +7,29 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\InvokeCommand;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class ProfileForm extends FormBase
 {
 
   protected $globalVariablesService;
+  protected $vaultConfigService;
+  protected $apimanTokenService;
 
-  public function __construct(GlobalVariablesService $globalVariablesService)
+  public function __construct(GlobalVariablesService $globalVariablesService, VaultConfigService $vaultConfigService, ApimanTokenService $apimanTokenService)
   {
     $this->globalVariablesService = $globalVariablesService;
+    $this->vaultConfigService = $vaultConfigService;
+    $this->apimanTokenService = $apimanTokenService;
   }
 
   public static function create($container)
   {
     return new static(
-      $container->get('global_module.global_variables')
+      $container->get('global_module.global_variables'),
+      $container->get('global_module.vault_config_service'),
+      $container->get('global_module.apiman_token_service')
     );
   }
 
@@ -248,8 +256,8 @@ $form['address'] = [
     ];
 
     try {
-      $access_token = $this->globalVariablesService->getApimanAccessToken();
-      $globalVariables = $this->globalVariablesService->getGlobalVariables();
+      $access_token = $this->apimanTokenService->getApimanAccessToken();
+      $globalVariables = $this->vaultConfigService->getGlobalVariables();
       $client = \Drupal::httpClient();
 
       $response = $client->post(

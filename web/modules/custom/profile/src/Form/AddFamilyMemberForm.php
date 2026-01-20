@@ -12,6 +12,8 @@ use Drupal\Core\Ajax\RedirectCommand;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\global_module\Service\FileUploadService;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class AddFamilyMemberForm extends FormBase
 {
@@ -24,14 +26,18 @@ class AddFamilyMemberForm extends FormBase
   protected $fileUploadService;
   protected $request;
   protected $globalVariableService;
+  protected $vaultConfigService;
+  protected $apimanTokenService;
 
 
-  public function __construct(FileUploadService $fileUploadService, ClientInterface $http_client, RequestStack $request_stack, GlobalVariablesService $globalVariableService)
+  public function __construct(FileUploadService $fileUploadService, ClientInterface $http_client, RequestStack $request_stack, GlobalVariablesService $globalVariableService, VaultConfigService $vaultConfigService, ApimanTokenService $apimanTokenService)
   {
     $this->httpClient = $http_client;
     $this->fileUploadService = $fileUploadService;
     $this->request = $request_stack->getCurrentRequest();
     $this->globalVariableService = $globalVariableService;
+    $this->vaultConfigService = $vaultConfigService;
+    $this->apimanTokenService = $apimanTokenService;
   }
 
   public static function create(ContainerInterface $container)
@@ -40,7 +46,9 @@ class AddFamilyMemberForm extends FormBase
       $container->get('global_module.file_upload_service'),
       $container->get('http_client'),
       $container->get('request_stack'),
-      $container->get('global_module.global_variables')
+      $container->get('global_module.global_variables'),
+      $container->get('global_module.vault_config_service'),
+      $container->get('global_module.apiman_token_service')
     );
   }
   public function getFormId()
@@ -401,8 +409,8 @@ class AddFamilyMemberForm extends FormBase
     }
 
 
-    $access_token = $this->globalVariableService->getApimanAccessToken();
-    $globalVariables = $this->globalVariableService->getGlobalVariables();
+    $access_token = $this->apimanTokenService->getApimanAccessToken();
+    $globalVariables = $this->vaultConfigService->getGlobalVariables();
 
     $payload = [
       'name'         => $values['first_name'],

@@ -4,6 +4,8 @@ namespace Drupal\reportgrievance\Service;
 
 use GuzzleHttp\ClientInterface;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class GrievanceApiService
 {
@@ -13,11 +15,15 @@ class GrievanceApiService
   protected $httpClient;
   protected $secret = 'replace_with_your_secret_key';
   protected $globalVariablesService;
+  protected $vaultConfigService;
+  protected $apimanTokenService;
 
-  public function __construct(ClientInterface $http_client, GlobalVariablesService $global_variables_service)
+  public function __construct(ClientInterface $http_client, GlobalVariablesService $global_variables_service, VaultConfigService $vault_config_service, ApimanTokenService $apiman_token_service)
   {
     $this->httpClient = $http_client;
     $this->globalVariablesService = $global_variables_service;
+    $this->vaultConfigService = $vault_config_service;
+    $this->apimanTokenService = $apiman_token_service;
   }
 
   protected function generateChecksum(array $data): string
@@ -34,8 +40,8 @@ class GrievanceApiService
 
   public function getIncidentTypes()
   {
-    $globalVariables = $this->globalVariablesService->getGlobalVariables();
-    $accessToken = $this->globalVariablesService->getApimanAccessToken();
+    $globalVariables = $this->vaultConfigService->getGlobalVariables();
+    $accessToken = $this->apimanTokenService->getApimanAccessToken();
 
     $incidentTypeUrl = $globalVariables['apiManConfig']['config']['apiUrl'] . 'trinityengage-casemanagementsystem' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'master-data/incident-types';
 
@@ -63,9 +69,8 @@ class GrievanceApiService
 
   public function getIncidentSubTypes(int $incidentTypeId): array
   {
-    $globalVariables = $this->globalVariablesService->getGlobalVariables();
-
-    $accessToken = $this->globalVariablesService->getApimanAccessToken();
+    $globalVariables = $this->vaultConfigService->getGlobalVariables();
+    $accessToken = $this->apimanTokenService->getApimanAccessToken();
 
     if (!$accessToken) {
       \Drupal::logger('report_grievance')->error('Apiman access token could not be retrieved.');
@@ -102,8 +107,8 @@ class GrievanceApiService
     $checksum = $this->generateChecksum($data);
     $csrf_token = $this->getCsrfToken();
 
-    $globalVariables = $this->globalVariablesService->getGlobalVariables();
-    $accessToken = $this->globalVariablesService->getApimanAccessToken();
+    $globalVariables = $this->vaultConfigService->getGlobalVariables();
+    $accessToken = $this->apimanTokenService->getApimanAccessToken();
 
     $grivanceUrl = $globalVariables['apiManConfig']['config']['apiUrl'] . 'trinityengage-casemanagementsystem' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'grievance-manage/report-grievance';
 

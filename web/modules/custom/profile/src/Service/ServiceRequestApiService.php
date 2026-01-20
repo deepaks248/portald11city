@@ -3,23 +3,27 @@
 namespace Drupal\profile\Service;
 
 use GuzzleHttp\ClientInterface;
-use Drupal\global_module\Service\GlobalVariablesService;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class ServiceRequestApiService
 {
     protected ClientInterface $httpClient;
-    protected GlobalVariablesService $globalVariablesService;
     protected LoggerChannelFactoryInterface $loggerFactory;
+    protected VaultConfigService $vaultConfigService;
+    protected ApimanTokenService $apimanTokenService;
 
     public function __construct(
         ClientInterface $http_client,
-        GlobalVariablesService $global_variables_service,
-        LoggerChannelFactoryInterface $loggerFactory
+        LoggerChannelFactoryInterface $loggerFactory,
+        VaultConfigService $vault_config_service,
+        ApimanTokenService $apiman_token_service
     ) {
         $this->httpClient = $http_client;
-        $this->globalVariablesService = $global_variables_service;
-        $this->loggerFactory = $loggerFactory; // Use LoggerChannelFactoryInterface
+        $this->loggerFactory = $loggerFactory;
+        $this->vaultConfigService = $vault_config_service;
+        $this->apimanTokenService = $apiman_token_service;
     }
 
     /**
@@ -27,7 +31,7 @@ class ServiceRequestApiService
      */
     private function getApiUrl(string $endpoint): string
     {
-        $globalVariables = $this->globalVariablesService->getGlobalVariables();
+        $globalVariables = $this->vaultConfigService->getGlobalVariables();
         $apiUrl = $globalVariables['apiManConfig']['config']['apiUrl'];
         $apiVersion = $globalVariables['apiManConfig']['config']['apiVersion'];
         return $apiUrl . 'trinityengage-casemanagementsystem' . $apiVersion . $endpoint;
@@ -38,7 +42,7 @@ class ServiceRequestApiService
      */
     private function getHeaders(): array
     {
-        $accessToken = $this->globalVariablesService->getApimanAccessToken();
+        $accessToken = $this->apimanTokenService->getApimanAccessToken();
         return [
             'Authorization' => 'Bearer ' . $accessToken,
             'Content-Type' => 'application/json',
@@ -52,7 +56,7 @@ class ServiceRequestApiService
     private function executeGetRequest(string $url, array $options = []): array
     {
         try {
-            $response = $this->httpClient->request('GET',$url, $options);
+            $response = $this->httpClient->request('GET', $url, $options);
             $data = json_decode($response->getBody(), TRUE);
             return $data ?? [];
         } catch (\Exception $e) {

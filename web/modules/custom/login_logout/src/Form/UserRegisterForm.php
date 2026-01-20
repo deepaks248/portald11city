@@ -13,6 +13,8 @@ use Drupal\login_logout\Service\OAuthLoginService;
 use Drupal\global_module\Service\GlobalVariablesService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\active_sessions\Service\ActiveSessionService;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class UserRegisterForm extends FormBase
 {
@@ -21,14 +23,26 @@ class UserRegisterForm extends FormBase
   protected $oauthLoginService;
   protected $globalVariablesService;
   protected $activeSessionService;
+  protected $vaultConfigService;
+  protected $apimanTokenService;
 
-  public function __construct(RequestStack $requestStack, ClientInterface $httpClient, OAuthLoginService $oauthLoginService, GlobalVariablesService $globalVariablesService, ActiveSessionService $activeSessionService)
+  public function __construct(
+    RequestStack $requestStack,
+    ClientInterface $httpClient,
+    OAuthLoginService $oauthLoginService,
+    GlobalVariablesService $globalVariablesService,
+    ActiveSessionService $activeSessionService,
+    VaultConfigService $vaultConfigService,
+    ApimanTokenService $apimanTokenService
+  )
   {
     $this->requestStack = $requestStack;
     $this->httpClient = $httpClient;
     $this->oauthLoginService = $oauthLoginService;
     $this->globalVariablesService = $globalVariablesService;
     $this->activeSessionService = $activeSessionService;
+    $this->vaultConfigService = $vaultConfigService;
+    $this->apimanTokenService = $apimanTokenService;
   }
 
   public static function create(ContainerInterface $container)
@@ -38,7 +52,9 @@ class UserRegisterForm extends FormBase
       $container->get('http_client'),
       $container->get('login_logout.oauth_login_service'),
       $container->get('global_module.global_variables'),
-      $container->get('active_sessions.session_service')
+      $container->get('active_sessions.session_service'),
+      $container->get('global_module.vault_config_service'),
+      $container->get('global_module.apiman_token_service')
     );
   }
 
@@ -295,7 +311,7 @@ class UserRegisterForm extends FormBase
           $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
           $form_state->set('otp_code', $otp);
           $form_state->set('user_data', $data);
-          $webhook_url = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['otpWebhookUrl'];
+          $webhook_url = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['otpWebhookUrl'];
 
           try {
             // Send OTP via secure API (ensure HTTPS and valid provider)
@@ -420,8 +436,8 @@ class UserRegisterForm extends FormBase
 
       // 1. External API (tiotcitizenapp)
       try {
-        $access_token = $this->globalVariablesService->getApimanAccessToken();
-        $globalVariables = $this->globalVariablesService->getGlobalVariables();
+        $access_token = $this->apimanTokenService->getApimanAccessToken();
+        $globalVariables = $this->vaultConfigService->getGlobalVariables();
         $this->httpClient->request(
           'POST',
           $globalVariables['apiManConfig']['config']['apiUrl'] . 'tiotcitizenapp' . $globalVariables['apiManConfig']['config']['apiVersion'] . 'user/register',
@@ -449,7 +465,7 @@ class UserRegisterForm extends FormBase
 
       // 2. SCIM API call
       try {
-        $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
         $this->httpClient->request('POST', 'https://' . $idamconfig . '/scim2/Users/', [
           'headers' => [
             'accept' => 'application/scim+json',

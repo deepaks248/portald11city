@@ -4,3 +4,5 @@ services:
     arguments:
       - '@http_client'
       - '@global_module.global_variables'
+      - '@global_module.vault_config_service'
+      - '@global_module.apiman_token_service'

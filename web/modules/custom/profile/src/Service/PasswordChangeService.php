@@ -10,6 +10,8 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApiHttpClientService;
 
 class PasswordChangeService
 {
@@ -19,17 +21,23 @@ class PasswordChangeService
     protected $logger;
     protected $currentUser;
     protected $session;
+    protected $vaultConfigService;
+    protected $apiHttpClientService;
 
     public function __construct(
         GlobalVariablesService $globalVariables,
         LoggerChannelFactoryInterface $loggerFactory,
         AccountProxyInterface $currentUser,
-        SessionInterface $session
+        SessionInterface $session,
+        VaultConfigService $vaultConfigService,
+        ApiHttpClientService $apiHttpClientService
     ) {
         $this->globalVariables = $globalVariables;
         $this->logger = $loggerFactory->get('change_password');
         $this->currentUser = $currentUser;
         $this->session = $session;
+        $this->vaultConfigService = $vaultConfigService;
+        $this->apiHttpClientService = $apiHttpClientService;
     }
 
     public function changePassword(string $oldPass, string $newPass, string $confirmPass): array
@@ -42,9 +50,9 @@ class PasswordChangeService
             $email = $this->currentUser->getEmail();
 
             // Step 1: Lookup in SCIM
-            $idamconfig = $this->globalVariables->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+            $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
             $url = self::SECURE_LINK . $idamconfig . '/scim2/Users?filter=' . urlencode("emails eq \"$email\"");
-            $responseData = $this->globalVariables->curl_get_api($url);
+            $responseData = $this->apiHttpClientService->getApi($url);
 
             if (empty($responseData['Resources'][0]['id'])) {
                 $this->logger->error('User ID not found for email: @mail', ['@mail' => $email]);
@@ -60,7 +68,7 @@ class PasswordChangeService
                 "client_id" => "hVBu5NSpBJHJ84KF70nfQ8ZMdnQa",
                 "username" => $email,
             ];
-            $resOld = $this->globalVariables->curl_post_idam(
+            $resOld = $this->apiHttpClientService->postIdam(
                 self::SECURE_LINK . $idamconfig . '/oauth2/token/',
                 $payloadOld
             );
@@ -77,7 +85,7 @@ class PasswordChangeService
                     "value" => $newPass,
                 ]],
             ];
-            $resPass = $this->globalVariables->curl_post_idam_auth(
+            $resPass = $this->apiHttpClientService->postIdamAuth(
                 self::SECURE_LINK . $idamconfig . '/scim2/Users/' . $idamUserId,
                 $payloadPass,
                 'PATCH'

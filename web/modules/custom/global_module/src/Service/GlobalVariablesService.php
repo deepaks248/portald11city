@@ -4,17 +4,16 @@ namespace Drupal\global_module\Service;
 
 use Drupal\Core\Site\Settings;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\GuzzleException;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Cache\CacheBackendInterface;
 use GuzzleHttp\ClientInterface;
 use Drupal\user\Entity\User;
-use phpDocumentor\Reflection\Types\True_;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-
-use function Symfony\Component\Translation\t;
+use Drupal\global_module\Service\ApimanTokenService;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApiHttpClientService;
 
 class GlobalVariablesService
 {
@@ -32,139 +31,34 @@ class GlobalVariablesService
   public const STR_STS = 'status';
   const PAYLOADS = 'payload';
   protected $httpClient;
+  protected $apimanTokenService;
+  protected $vaultConfigService;
+  protected $apiHttpClientService;
 
   /**
    * Constructs a new GlobalVariablesService.
    */
-  public function __construct(ClientInterface $http_client, LoggerChannelFactoryInterface $logger_factory, CacheBackendInterface $cache)
+  public function __construct(
+    ClientInterface $http_client,
+    LoggerChannelFactoryInterface $logger_factory,
+    CacheBackendInterface $cache,
+    ApimanTokenService $apimanTokenService,
+    VaultConfigService $vaultConfigService,
+    ApiHttpClientService $apiHttpClientService
+  )
   {
-    $this->logger = $logger_factory->get('custom_services');
+    $this->logger = $logger_factory->get('global_variables_service');
     $this->cache = $cache;
     $this->httpClient = $http_client;
-  }
-
-  public function getGlobalVariables(): ?array
-  {
-    $cid = 'globalvariables_data';
-
-    // Try to get cached value first
-    if ($cache = $this->cache->get($cid)) {
-      return $cache->data;
-    }
-
-    // Optional: prevent multiple concurrent refreshes
-    $lock = \Drupal::service('lock');
-    if ($lock->acquire($cid)) {
-      try {
-        $vaultAPI = Settings::get('vault_url');
-        $vaultToken = Settings::get('vault_token');
-
-        $response = $this->httpClient->request('GET', $vaultAPI, [
-          'headers' => [
-            'Content-Type' => self::APP_JSON,
-            'X-Vault-Token' => $vaultToken,
-          ],
-        ]);
-
-        $data = $response->getBody()->getContents();
-        if ($data) {
-          $vaultData = json_decode($data)->data ?? [];
-          $vaultData = json_decode(json_encode($vaultData), TRUE);
-
-          $vaultData = array_merge(
-            ['webportalUrl' => $vaultData['applicationConfig']['config']['webportalUrl'] ?? ''],
-            $vaultData
-          );
-          $vaultData = array_merge(
-            ['siteUrl' => $vaultData['applicationConfig']['config']['siteUrl'] ?? ''],
-            $vaultData
-          );
-
-          // Cache for 1 hour
-          $this->cache->set($cid, $vaultData, time() + 3600);
-
-          return $vaultData;
-        }
-      } catch (\Exception $e) {
-        $this->logger->error('Vault fetch failed: ' . $e->getMessage());
-      } finally {
-        $lock->release($cid);
-      }
-    } else {
-      // If another request is refreshing, wait a bit and retry
-      usleep(100000); // 0.1s
-      if ($cache = $this->cache->get($cid)) {
-        return $cache->data;
-      }
-    }
-
-    return NULL;
-  }
-
-  public function getApiUrl(): ?string
-  {
-    $globals = $this->getGlobalVariables();
-    return $globals['apiManConfig']['config']['apiUrl'] ?? NULL;
-  }
-
-  public function getApiVersion(): ?string
-  {
-    $globals = $this->getGlobalVariables();
-    return $globals['apiManConfig']['config']['apiVersion'] ?? NULL;
-  }
-
-  public function getApimanAccessToken(): ?string
-  {
-    $cid = 'apiman_access_token';
-
-    // Check cache first
-    if ($cache_item = $this->cache->get($cid)) {
-      $cached = $cache_item->data;
-      if (!empty($cached['access_token']) && time() < $cached['expires_at']) {
-        return $cached['access_token'];
-      }
-    }
-
-    $globals = $this->getGlobalVariables();
-    if (empty($globals['apiManConfig']['config'])) {
-      $this->logger->error('Missing apiManConfig configuration in Vault response.');
-      return NULL;
-    }
-
-    $tokenUrl = $globals['apiManConfig']['config']['apiUrl']
-      . 'tiotAPIESBSubSystem'
-      . $globals['apiManConfig']['config']['apiVersion']
-      . 'getAccessToken';
-
-    try {
-      $response = $this->httpClient->request('POST', $tokenUrl, [
-        'headers' => ['Content-Type' => 'application/json'],
-        'body' => json_encode($globals['apiManConfig']['config']),
-        'verify' => FALSE,
-      ]);
-
-      $data = json_decode($response->getBody(), TRUE);
-
-      if (!empty($data['access_token']) && !empty($data['expires_in'])) {
-        // Cache token until shortly before it expires
-        $this->cache->set($cid, [
-          'access_token' => $data['access_token'],
-          'expires_at' => time() + $data['expires_in'] - 30,
-        ], time() + $data['expires_in']);
-
-        return $data['access_token'];
-      }
-    } catch (RequestException $e) {
-      $this->logger->error('Apiman token fetch failed: ' . $e->getMessage());
-    }
-
-    return NULL;
+    $this->apimanTokenService = $apimanTokenService;
+    $this->vaultConfigService = $vaultConfigService;
+    $this->apiHttpClientService = $apiHttpClientService;
   }
 
   public function getServiceUrl($serviceName)
   {
     $serUrl = '';
-    $globalVariables = $this->getGlobalVariables();
+    $globalVariables = $this->vaultConfigService->getGlobalVariables();
 
     $apiUrl = $globalVariables['apiManConfig']['config']['apiUrl'];
     $apiVer = $globalVariables['apiManConfig']['config']['apiVersion'];
@@ -238,7 +132,7 @@ class GlobalVariablesService
 
     switch ($type) {
       case 2:
-        return $this->curl_post_apiman($url, $payload); // Assuming it's a method in this class
+        return $this->apiHttpClientService->postApiman($url, $payload); // Assuming it's a method in this class
       case 'delyUser':
         return $this->userDelete(
           userID: $user_data['userId'],
@@ -246,7 +140,7 @@ class GlobalVariablesService
         );
 
       default:
-        return $this->curl_post_apiman($url, $payload); // Fallback/default handler
+        return $this->apiHttpClientService->postApiman($url, $payload); // Fallback/default handler
     }
   }
 
@@ -285,7 +179,7 @@ class GlobalVariablesService
       throw new NotFoundHttpException();
     }
     define('UPLOAD_FILE', 'uploadedfile1');
-    $globalVariables = $this->getGlobalVariables();
+    $globalVariables = $this->vaultConfigService->getGlobalVariables();
 
     if (!isset($_FILES[UPLOAD_FILE])) {
       return new JsonResponse(['status' => FALSE, 'message' => 'No file uploaded.']);
@@ -378,10 +272,10 @@ class GlobalVariablesService
   public function updateUserProfilePic($profilePic)
   {
     try {
-      $globalVariables = $this->getGlobalVariables();
+      $globalVariables = $this->vaultConfigService->getGlobalVariables();
       $session = \Drupal::request()->getSession();
       $user_data = $session->get('api_redirect_result') ?? [];
-      $access_token = $this->getApimanAccessToken();
+      $access_token = $this->apimanTokenService->getApimanAccessToken();
       if (empty($user_data['mobileNumber'])) {
         return new JsonResponse(['status' => FALSE, 'message' => 'Mobile number not found in session'], 400);
       }
@@ -425,220 +319,20 @@ class GlobalVariablesService
     }
   }
 
-  public function curl_post_apiman($url, $payload, $method = 'POST')
-  {
-    try {
-      $client = \Drupal::httpClient();
-      $method = strtoupper($method); // Ensure method is uppercase (POST/PATCH)
-
-      $options = [
-        'headers' => [
-          'Content-Type' => self::APP_JSON,
-          'Accept' => self::APP_JSON,
-          'Authorization' => self::BEARER . $this->getApimanAccessToken(),
-        ],
-        'json' => $payload,
-      ];
-
-      // Call dynamically based on method (POST by default)
-      switch ($method) {
-        case 'PATCH':
-          $response = $client->patch($url, $options);
-          break;
-
-        case 'PUT':
-          $response = $client->put($url, $options);
-          break;
-
-        default: // Default to POST
-          $response = $client->post($url, $options);
-      }
-
-      $body = $response->getBody()->getContents();
-      return json_decode($body, TRUE);
-    } catch (RequestException $e) {
-      \Drupal::logger('global_module')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
-      return ['error' => 'Request failed'];
-    }
-  }
-
-  public function curl_post_idam($url, $payload, $method = 'POST')
-  {
-    try {
-      $client = \Drupal::httpClient();
-      $method = strtoupper($method); // Ensure method is uppercase (POST/PATCH)
-      $options = [
-        'headers' => [
-          'Content-Type' => 'application/x-www-form-urlencoded',
-        ],
-        'form_params' => $payload,
-        'verify' => FALSE,
-      ];
-
-      // Call dynamically based on method (POST by default)
-      switch ($method) {
-        case 'PATCH':
-          $response = $client->patch($url, $options);
-          break;
-
-        case 'PUT':
-          $response = $client->put($url, $options);
-          break;
-
-        default: // Default to POST
-          $response = $client->post($url, $options);
-      }
-
-      $body = $response->getBody()->getContents();
-      return json_decode($body, TRUE);
-    } catch (RequestException $e) {
-      \Drupal::logger('global_module')->error('HTTP request failed: @message', ['@message' => $e->getMessage()]);
-      return ['error' => 'Request failed'];
-    }
-  }
-  public function curl_post_idam_auth($url, $payload, $method = 'POST')
-  {
-    try {
-      $client = \Drupal::httpClient();
-      $method = strtoupper($method); // Ensure method is uppercase (POST/PATCH)
-      $options = [
-        'headers' => [
-          'Accept' => self::APP_JSON,
-          'Authorization' => 'Basic ' . base64_encode('trinity:trinity@123'),
-        ],
-        'json' => $payload,
-        'verify' => FALSE,
-      ];
-
-      // Call dynamically based on method (POST by default)
-      switch ($method) {
-        case 'PATCH':
-          $response = $client->patch($url, $options);
-          break;
-
-        case 'PUT':
-          $response = $client->put($url, $options);
-          break;
-
-        default: // Default to POST
-          $response = $client->post($url, $options);
-      }
-
-      $body = $response->getBody()->getContents();
-      return json_decode($body, TRUE);
-    } catch (\GuzzleHttp\Exception\RequestException $e) {
-      $errorBody = NULL;
-      if ($e->hasResponse()) {
-        $errorBody = (string) $e->getResponse()->getBody();
-      }
-
-      \Drupal::logger('global_module idam auth')->error(
-        'HTTP request failed: @message | Response: @response',
-        [
-          '@message' => $e->getMessage(),
-          '@response' => $errorBody,
-        ]
-      );
-
-      return [
-        'error' => 'Request failed',
-        'details' => $errorBody ? json_decode($errorBody, TRUE) : $e->getMessage(),
-      ];
-    }
-  }
-
-  public function curlDeleteApiman(string $url): array
-  {
-    try {
-      $client = \Drupal::httpClient();
-
-      $response = $client->request('DELETE', $url, [
-        'headers' => [
-          'Content-Type' => self::APP_JSON,
-          'Accept' => self::APP_JSON,
-          // Add Authorization if needed:
-          'Authorization' => self::BEARER . $this->getApimanAccessToken(),
-        ],
-        'timeout' => 10,
-      ]);
-
-      $body = $response->getBody()->getContents();
-      return json_decode($body, TRUE);
-    } catch (\Exception $e) {
-      \Drupal::logger('apiman')->error('Delete request failed: @message', ['@message' => $e->getMessage()]);
-      return ['status' => FALSE, 'error' => 'Request failed'];
-    }
-  }
-
-
-  /**
-   * POST request using Drupal's HTTP client.
-   */
-  public function curl_post_api($url)
-  {
-    try {
-      /** @var \GuzzleHttp\ClientInterface $client */
-      $client = \Drupal::httpClient(); // Or inject ClientInterface in constructor
-
-      $response = $client->request('POST', $url, [
-        'headers' => [
-          'Accept' => self::APP_JSON,
-        ],
-        'verify' => FALSE, // Disable SSL verification (not for production)
-      ]);
-
-      $contents = $response->getBody()->getContents();
-      return json_decode($contents, TRUE);
-    } catch (\Exception $e) {
-      \Drupal::logger('custom_module')->error('HTTP POST failed: @error', [
-        '@error' => $e->getMessage(),
-      ]);
-      return NULL;
-    }
-  }
-
-  public function curl_get_api($url)
-  {
-    try {
-      /** @var \GuzzleHttp\ClientInterface $client */
-      $client = \Drupal::httpClient(); // Alternatively inject via constructor
-
-      $response = $client->request('GET', $url, [
-        'headers' => [
-          'Accept' => self::APP_JSON,
-          'Authorization' => 'Basic ' . base64_encode('trinity:trinity@123'),
-          // 'Authorization' => 'Basic ' . base64_encode('admin:admin'),
-        ],
-        'verify' => FALSE, // Disable SSL verification (only for dev/test)
-      ]);
-
-      $contents = $response->getBody()->getContents();
-      return json_decode($contents, TRUE);
-    } catch (\Exception $e) {
-      \Drupal::logger('custom_module')->error('HTTP GET failed: @error', [
-        '@error' => $e->getMessage(),
-      ]);
-      return NULL;
-    }
-  }
-
-
-
   public function userDelete($userID, $tenantCode)
   {
-    $globalVariables = $this->getGlobalVariables();
+    $globalVariables = $this->vaultConfigService->getGlobalVariables();
     $apiUrl = $globalVariables['apiManConfig']['config']['apiUrl'];
     $apiVer = $globalVariables['apiManConfig']['config']['apiVersion'];
     
     $cityUrl = $globalVariables['applicationConfig']['config']['deleteAPICA'] . $userID;
     \Drupal::logger('City App Delete Url')->notice($cityUrl);
-    $deleteResponse = $this->curl_post_api($cityUrl);
+    $deleteResponse = $this->apiHttpClientService->postApi($cityUrl);
     \Drupal::logger('Post Data response')->notice(print_r($deleteResponse, TRUE));
     if ($deleteResponse && isset($deleteResponse['status']) && $deleteResponse['status'] === TRUE) {
 
-      $responseData = $this->curl_post_apiman(
+      $responseData = $this->apiHttpClientService->postApiman(
         $apiUrl . 'trinityengage-casemanagementsystem' . $apiVer . 'user/delete-user?userId=' . $userID . '&tenantCode=' . $tenantCode,
-        ''
       );
 
 
@@ -677,8 +371,8 @@ class GlobalVariablesService
       'userId' => $user_id
     ];
     try {
-      $access_token = $this->getApimanAccessToken();
-      $globalVariables = $this->getGlobalVariables();
+      $access_token = $this->apimanTokenService->getApimanAccessToken();
+      $globalVariables = $this->vaultConfigService->getGlobalVariables();
       $client = \Drupal::httpClient();
 
       $response = $client->post(

@@ -4,6 +4,8 @@ services:
     arguments:
       - '@http_client'
       - '@global_module.global_variables'
+      - '@global_module.vault_config_service'
+      - '@global_module.apiman_token_service'
     tags:
       - { name: 'controller.service_arguments' }
 
@@ -11,8 +13,9 @@ services:
     class: Drupal\profile\Service\ServiceRequestApiService
     arguments:
       - '@http_client'
-      - '@global_module.global_variables'
       - '@logger.factory'
+      - '@global_module.vault_config_service'
+      - '@global_module.apiman_token_service'
 
 
   profile.my_services_controller:
@@ -27,6 +30,8 @@ services:
     class: Drupal\profile\Service\PasswordChangeService
     arguments:
       - '@global_module.global_variables'
+      - '@global_module.vault_config_service'
+      - '@global_module.api_http_client'
       - '@logger.factory'
       - '@current_user'
       - '@session'

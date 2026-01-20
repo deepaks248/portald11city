@@ -7,6 +7,8 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\global_module\Service\GlobalVariablesService;
 use Drupal\Core\Site\Settings;
+use Drupal\global_module\Service\VaultConfigService;
+use Drupal\global_module\Service\ApimanTokenService;
 
 class OAuthLoginService
 {
@@ -17,23 +19,29 @@ class OAuthLoginService
     protected $logger;
     protected $requestStack;
     protected $globalVariablesService;
+    protected $vaultConfigService;
+    protected $apimanTokenService;
 
     public function __construct(
         ClientInterface $http_client,
         LoggerInterface $logger,
         RequestStack $requestStack,
-        GlobalVariablesService $globalVariablesService
+        GlobalVariablesService $globalVariablesService,
+        VaultConfigService $vaultConfigService,
+        ApimanTokenService $apimanTokenService
     ) {
         $this->globalVariablesService = $globalVariablesService;
         $this->httpClient = $http_client;
         $this->logger = $logger;
         $this->requestStack = $requestStack;
+        $this->apimanTokenService = $apimanTokenService;
+        $this->vaultConfigService = $vaultConfigService;
     }
 
     public function getFlowId(): ?string
     {
         try {
-            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+            $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
             $response = $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/authorize', [
                 'headers' => [
                     'Accept' => self::APP_JSON,
@@ -307,10 +315,10 @@ class OAuthLoginService
             'verify' => FALSE,
         ]);
     }
-    
+
     private function getIdamConfig(): string
     {
-        return $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+        return $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
     }
 
     public function checkEmailExists(string $email, string $access_token, string $api_url, string $api_version): bool
@@ -338,7 +346,7 @@ class OAuthLoginService
         $cookies = $request->headers->get('cookie');
 
         try {
-            $idamconfig = $this->globalVariablesService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+            $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
             $response = $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oidc/logout', [
                 'headers' => [
                     'Content-Type' => self::FORM_URLENCODED,
@@ -406,8 +414,8 @@ class OAuthLoginService
      */
     public function validateEmail(string $email): bool
     {
-        $accessToken = $this->globalVariablesService->getApimanAccessToken();
-        $globals = $this->globalVariablesService->getGlobalVariables();
+        $accessToken = $this->apimanTokenService->getApimanAccessToken();
+        $globals = $this->vaultConfigService->getGlobalVariables();
 
         $apiUrl = $globals['apiManConfig']['config']['apiUrl'] ?? '';
         $apiVersion = $globals['apiManConfig']['config']['apiVersion'] ?? '';

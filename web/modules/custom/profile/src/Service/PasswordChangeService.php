@@ -42,76 +42,92 @@ class PasswordChangeService
 
     public function changePassword(string $oldPass, string $newPass, string $confirmPass): array
     {
+        // Default failure response
+        $result = [
+            'status' => FALSE,
+            'message' => 'Password not updated!',
+        ];
+
         try {
             if ($newPass !== $confirmPass) {
-                return ['status' => FALSE, 'message' => 'New password and confirm password do not match.'];
+                $result['message'] = 'New password and confirm password do not match.';
+            } else {
+                $email = $this->currentUser->getEmail();
+
+                // Step 1: Lookup in SCIM
+                $idamconfig = $this->vaultConfigService
+                    ->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
+
+                $url = self::SECURE_LINK . $idamconfig . '/scim2/Users?filter='
+                    . urlencode("emails eq \"$email\"");
+
+                $responseData = $this->apiHttpClientService->getApi($url);
+
+                if (empty($responseData['Resources'][0]['id'])) {
+                    $this->logger->error('User ID not found for email: @mail', ['@mail' => $email]);
+                    $result['message'] = 'User not found in SCIM.';
+                } else {
+                    $idamUserId = $responseData['Resources'][0]['id'];
+
+                    // Step 2: Verify old password
+                    $payloadOld = [
+                        'grant_type' => 'password',
+                        'password' => $oldPass,
+                        'client_id' => 'hVBu5NSpBJHJ84KF70nfQ8ZMdnQa',
+                        'username' => $email,
+                    ];
+
+                    $resOld = $this->apiHttpClientService->postIdam(
+                        self::SECURE_LINK . $idamconfig . '/oauth2/token/',
+                        $payloadOld
+                    );
+
+                    if (empty($resOld['access_token'])) {
+                        $result['message'] = 'Old password not matching!';
+                    } else {
+                        // Step 3: Update password
+                        $payloadPass = [
+                            'schemas' => [
+                                'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User',
+                            ],
+                            'Operations' => [[
+                                'op' => 'replace',
+                                'path' => 'password',
+                                'value' => $newPass,
+                            ]],
+                        ];
+
+                        $resPass = $this->apiHttpClientService->postIdamAuth(
+                            self::SECURE_LINK . $idamconfig . '/scim2/Users/' . $idamUserId,
+                            $payloadPass,
+                            'PATCH'
+                        );
+
+                        if (!empty($resPass['error'])) {
+                            $result['message'] = $resPass['details']['detail']
+                                ?? 'Password update failed';
+                        } elseif (!empty($resPass['emails'][0]) && $resPass['emails'][0] === $email) {
+                            $result['message'] = 'Password changed successfully. Please log in again.';
+                        } elseif (
+                            !empty($resPass['detail'])
+                            && str_contains(strtolower($resPass['detail']), 'password history')
+                        ) {
+                            $result['message'] =
+                                'The password you are trying to use was already used in your last 3 password changes. Please choose a completely new password.';
+                        } elseif (!empty($resPass['detail'])) {
+                            $result['message'] = $resPass['detail'];
+                        }
+                    }
+                }
             }
-
-            $email = $this->currentUser->getEmail();
-
-            // Step 1: Lookup in SCIM
-            $idamconfig = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['idamconfig'];
-            $url = self::SECURE_LINK . $idamconfig . '/scim2/Users?filter=' . urlencode("emails eq \"$email\"");
-            $responseData = $this->apiHttpClientService->getApi($url);
-
-            if (empty($responseData['Resources'][0]['id'])) {
-                $this->logger->error('User ID not found for email: @mail', ['@mail' => $email]);
-                return ['status' => FALSE, 'message' => 'User not found in SCIM.'];
-            }
-
-            $idamUserId = $responseData['Resources'][0]['id'];
-
-            // Step 2: Verify old password
-            $payloadOld = [
-                "grant_type" => "password",
-                "password" => $oldPass,
-                "client_id" => "hVBu5NSpBJHJ84KF70nfQ8ZMdnQa",
-                "username" => $email,
-            ];
-            $resOld = $this->apiHttpClientService->postIdam(
-                self::SECURE_LINK . $idamconfig . '/oauth2/token/',
-                $payloadOld
-            );
-            if (empty($resOld['access_token'])) {
-                return ['status' => FALSE, 'message' => 'Old password not matching!'];
-            }
-
-            // Step 3: Update password
-            $payloadPass = [
-                "schemas" => ["urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"],
-                "Operations" => [[
-                    "op" => "replace",
-                    "path" => "password",
-                    "value" => $newPass,
-                ]],
-            ];
-            $resPass = $this->apiHttpClientService->postIdamAuth(
-                self::SECURE_LINK . $idamconfig . '/scim2/Users/' . $idamUserId,
-                $payloadPass,
-                'PATCH'
-            );
-
-            if (!empty($resPass['error'])) {
-                $details = $resPass['details']['detail'] ?? 'Password update failed';
-                return ['status' => FALSE, 'message' => $details];
-            }
-
-            if (!empty($resPass['emails'][0]) && $resPass['emails'][0] === $email) {
-                return ['status' => FALSE, 'message' => 'Password changed successfully. Please log in again.'];
-            }
-
-            if (!empty($resPass['detail']) && str_contains(strtolower($resPass['detail']), 'password history')) {
-                return ['status' => FALSE, 'message' => 'The password you are trying to use was already used in your last 3 password changes. Please choose a completely new password.'];
-            }
-
-            if (!empty($resPass['detail'])) {
-                return ['status' => FALSE, 'message' => $resPass['detail']];
-            }
-
-            return ['status' => FALSE, 'message' => 'Password not updated!'];
         } catch (\Exception $e) {
-            $this->logger->error('Exception during password change: @msg', ['@msg' => $e->getMessage()]);
-            return ['status' => FALSE, 'message' => 'Unexpected error occurred.'];
+            $this->logger->error(
+                'Exception during password change: @msg',
+                ['@msg' => $e->getMessage()]
+            );
+            $result['message'] = 'Unexpected error occurred.';
         }
+
+        return $result;
     }
 }

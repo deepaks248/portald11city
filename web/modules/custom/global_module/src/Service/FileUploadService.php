@@ -29,31 +29,31 @@ class FileUploadService
     {
         define('UPLOAD_FILE', 'uploadedfile1');
 
+        // Default error response
+        $response = $this->errorResponse('No file uploaded.', 400);
+
         $fileInfo = $this->getUploadedFileInfo();
-        if (!$fileInfo) {
-            return $this->errorResponse('No file uploaded.', 400);
+        if ($fileInfo) {
+            [$tmpFile, $originalName, $mimeType] = $fileInfo;
+
+            if (!$this->isMimeAllowed($mimeType)) {
+                $response = $this->errorResponse('File content not allowed!');
+            } elseif ($this->hasMultipleExtensions($originalName)) {
+                $response = $this->errorResponse('Multiple file extensions not allowed');
+            } else {
+                $fileType = $this->detectFileType($originalName);
+
+                if (!$fileType) {
+                    $response = $this->errorResponse('Selected file not allowed!');
+                } elseif (!$this->validateFileContent($tmpFile)) {
+                    $response = $this->errorResponse('Malicious file detected!');
+                } else {
+                    $response = $this->uploadToRemote($tmpFile, $originalName, $fileType);
+                }
+            }
         }
 
-        [$tmpFile, $originalName, $mimeType] = $fileInfo;
-
-        if (!$this->isMimeAllowed($mimeType)) {
-            return $this->errorResponse('File content not allowed!');
-        }
-
-        if ($this->hasMultipleExtensions($originalName)) {
-            return $this->errorResponse('Multiple file extensions not allowed');
-        }
-
-        $fileType = $this->detectFileType($originalName);
-        if (!$fileType) {
-            return $this->errorResponse('Selected file not allowed!');
-        }
-
-        if (!$this->validateFileContent($tmpFile)) {
-            return $this->errorResponse('Malicious file detected!');
-        }
-
-        return $this->uploadToRemote($tmpFile, $originalName, $fileType);
+        return $response;
     }
 
     private function getUploadedFileInfo(): ?array

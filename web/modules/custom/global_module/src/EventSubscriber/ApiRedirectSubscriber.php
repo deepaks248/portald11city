@@ -11,12 +11,14 @@ use Drupal\Core\Url;
 /**
  * Subscribes to kernel request event to call an API once per session.
  */
-class ApiRedirectSubscriber implements EventSubscriberInterface {
+class ApiRedirectSubscriber implements EventSubscriberInterface
+{
 
   /**
    * {@inheritdoc}
    */
-  public static function getSubscribedEvents(): array {
+  public static function getSubscribedEvents(): array
+  {
     return [
       KernelEvents::REQUEST => ['onKernelRequest', 30],
     ];
@@ -25,7 +27,8 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
   /**
    * Kernel request handler.
    */
-  public function onKernelRequest(RequestEvent $event): void {
+  public function onKernelRequest(RequestEvent $event): void
+  {
     if (!$this->shouldProcess($event)) {
       return;
     }
@@ -48,32 +51,27 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
    * DECISION HELPERS
    * ============================================================ */
 
-  private function shouldProcess(RequestEvent $event): bool {
+  private function shouldProcess(RequestEvent $event): bool
+  {
     $request = $event->getRequest();
 
-    if (!\Drupal::currentUser()->isAuthenticated()) {
-      return FALSE;
-    }
-
-    if ($request->isXmlHttpRequest()) {
-      return FALSE;
-    }
-
-    if ($request->getRequestFormat() !== 'html') {
-      return FALSE;
-    }
-
-    return !$this->isAdminPath();
+    return
+      \Drupal::currentUser()->isAuthenticated()
+      && !$request->isXmlHttpRequest()
+      && $request->getRequestFormat() === 'html'
+      && !$this->isAdminPath();
   }
 
-  private function isAdminPath(): bool {
+  private function isAdminPath(): bool
+  {
     $current_path = \Drupal::service('path.current')->getPath();
     $alias = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
 
     return str_starts_with($alias, '/admin');
   }
 
-  private function shouldRedirect($result): bool {
+  private function shouldRedirect($result): bool
+  {
     return $result === 'redirect_me';
   }
 
@@ -81,7 +79,8 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
    * API RESULT HANDLING
    * ============================================================ */
 
-  private function processApiResult($result, $session): void {
+  private function processApiResult($result, $session): void
+  {
     if (!is_array($result)) {
       $this->logError('Invalid API response format.');
       return;
@@ -99,7 +98,8 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
     $this->logInfo('API data stored for userId: @uid', ['@uid' => $processed['userId']]);
   }
 
-  private function decryptSensitiveFields(array $data): array {
+  private function decryptSensitiveFields(array $data): array
+  {
     $globalService = \Drupal::service('global_module.global_variables');
 
     if (!empty($data['emailId'])) {
@@ -117,7 +117,8 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
    * REDIRECT
    * ============================================================ */
 
-  private function redirectToFront(RequestEvent $event): void {
+  private function redirectToFront(RequestEvent $event): void
+  {
     $url = Url::fromRoute('<front>')->toString();
     $event->setResponse(new RedirectResponse($url));
   }
@@ -126,7 +127,8 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
    * API CALL
    * ============================================================ */
 
-  private function callYourApi() {
+  private function callYourApi()
+  {
     try {
       $globalService = \Drupal::service('global_module.vault_config_service');
       $globals = $globalService->getGlobalVariables();
@@ -134,9 +136,9 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
 
       $response = \Drupal::httpClient()->post(
         $globals['apiManConfig']['config']['apiUrl']
-        . 'tiotcitizenapp'
-        . $globals['apiManConfig']['config']['apiVersion']
-        . 'user/details',
+          . 'tiotcitizenapp'
+          . $globals['apiManConfig']['config']['apiVersion']
+          . 'user/details',
         [
           'headers' => [
             'Authorization' => 'Bearer ' . $tokenService->getApimanAccessToken(),
@@ -150,7 +152,6 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
 
       $decoded = json_decode($response->getBody(), TRUE);
       return $decoded['data'] ?? NULL;
-
     } catch (\Exception $e) {
       $this->logError('API call failed: @msg', ['@msg' => $e->getMessage()]);
       return NULL;
@@ -161,16 +162,18 @@ class ApiRedirectSubscriber implements EventSubscriberInterface {
    * LOGGING HELPERS
    * ============================================================ */
 
-  private function logInfo(string $message, array $context = []): void {
+  private function logInfo(string $message, array $context = []): void
+  {
     \Drupal::logger('api_subscriber')->info($message, $context);
   }
 
-  private function logWarning(string $message): void {
+  private function logWarning(string $message): void
+  {
     \Drupal::logger('api_subscriber')->warning($message);
   }
 
-  private function logError(string $message, array $context = []): void {
+  private function logError(string $message, array $context = []): void
+  {
     \Drupal::logger('api_subscriber')->error($message, $context);
   }
-
 }

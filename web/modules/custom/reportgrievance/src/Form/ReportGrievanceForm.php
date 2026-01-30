@@ -81,7 +81,7 @@ class ReportGrievanceForm extends FormBase
       '#required' => TRUE,
       '#validated' => TRUE,
       '#required_error' => $this->t('Please Select Category'),
-      '#attributes' => ['class' => ['form-select','grievance-type-select','w-full','rounded-md','border','border-gray-300','focus:border-yellow-500','focus:ring-yellow-500','text-gray-700','text-base','p-2.5'], 'data-endpoint' => '/grievance/types'],
+      '#attributes' => ['class' => ['form-select', 'grievance-type-select', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'], 'data-endpoint' => '/grievance/types'],
     ];
 
     // ✅ Subtype wrapper + Grievance Subtype
@@ -98,7 +98,7 @@ class ReportGrievanceForm extends FormBase
       '#required' => TRUE,
       '#validated' => TRUE,
       '#required_error' => $this->t('Please Select Sub Category'),
-      '#attributes' => ['class' => ['form-select','grievance-subtype-select','w-full','rounded-md','border','border-gray-300','focus:border-yellow-500','focus:ring-yellow-500','text-gray-700','text-base','p-2.5'], 'data-endpoint-template' => '/grievance/subtypes/'],
+      '#attributes' => ['class' => ['form-select', 'grievance-subtype-select', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'], 'data-endpoint-template' => '/grievance/subtypes/'],
     ];
 
     // ✅ Remarks
@@ -108,7 +108,7 @@ class ReportGrievanceForm extends FormBase
       '#required' => TRUE,
       '#required_error' => $this->t('Remarks is required.'),
       '#maxlength' => 255,
-      '#attributes' => ['placeholder' => $this->t('Remarks'), 'class' => ['form-input','w-full','rounded-md','border','border-gray-300','focus:border-yellow-500','focus:ring-yellow-500','text-gray-700','text-base','p-2.5']],
+      '#attributes' => ['placeholder' => $this->t('Remarks'), 'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5']],
     ];
 
     // ✅ Address
@@ -118,7 +118,7 @@ class ReportGrievanceForm extends FormBase
       '#maxlength' => 255,
       '#required' => TRUE,
       '#required_error' => $this->t('Address is required.'),
-      '#attributes' => ['placeholder' => $this->t('Address'), 'class' => ['form-input','w-full','rounded-md','border','border-gray-300','focus:border-yellow-500','focus:ring-yellow-500','text-gray-700','text-base','p-2.5'], 'readonly' => 'readonly'],
+      '#attributes' => ['placeholder' => $this->t('Address'), 'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'], 'readonly' => 'readonly'],
     ];
 
     // ✅ File Upload
@@ -126,14 +126,14 @@ class ReportGrievanceForm extends FormBase
       '#type' => 'file',
       '#required' => FALSE,
       '#limit_validation_errors' => [],
-      '#attributes' => ['class' => ['form-input','rounded-md','border','border-gray-300','focus:border-yellow-500','focus:ring-yellow-500','text-gray-700','text-base','p-2.5']],
+      '#attributes' => ['class' => ['form-input', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5']],
     ];
 
     // ✅ Agree to Terms
     $form['agree_terms'] = [
       '#type' => 'checkbox',
       '#required' => TRUE,
-      '#attributes' => ['class' => ['w-6','h-6','rounded','cursor-pointer','border','border-gray-400']],
+      '#attributes' => ['class' => ['w-6', 'h-6', 'rounded', 'cursor-pointer', 'border', 'border-gray-400']],
     ];
 
     // ✅ Hidden Lat/Long
@@ -161,7 +161,7 @@ class ReportGrievanceForm extends FormBase
       '#type' => 'submit',
       '#value' => $this->t('Submit'),
       '#button_type' => 'primary',
-      '#attributes' => ['class' => ['lg:h-14','lg:w-44','s:h-10','xs:h-10','bg-yellow-500','text-white','text-lg','rounded-full','px-6','py-2','hover:bg-yellow-600','transition']],
+      '#attributes' => ['class' => ['lg:h-14', 'lg:w-44', 's:h-10', 'xs:h-10', 'bg-yellow-500', 'text-white', 'text-lg', 'rounded-full', 'px-6', 'py-2', 'hover:bg-yellow-600', 'transition']],
     ];
 
     // ✅ Attach JS and settings for endpoints
@@ -193,7 +193,6 @@ class ReportGrievanceForm extends FormBase
     // Validate type.
     if (!isset($types[$grievance_type_id])) {
       $form_state->setErrorByName('grievance_type', $this->t('Invalid grievance type selected.'));
-      return;
     }
     // Load the cached subtypes (depends on the type).
     $sub_cache = \Drupal::cache()->get('grievance_subtypes_' . $grievance_type_id);
@@ -202,7 +201,6 @@ class ReportGrievanceForm extends FormBase
     // Validate subtype.
     if (!isset($subtypes[$grievance_subtype_id])) {
       $form_state->setErrorByName('grievance_subtype', $this->t('Invalid grievance subtype selected.'));
-      return;
     }
   }
 

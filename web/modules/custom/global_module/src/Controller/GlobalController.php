@@ -64,23 +64,24 @@ class GlobalController extends ControllerBase
    */
   public static function fileUploadAccess(Request $request)
   {
+    $access = AccessResult::allowed();
     // Only allow POST
     if ($request->getMethod() !== 'POST') {
-      return AccessResult::forbidden();
+      $access = AccessResult::forbidden();
     }
 
     // Exact path match (case-insensitive)
     $current_path = strtolower(\Drupal::service('path.current')->getPath());
     if ($current_path !== '/fileupload') {
-      return AccessResult::forbidden();
+      $access = AccessResult::forbidden();
     }
 
     // Optional: check user permission
     $current_user = \Drupal::currentUser();
     if (!$current_user->hasPermission('access content')) {
-      return AccessResult::forbidden();
+      $access = AccessResult::forbidden();
     }
 
-    return AccessResult::allowed();
+    return $access;
   }
 }

@@ -204,27 +204,35 @@ class ActiveSessionController extends ControllerBase
         $session = \Drupal::service('session');
         $accessToken = $session->get('login_logout.access_token');
         $active_session_id_token = $session->get('login_logout.active_session_id_token');
+        $response = new RedirectResponse(self::MY_ACCOUNT_PATH);
 
         if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
-            return new RedirectResponse(self::MY_ACCOUNT_PATH);
+            return $response;
         }
 
         [$id, $access_token] = explode('--', $session_id) + [NULL, NULL];
 
         try {
             $is_my_session = ($active_session_id_token == $id);
+
             if ($is_my_session) {
                 $this->sessionService->terminateSession($active_session_id_token, $accessToken);
-                return new RedirectResponse('/logout');
+                $response = new RedirectResponse('/logout');
             } else {
                 $this->sessionService->terminateSession($id, $accessToken);
-                return new RedirectResponse(self::MY_ACCOUNT_PATH);
+                $response = new RedirectResponse(self::MY_ACCOUNT_PATH);
             }
         } catch (\Exception $e) {
-            $this->messenger()->addError($this->t('An error occurred while ending the session: @message', ['@message' => $e->getMessage()]));
-            return new RedirectResponse(self::MY_ACCOUNT_PATH);
+            $this->messenger()->addError(
+                $this->t(
+                    'An error occurred while ending the session: @message',
+                    ['@message' => $e->getMessage()]
+                )
+            );
         }
+
+        return $response;
     }
 
     public function endAllSessions()

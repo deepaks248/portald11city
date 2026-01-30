@@ -29,45 +29,30 @@ class RouteChangeSubscriber implements EventSubscriberInterface
 
   public function onKernelResponse(ResponseEvent $event): void
   {
-    // Only process main HTML requests
-    if (!$event->isMainRequest()) {
-      return;
-    }
-
     $request = $event->getRequest();
     $response = $event->getResponse();
-
-    // Skip AJAX or non-HTML responses
-    if ($request->isXmlHttpRequest() || $request->getRequestFormat() !== 'html') {
-      return;
-    }
-
-    // Only increment if it's a 200 OK response
-    if ($response->getStatusCode() !== 200) {
-      return;
-    }
-
     $current_path = $request->getPathInfo();
 
-    // Ignore admin/system/internal paths
-    if (
-      $current_path !== NULL && substr($current_path, 0, strlen('/admin')) === '/admin' ||
-      $current_path !== NULL && substr($current_path, 0, strlen('/core')) === '/core' ||
-      $current_path !== NULL && substr($current_path, 0, strlen('/system')) === '/system' ||
-      $current_path !== NULL && substr($current_path, 0, strlen('/_')) === '/_'
-    ) {
-      return;
+    $should_process =
+      $event->isMainRequest()
+      && !$request->isXmlHttpRequest()
+      && $request->getRequestFormat() === 'html'
+      && $response->getStatusCode() === 200
+      && !(
+        $current_path !== NULL &&
+        (
+          str_starts_with($current_path, '/admin') ||
+          str_starts_with($current_path, '/core') ||
+          str_starts_with($current_path, '/system') ||
+          str_starts_with($current_path, '/_')
+        )
+      )
+      && $this->session->get('page_visit_counted_for') !== $current_path;
+
+    if ($should_process) {
+      $count = $this->state->get('page_visit_counter.count', 0);
+      $this->state->set('page_visit_counter.count', $count + 1);
+      $this->session->set('page_visit_counted_for', $current_path);
     }
-
-    // Prevent counting reloads of same page in quick succession
-    if ($this->session->get('page_visit_counted_for') === $current_path) {
-      return;
-    }
-
-    // Increment counter
-    $count = $this->state->get('page_visit_counter.count', 0);
-    $this->state->set('page_visit_counter.count', $count + 1);
-
-    $this->session->set('page_visit_counted_for', $current_path);
   }
 }

@@ -79,9 +79,8 @@ class ApiGatewayService
                 throw new \InvalidArgumentException('Invalid payload', 400);
             }
 
-            $userId   = (int) \Drupal::currentUser()->id();
             $url      = $this->buildServiceUrl($postData);
-            $response = $this->handleRequestByType($postData, $url, $request, $userId);
+            $response = $this->handleRequestByType($postData, $url, $request);
         } catch (\Throwable $e) {
             $statusCode = $e->getCode() ?: 500;
 
@@ -100,7 +99,6 @@ class ApiGatewayService
         array $data,
         string $url,
         Request $request,
-        int $userId
     ): array {
         $session   = $request->getSession();
         $userData  = $session->get('api_redirect_result') ?? [];

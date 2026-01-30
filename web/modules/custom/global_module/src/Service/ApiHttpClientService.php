@@ -86,8 +86,7 @@ class ApiHttpClientService
     private function request(
         string $method,
         string $url,
-        array $options = [],
-        string $logChannel = 'global_module'
+        array $options = []
     ): ?array {
         try {
             $response = $this->httpClient->request(
@@ -101,7 +100,7 @@ class ApiHttpClientService
                 true
             );
         } catch (RequestException $e) {
-            $this->logException($e, $logChannel);
+            $this->logException($e);
             return ['error' => 'Request failed'];
         } catch (\Exception $e) {
             $this->logger->error(
@@ -125,7 +124,7 @@ class ApiHttpClientService
         ];
     }
 
-    private function logException(RequestException $e, string $channel): void
+    private function logException(RequestException $e): void
     {
         $responseBody = $e->hasResponse()
             ? (string) $e->getResponse()->getBody()

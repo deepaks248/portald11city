@@ -8,6 +8,8 @@ report_grievance_form:
     http://192.168.1.165:8989/trinityAPI/v4.0.2/appconfig-security.js: {}
     js/jquery.validate.min.js: {}
     js/report-grievance.js: {}
+    js/map-populate.js: {}
+    js/grievance-validate.js: {}
   dependencies:
     - core/jquery
     - core/once

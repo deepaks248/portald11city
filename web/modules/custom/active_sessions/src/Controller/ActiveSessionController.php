@@ -19,6 +19,7 @@ class ActiveSessionController extends ControllerBase
     protected $requestStack;
     protected $sessionService;
     protected $dateFormatter;
+    public const MY_ACCOUNT_PATH = '/my-account';
 
     public function __construct(
         OAuthLoginService $oauthLoginService,
@@ -42,123 +43,158 @@ class ActiveSessionController extends ControllerBase
         );
     }
 
-    private function format_user_agent($userAgent)
+    private function format_user_agent(string $userAgent): string
     {
-        $browser = $userAgent;
-        $device  = $userAgent;
+        $browser = $this->detectValue($userAgent, $this->browserMap(), 'Unknown Browser');
+        $device  = $this->detectValue($userAgent, $this->deviceMap(), 'Unknown Device/OS');
 
-        // Detect browser
-        switch (TRUE) {
-            case stripos($browser, 'Edg') !== FALSE:
-                $browser = 'Microsoft Edge';
-                break;
-            case stripos($browser, 'Chrome') !== FALSE && stripos($browser, 'Chromium') === FALSE:
-                $browser = 'Chrome';
-                break;
-            case stripos($browser, 'Firefox') !== FALSE:
-                $browser = 'Firefox';
-                break;
-            case stripos($browser, 'Safari') !== FALSE && stripos($browser, 'Chrome') === FALSE:
-                $browser = 'Safari';
-                break;
-            case stripos($browser, 'Opera') !== FALSE || stripos($browser, 'OPR') !== FALSE:
-                $browser = 'Opera';
-                break;
-            default:
-                $browser = 'Unknown Browser';
-                break;
-        }
-
-        // Detect device/OS
-        switch (TRUE) {
-            case stripos($device, 'Windows') !== FALSE:
-                $device = 'Desktop (Windows)';
-                break;
-            case stripos($device, 'Macintosh') !== FALSE || stripos($device, 'Mac OS X') !== FALSE:
-                $device = 'Desktop (Mac)';
-                break;
-            case stripos($device, 'iPhone') !== FALSE:
-                $device = 'Mobile (iPhone)';
-                break;
-            case stripos($device, 'iPad') !== FALSE:
-                $device = 'Tablet (iPad)';
-                break;
-            case stripos($device, 'Android') !== FALSE && stripos($device, 'Mobile') !== FALSE:
-                $device = 'Mobile (Android)';
-                break;
-            case stripos($device, 'Android') !== FALSE:
-                $device = 'Tablet (Android)';
-                break;
-            case stripos($device, 'Linux') !== FALSE:
-                $device = 'Linux';
-                break;
-            default:
-                $device = 'Unknown Device/OS';
-                break;
-        }
-
-        if ($browser === $userAgent && $device === $userAgent) {
-            return $userAgent;
-        }
-        return "{$browser}, {$device}";
+        return ($browser === 'Unknown Browser' && $device === 'Unknown Device/OS')
+            ? $userAgent
+            : "{$browser}, {$device}";
     }
 
-    public function activeSession()
+    private function detectValue(string $ua, array $map, string $default): string
     {
-        $session = \Drupal::service('session');
-        $accessToken = $session->get('login_logout.access_token');
-        $storedLoginTime = $session->get('login_logout.login_time');
-
-        // Fetch sessions from API
-        $sessions = $this->sessionService->fetchActiveSessions($accessToken);
-        $apiSessions = $sessions['sessions'] ?? [];
-
-        $currentUserSessions = [];
-        $otherUserSessions = [];
-
-        $closestSessionId = NULL;
-        if (!empty($storedLoginTime) && !empty($apiSessions)) {
-            $targetTimeMs = $storedLoginTime * 1000;
-            $closestDiff = PHP_INT_MAX;
-
-            foreach ($apiSessions as $apiSession) {
-                if (!empty($apiSession['loginTime'])) {
-                    $diff = abs($apiSession['loginTime'] - $targetTimeMs);
-
-                    // short-circuit if exact match
-                    if ($diff === 0) {
-                        $closestSessionId = $apiSession['id'];
-                        break;
-                    }
-
-                    if ($diff < $closestDiff) {
-                        $closestDiff = $diff;
-                        $closestSessionId = $apiSession['id'];
-                    }
+        foreach ($map as $label => $patterns) {
+            foreach ((array) $patterns as $pattern) {
+                if (stripos($ua, $pattern) !== FALSE) {
+                    return $label;
                 }
             }
         }
 
-        foreach ($apiSessions as &$apiSession) {
-            $timestamp = (int) ($apiSession['loginTime'] / 1000);
-            $apiSession['accessToken'] = $accessToken;
-            $apiSession['userAgentFormatted'] = $this->format_user_agent($apiSession['userAgent'] ?? '');
-            $apiSession['loginTimeSeconds'] = $timestamp;
-            $apiSession['formattedLoginTime'] = $this->dateFormatter
-                ->format($timestamp, 'custom', 'd-m-Y, h:i:s', 'Asia/Kolkata');
+        return $default;
+    }
 
-            if ($apiSession['id'] === $closestSessionId) {
-                $currentUserSessions[] = $apiSession;
-            } else {
-                $otherUserSessions[] = $apiSession;
+    private function browserMap(): array
+    {
+        return [
+            'Microsoft Edge' => ['Edg'],
+            'Chrome'         => ['Chrome'],
+            'Firefox'        => ['Firefox'],
+            'Safari'         => ['Safari'],
+            'Opera'          => ['Opera', 'OPR'],
+        ];
+    }
+
+
+    private function deviceMap(): array
+    {
+        return [
+            'Desktop (Windows)' => ['Windows'],
+            'Desktop (Mac)'     => ['Macintosh', 'Mac OS X'],
+            'Mobile (iPhone)'   => ['iPhone'],
+            'Tablet (iPad)'     => ['iPad'],
+            'Mobile (Android)'  => ['Android Mobile'],
+            'Tablet (Android)'  => ['Android'],
+            'Linux'             => ['Linux'],
+        ];
+    }
+
+
+    public function activeSession(): array
+    {
+        $session     = \Drupal::service('session');
+        $accessToken = $session->get('login_logout.access_token');
+        $loginTime   = $session->get('login_logout.login_time');
+
+        $apiSessions = $this->getApiSessions($accessToken);
+        $closestId   = $this->findClosestSessionId($apiSessions, $loginTime);
+
+        [$current, $others] = $this->prepareSessions(
+            $apiSessions,
+            $closestId,
+            $accessToken
+        );
+
+        return $this->buildResponse($current, $others);
+    }
+
+
+    private function getApiSessions(?string $accessToken): array
+    {
+        $sessions = $this->sessionService->fetchActiveSessions($accessToken);
+        return $sessions['sessions'] ?? [];
+    }
+
+    private function findClosestSessionId(array $sessions, ?int $loginTime): ?string
+    {
+        if (empty($loginTime) || empty($sessions)) {
+            return NULL;
+        }
+
+        $targetMs   = $loginTime * 1000;
+        $closestId  = NULL;
+        $closestDiff = PHP_INT_MAX;
+
+        foreach ($sessions as $session) {
+            if (empty($session['loginTime'])) {
+                continue;
+            }
+
+            $diff = abs($session['loginTime'] - $targetMs);
+
+            if ($diff < $closestDiff) {
+                $closestDiff = $diff;
+                $closestId   = $session['id'];
+            }
+
+            if ($diff === 0) {
+                break;
             }
         }
 
+        return $closestId;
+    }
+
+    private function prepareSessions(
+        array $sessions,
+        ?string $currentSessionId,
+        string $accessToken
+    ): array {
+        $current = [];
+        $others  = [];
+
+        foreach ($sessions as $session) {
+            $normalized = $this->normalizeSession(
+                $session,
+                $accessToken
+            );
+
+            if ($session['id'] === $currentSessionId) {
+                $current[] = $normalized;
+            } else {
+                $others[] = $normalized;
+            }
+        }
+
+        return [$current, $others];
+    }
+
+    private function normalizeSession(array $session, string $accessToken): array
+    {
+        $timestamp = (int) (($session['loginTime'] ?? 0) / 1000);
+
+        $session['accessToken']          = $accessToken;
+        $session['userAgentFormatted']   = $this->format_user_agent($session['userAgent'] ?? '');
+        $session['loginTimeSeconds']     = $timestamp;
+        $session['formattedLoginTime']   = $this->dateFormatter->format(
+            $timestamp,
+            'custom',
+            'd-m-Y, h:i:s',
+            'Asia/Kolkata'
+        );
+
+        return $session;
+    }
+
+    private function buildResponse(array $current, array $others): array
+    {
         return [
             '#title' => $this->t('Active Sessions'),
             '#theme' => 'active_sessions_page',
-            '#currentUserSessions' => $currentUserSessions,
-            '#otherUserSessions' => $otherUserSessions,
+            '#currentUserSessions' => $current,
+            '#otherUserSessions'  => $others,
             '#cache' => ['max-age' => 0],
         ];
     }
@@ -171,7 +207,7 @@ class ActiveSessionController extends ControllerBase
 
         if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
-            return new RedirectResponse('/my-account');
+            return new RedirectResponse(self::MY_ACCOUNT_PATH);
         }
 
         [$id, $access_token] = explode('--', $session_id) + [NULL, NULL];
@@ -183,11 +219,11 @@ class ActiveSessionController extends ControllerBase
                 return new RedirectResponse('/logout');
             } else {
                 $this->sessionService->terminateSession($id, $accessToken);
-                return new RedirectResponse('/my-account');
+                return new RedirectResponse(self::MY_ACCOUNT_PATH);
             }
         } catch (\Exception $e) {
             $this->messenger()->addError($this->t('An error occurred while ending the session: @message', ['@message' => $e->getMessage()]));
-            return new RedirectResponse('/my-account');
+            return new RedirectResponse(self::MY_ACCOUNT_PATH);
         }
     }
 
@@ -198,7 +234,7 @@ class ActiveSessionController extends ControllerBase
 
         if ($accessToken === NULL) {
             $this->messenger()->addError($this->t('Failed to retrieve access token.'));
-            return new RedirectResponse('/my-account');
+            return new RedirectResponse(self::MY_ACCOUNT_PATH);
         }
 
         try {
@@ -206,7 +242,7 @@ class ActiveSessionController extends ControllerBase
             return new RedirectResponse('/logout');
         } catch (\Exception $e) {
             $this->messenger()->addError($this->t('An error occurred while ending all sessions: @message', ['@message' => $e->getMessage()]));
-            return new RedirectResponse('/my-account');
+            return new RedirectResponse(self::MY_ACCOUNT_PATH);
         }
     }
 }

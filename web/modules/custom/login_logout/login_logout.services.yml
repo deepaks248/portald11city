@@ -16,7 +16,13 @@ services:
       - '@global_module.global_variables'
       - '@global_module.vault_config_service'
       - '@global_module.apiman_token_service'
+      - '@login_logout.oauth_helper_service'
 
+  login_logout.oauth_helper_service:
+    class: Drupal\login_logout\Service\OAuthHelperService
+    arguments:
+      - '@http_client'
+      - '@logger.channel.login_logout'
 
   login_logout.no_cache_subscriber:
     class: Drupal\login_logout\EventSubscriber\NoCacheSubscriber

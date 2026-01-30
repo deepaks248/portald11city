@@ -55,96 +55,6 @@ class GlobalVariablesService
     $this->apiHttpClientService = $apiHttpClientService;
   }
 
-  public function getServiceUrl($serviceName)
-  {
-    $serUrl = '';
-    $globalVariables = $this->vaultConfigService->getGlobalVariables();
-
-    $apiUrl = $globalVariables['apiManConfig']['config']['apiUrl'];
-    $apiVer = $globalVariables['apiManConfig']['config']['apiVersion'];
-    $webportalUrl = $globalVariables['applicationConfig']['config']['webportalUrl'];
-    if ($serviceName == 'cep') {
-      $serUrl = $apiUrl . 'trinityengage-casemanagementsystem' . $apiVer;
-    } elseif ($serviceName == 'cad') {
-      $serUrl = $apiUrl . 'trinity-respond' . $apiVer;
-    } elseif ($serviceName == 'ngcad') {
-      $serUrl = $apiUrl . 'ngcadmobileapp' . $apiVer;
-    } elseif ($serviceName == 'iot') {
-      $serUrl = $apiUrl . 'tiotIOTPS' . $apiVer;
-    } elseif ($serviceName == 'cityapp') {
-      $serUrl = $apiUrl . 'tengageCity' . $apiVer;
-    } elseif ($serviceName == 'idam') {
-      $serUrl = $apiUrl . 'UMA' . $apiVer;
-    } elseif ($serviceName == 'tiotweb') {
-      $serUrl = $apiUrl . 'tiotweb' . $apiVer;
-    } elseif ($serviceName == 'tiotICCCOperator') {
-      $serUrl = $apiUrl . 'tiotICCCOperator' . $apiVer;
-    } elseif ($serviceName == 'tiotcitizenapp') {
-      $serUrl = $apiUrl . 'tiotcitizenapp' . $apiVer;
-    } elseif ($serviceName == 'innv') {
-      $serUrl = $apiUrl . 'tiotcitizenapp' . $apiVer;
-    } elseif ($serviceName == 'portal') {
-      $serUrl = $webportalUrl;
-    } else {
-      $serUrl = '';
-    }
-
-    return $serUrl;
-  }
-
-  private function buildServiceUrl(array $data): ?string
-  {
-    $base = $this->getServiceUrl($data['service'] ?? '');
-    return $base ? $base . ($data['endPoint'] ?? '') : NULL;
-  }
-
-  public function postData(Request $request): JsonResponse
-  {
-    try {
-      $method = $request->getMethod();
-      if ($method !== 'POST') {
-        return new JsonResponse(['status' => FALSE, 'message' => 'Method not allowed!']);
-      }
-
-      $postData = json_decode($request->getContent(), TRUE);
-      if (!$postData || !isset($postData['service'], $postData['type'])) {
-        return new JsonResponse(['status' => FALSE, 'message' => 'Invalid payload!']);
-      }
-
-      $user = \Drupal::currentUser();
-      $userId = $user->id();
-      $url = $this->buildServiceUrl($postData);
-      $response = $this->handleRequestByType($postData, $url, $request, $userId);
-
-      return new JsonResponse($response);
-    } catch (\Exception $e) {
-      \Drupal::logger('Post Data Error')->error($e->getMessage());
-      return new JsonResponse(['status' => FALSE, 'message' => 'Internal server error.'], 500);
-    }
-  }
-
-  public function handleRequestByType(array $data, string $url, Request $request, int $userId): array
-  {
-    $session = \Drupal::request()->getSession();
-    $user_data = $session->get('api_redirect_result') ?? [];
-    $type = $data['type'] ?? NULL;
-    $payload = $data[self::PAYLOADS] ?? [];
-
-    switch ($type) {
-      case 2:
-        return $this->apiHttpClientService->postApiman($url, $payload); // Assuming it's a method in this class
-      case 'delyUser':
-        return $this->userDelete(
-          userID: $user_data['userId'],
-          tenantCode: $user_data['tenantCode']
-        );
-
-      default:
-        return $this->apiHttpClientService->postApiman($url, $payload); // Fallback/default handler
-    }
-  }
-
-
   public function decrypt($value)
   {
     $key = "Fl%JTt%d954n@PoU";
@@ -207,7 +117,7 @@ class GlobalVariablesService
       return new JsonResponse(['message' => 'Multiple file extensions not allowed', self::STR_STS => FALSE]);
     }
 
-    // Detect file type   
+    // Detect file type
     $fileTypeVal = NULL;
     $fileTypeType = NULL;
     $extensionLower = strtolower($extension);
@@ -316,36 +226,6 @@ class GlobalVariablesService
         'status' => FALSE,
         'message' => 'Profile update failed',
       ], 500);
-    }
-  }
-
-  public function userDelete($userID, $tenantCode)
-  {
-    $globalVariables = $this->vaultConfigService->getGlobalVariables();
-    $apiUrl = $globalVariables['apiManConfig']['config']['apiUrl'];
-    $apiVer = $globalVariables['apiManConfig']['config']['apiVersion'];
-    
-    $cityUrl = $globalVariables['applicationConfig']['config']['deleteAPICA'] . $userID;
-    \Drupal::logger('City App Delete Url')->notice($cityUrl);
-    $deleteResponse = $this->apiHttpClientService->postApi($cityUrl);
-    \Drupal::logger('Post Data response')->notice(print_r($deleteResponse, TRUE));
-    if ($deleteResponse && isset($deleteResponse['status']) && $deleteResponse['status'] === TRUE) {
-
-      $responseData = $this->apiHttpClientService->postApiman(
-        $apiUrl . 'trinityengage-casemanagementsystem' . $apiVer . 'user/delete-user?userId=' . $userID . '&tenantCode=' . $tenantCode,
-      );
-
-
-      \Drupal::logger('CEP Delete API response')->notice(print_r($responseData, TRUE));
-      if ($responseData['status']) {
-        $account = User::load(\Drupal::currentUser()->id());
-        $account->delete();
-        return ['status' => TRUE, 'message' => 'User account deleted successfully!'];
-      } else {
-        return ['status' => FALSE, 'message' => 'Failed to delete user from case management system.'];
-      }
-    } else {
-      return ['status' => FALSE, 'message' => 'Failed to delete user account.'];
     }
   }
 

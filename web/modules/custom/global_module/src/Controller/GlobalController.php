@@ -8,8 +8,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\global_module\Service\GlobalVariablesService;
+use Drupal\global_module\Service\ApiGatewayService;
 
-class GlobalController extends ControllerBase {
+class GlobalController extends ControllerBase
+{
 
   /**
    * The custom global service.
@@ -17,42 +19,51 @@ class GlobalController extends ControllerBase {
    * @var \Drupal\global_module\Service\GlobalService
    */
   protected $globalService;
+  protected $apiGatewayService;
 
   /**
    * Constructs the controller with GlobalService.
    */
-  public function __construct(GlobalVariablesService $globalService) {
+  public function __construct(GlobalVariablesService $globalService, ApiGatewayService $apiGatewayService)
+  {
     $this->globalService = $globalService;
+    $this->apiGatewayService = $apiGatewayService;
   }
 
   /**
    * Dependency injection via container.
    */
-  public static function create(ContainerInterface $container) {
+  public static function create(ContainerInterface $container)
+  {
     return new static(
-      $container->get('global_module.global_variables')
+      $container->get('global_module.global_variables'),
+      $container->get('global_module.api_gateway')
     );
   }
 
   /**
    * Handles file upload.
    */
-  public function fileUpload(Request $request): JsonResponse {
+  public function fileUpload(Request $request): JsonResponse
+  {
     return $this->globalService->fileUploadser($request);
   }
 
-  public function postData(Request $request): JsonResponse {
-    return $this->globalService->postData($request);
+  public function postData(Request $request): JsonResponse
+  {
+    return $this->apiGatewayService->postData($request);
   }
 
-   public function detailsUpdate(): JsonResponse {
+  public function detailsUpdate(): JsonResponse
+  {
     return $this->globalService->detailsUpdate();
   }
 
   /**
    * Access check for /fileupload.
    */
-  public static function fileUploadAccess(Request $request) {
+  public static function fileUploadAccess(Request $request)
+  {
     // Only allow POST
     if ($request->getMethod() !== 'POST') {
       return AccessResult::forbidden();

@@ -10,7 +10,7 @@ global_module.fileupload:
 global_module.postData:
   path: "/postData"
   defaults:
-    _controller: 'global_module.global_variables:postData'
+    _controller: 'global_module.api_gateway:postData'
     _title: ""
   requirements:
     _permission: "access content"

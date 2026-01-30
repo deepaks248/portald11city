@@ -9,6 +9,7 @@ use Drupal\global_module\Service\GlobalVariablesService;
 use Drupal\Core\Site\Settings;
 use Drupal\global_module\Service\VaultConfigService;
 use Drupal\global_module\Service\ApimanTokenService;
+use Drupal\login_logout\Service\OAuthHelperService;
 
 class OAuthLoginService
 {
@@ -21,6 +22,7 @@ class OAuthLoginService
     protected $globalVariablesService;
     protected $vaultConfigService;
     protected $apimanTokenService;
+    protected $oauthHelperService;
 
     public function __construct(
         ClientInterface $http_client,
@@ -28,7 +30,8 @@ class OAuthLoginService
         RequestStack $requestStack,
         GlobalVariablesService $globalVariablesService,
         VaultConfigService $vaultConfigService,
-        ApimanTokenService $apimanTokenService
+        ApimanTokenService $apimanTokenService,
+        OAuthHelperService $oauthHelperService
     ) {
         $this->globalVariablesService = $globalVariablesService;
         $this->httpClient = $http_client;
@@ -36,6 +39,7 @@ class OAuthLoginService
         $this->requestStack = $requestStack;
         $this->apimanTokenService = $apimanTokenService;
         $this->vaultConfigService = $vaultConfigService;
+        $this->oauthHelperService = $oauthHelperService;
     }
 
     public function getFlowId(): ?string
@@ -68,7 +72,7 @@ class OAuthLoginService
 
     public function format_user_agent(string $userAgent): string
     {
-        $browser = $this->detectFromRules($userAgent, [
+        $browser = $this->oauthHelperService->detectFromRules($userAgent, [
             'Microsoft Edge' => ['Edg'],
             'Chrome'         => ['Chrome', '!Chromium'],
             'Firefox'        => ['Firefox'],
@@ -76,7 +80,7 @@ class OAuthLoginService
             'Opera'          => ['Opera', 'OPR'],
         ], 'Unknown Browser');
 
-        $device = $this->detectFromRules($userAgent, [
+        $device = $this->oauthHelperService->detectFromRules($userAgent, [
             'Desktop (Windows)' => ['Windows'],
             'Desktop (Mac)'     => ['Macintosh', 'Mac OS X'],
             'Mobile (iPhone)'   => ['iPhone'],
@@ -93,161 +97,44 @@ class OAuthLoginService
         return "{$browser}, {$device}";
     }
 
-    private function detectFromRules(string $agent, array $rules, string $default): string
-    {
-        foreach ($rules as $label => $conditions) {
-            if ($this->matchesConditions($agent, (array) $conditions)) {
-                return $label;
-            }
-        }
-
-        return $default;
-    }
-
-    private function matchesConditions(string $agent, array $conditions): bool
-    {
-        foreach ($conditions as $condition) {
-            $negate = $condition[0] === '!';
-            $token  = ltrim($condition, '!');
-
-            $found = stripos($agent, $token) !== FALSE;
-
-            if ($negate && $found) {
-                return FALSE;
-            }
-
-            if (!$negate && !$found) {
-                return FALSE;
-            }
-        }
-
-        return TRUE;
-    }
-
-    public function authenticateUser(string $flow_id, string $email, string $password): ?array
-    {
-        $userAgent = $this->requestStack->getCurrentRequest()->headers->get('User-Agent');
-        $payload = $this->prepareAuthPayload($flow_id, $email, $password);
-        $idamconfig = $this->getIdamConfig();
+    public function authenticateUser(
+        string $flow_id,
+        string $email,
+        string $password
+    ): ?array {
+        $resultData = NULL;
 
         try {
-            $response = $this->sendAuthenticationRequest($idamconfig, $payload, $userAgent);
-            $result = $this->parseResponse($response);
+            $userAgent = $this->requestStack
+                ->getCurrentRequest()
+                ->headers
+                ->get('User-Agent');
 
-            if ($this->isAuthSuccess($result)) {
-                return $this->handleAuthSuccess($result);
+            $payload    = $this->oauthHelperService->prepareAuthPayload($flow_id, $email, $password);
+            $idamconfig = $this->getIdamConfig();
+
+            $response = $this->oauthHelperService->sendAuthenticationRequest(
+                $idamconfig,
+                $payload,
+                $userAgent
+            );
+
+            $result = $this->oauthHelperService->parseResponse($response);
+
+            if ($this->oauthHelperService->isAuthSuccess($result)) {
+                $resultData = $this->oauthHelperService->handleAuthSuccess($result);
+            } elseif ($this->oauthHelperService->isActiveSessionLimitReached($result)) {
+                $resultData = $this->oauthHelperService->handleSessionLimit($result, $email);
+            } else {
+                $resultData = $this->oauthHelperService->handleErrorResponse($result);
             }
-
-            if ($this->isActiveSessionLimitReached($result)) {
-                return $this->handleSessionLimit($result, $email);
-            }
-
-            return $this->handleErrorResponse($result);
-        } catch (\Exception $e) {
-            $this->logError($e->getMessage());
-            return $this->generateErrorResponse();
+        } catch (\Throwable $e) {
+            $this->oauthHelperService->logError($e->getMessage());
+            $resultData = $this->oauthHelperService->generateErrorResponse();
         }
+
+        return $resultData;
     }
-
-    private function prepareAuthPayload($flow_id, $email, $password)
-    {
-        return [
-            "flowId" => $flow_id,
-            "selectedAuthenticator" => [
-                "authenticatorId" => Settings::get('idam_local_authenticator_id'),
-                "params" => ["username" => $email, "password" => $password],
-            ],
-        ];
-    }
-
-    private function sendAuthenticationRequest($idamconfig, $payload, $userAgent)
-    {
-        return $this->httpClient->request('POST', self::SECURE_LINK . $idamconfig . '/oauth2/authn', [
-            'headers' => [
-                'Accept' => self::APP_JSON,
-                'Content-Type' => self::APP_JSON,
-                'User-Agent' => $userAgent,
-            ],
-            'json' => $payload,
-            'verify' => FALSE,
-        ]);
-    }
-
-    private function parseResponse($response)
-    {
-        return json_decode($response->getBody()->getContents(), TRUE);
-    }
-
-    private function isAuthSuccess($result)
-    {
-        return !empty($result['authData']['code']);
-    }
-
-    private function handleAuthSuccess($result)
-    {
-        return ['success' => TRUE, 'code' => $result['authData']['code'], 'message' => NULL];
-    }
-
-    private function isActiveSessionLimitReached($result)
-    {
-        return !empty($result['nextStep']['authenticators'][0]['authenticator']) &&
-            $result['nextStep']['authenticators'][0]['authenticator'] === 'Active Sessions Limit';
-    }
-
-    private function handleSessionLimit($result, $email)
-    {
-        $maxSessions = $result['nextStep']['authenticators'][0]['metadata']['additionalData']['MaxSessionCount'] ?? 'unknown';
-        $sessions = json_decode($result['nextStep']['authenticators'][0]['metadata']['additionalData']['sessions'] ?? '[]', TRUE);
-        $sessionList = $this->formatSessions($sessions);
-
-        $this->logger->notice('Active sessions for user @email: @sessions', [
-            '@email' => $email,
-            '@sessions' => $sessionList,
-        ]);
-
-        return [
-            'success' => FALSE,
-            'code' => NULL,
-            'message' => "You have reached the maximum active sessions ($maxSessions).",
-        ];
-    }
-
-    private function formatSessions($sessions)
-    {
-        $sessionList = '';
-        foreach ($sessions as $s) {
-            $sessionList .= "- Browser: {$s['browser']}, Device: {$s['device']}, Last Active: " .
-                date('Y-m-d H:i:s', $s['lastAccessTime'] / 1000) . "\n";
-        }
-        return $sessionList;
-    }
-
-    private function handleErrorResponse($result)
-    {
-        if (!empty($result['nextStep']['messages'][0]['message'])) {
-            return [
-                'success' => FALSE,
-                'code' => NULL,
-                'message' => $result['nextStep']['messages'][0]['message'],
-            ];
-        }
-        return ['success' => FALSE, 'code' => NULL, 'message' => 'Authentication failed. Please try again.'];
-    }
-
-    private function logError($message)
-    {
-        $this->logger->error('Error authenticating user: @msg', ['@msg' => $message]);
-    }
-
-    private function generateErrorResponse()
-    {
-        return [
-            'success' => FALSE,
-            'code' => NULL,
-            'message' => 'An error occurred during authentication. Please try again later.',
-        ];
-    }
-
 
     /**
      * Decode a JWT token payload.
@@ -260,34 +147,12 @@ class OAuthLoginService
      */
     public function decodeJwt(string $jwt): ?array
     {
-        if (!$this->isValidJwtFormat($jwt)) {
+        if (!$this->oauthHelperService->isValidJwtFormat($jwt)) {
             return NULL; // Invalid token format
         }
 
-        $payload = $this->extractPayloadFromJwt($jwt);
-        return $this->decodeBase64Url($payload);
-    }
-
-    private function isValidJwtFormat($jwt)
-    {
-        return count(explode('.', $jwt)) === 3;
-    }
-
-    private function extractPayloadFromJwt($jwt)
-    {
-        return explode('.', $jwt)[1];
-    }
-
-    private function decodeBase64Url($payload)
-    {
-        // Decode Base64Url (replace -_ with +/ and pad with =)
-        $payload = strtr($payload, '-_', '+/');
-        $mod4 = strlen($payload) % 4;
-        if ($mod4) {
-            $payload .= str_repeat('=', 4 - $mod4);
-        }
-
-        return json_decode(base64_decode($payload), TRUE);
+        $payload = $this->oauthHelperService->extractPayloadFromJwt($jwt);
+        return $this->oauthHelperService->decodeBase64Url($payload);
     }
 
     public function exchangeCodeForToken(string $code): ?array
@@ -295,9 +160,9 @@ class OAuthLoginService
         try {
             $idamconfig = $this->getIdamConfig();
             $response = $this->sendTokenRequest($idamconfig, $code);
-            return $this->parseResponse($response);
+            return $this->oauthHelperService->parseResponse($response);
         } catch (\Exception $e) {
-            $this->logError($e->getMessage());
+            $this->oauthHelperService->logError($e->getMessage());
             return NULL;
         }
     }

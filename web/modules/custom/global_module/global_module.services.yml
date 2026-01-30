@@ -47,3 +47,9 @@ services:
       - '@http_client'
       - '@logger.channel.global_module'
       - '@global_module.apiman_token_service'
+
+  global_module.api_gateway:
+    class: Drupal\global_module\Service\ApiGatewayService
+    arguments:
+      - '@global_module.vault_config_service'
+      - '@global_module.api_http_client'

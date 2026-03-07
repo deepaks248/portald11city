@@ -24,6 +24,10 @@ class VaultConfigServiceTest extends UnitTestCase {
   protected $logger;
   protected $service;
 
+  /**
+   * {@inheritdoc}
+   * @covers ::__construct
+   */
   protected function setUp(): void {
     parent::setUp();
 
@@ -47,6 +51,7 @@ class VaultConfigServiceTest extends UnitTestCase {
 
   /**
    * @covers ::getGlobalVariables
+   * @covers ::getFromCache
    */
   public function testGetGlobalVariablesCacheHit() {
     $data = ['key' => 'value'];
@@ -63,6 +68,8 @@ class VaultConfigServiceTest extends UnitTestCase {
    * @covers ::fetchFromVault
    * @covers ::normalizeVaultData
    * @covers ::storeInCache
+   * @covers ::acquireLock
+   * @covers ::releaseLock
    */
   public function testGetGlobalVariablesSuccess() {
     $this->cache->method('get')->willReturn(NULL);
@@ -95,6 +102,7 @@ class VaultConfigServiceTest extends UnitTestCase {
 
   /**
    * @covers ::getGlobalVariables
+   * @covers ::acquireLock
    */
   public function testGetGlobalVariablesLockFailure() {
     $this->cache->method('get')->willReturn(NULL);
@@ -106,6 +114,7 @@ class VaultConfigServiceTest extends UnitTestCase {
 
   /**
    * @covers ::getGlobalVariables
+   * @covers ::fetchAndCacheVaultData
    * @covers ::logError
    */
   public function testGetGlobalVariablesVaultError() {
@@ -131,5 +140,49 @@ class VaultConfigServiceTest extends UnitTestCase {
 
     $result = $this->service->getGlobalVariables();
     $this->assertNull($result);
+  }
+
+  /**
+   * @covers ::fetchAndCacheVaultData
+   * @covers ::fetchFromVault
+   */
+  public function testFetchAndCacheVaultDataNullResponse() {
+    $this->cache->method('get')->willReturn(NULL);
+    $this->lock->method('acquire')->willReturn(TRUE);
+
+    $response = $this->createMock(ResponseInterface::class);
+    $body = $this->createMock(StreamInterface::class);
+    // Payload with no 'data' key
+    $body->method('getContents')->willReturn(json_encode(['foo' => 'bar']));
+    $response->method('getBody')->willReturn($body);
+
+    $this->httpClient->method('request')->willReturn($response);
+
+    $result = $this->service->getGlobalVariables();
+    $this->assertNull($result);
+  }
+
+  /**
+   * @covers ::normalizeVaultData
+   */
+  public function testNormalizeVaultDataEmptyConfig() {
+    $this->cache->method('get')->willReturn(NULL);
+    $this->lock->method('acquire')->willReturn(TRUE);
+
+    $response = $this->createMock(ResponseInterface::class);
+    $body = $this->createMock(StreamInterface::class);
+    $vault_payload = [
+      'data' => [
+        // Missing applicationConfig
+      ],
+    ];
+    $body->method('getContents')->willReturn(json_encode($vault_payload));
+    $response->method('getBody')->willReturn($body);
+
+    $this->httpClient->method('request')->willReturn($response);
+
+    $result = $this->service->getGlobalVariables();
+    $this->assertEquals('', $result['webportalUrl']);
+    $this->assertEquals('', $result['siteUrl']);
   }
 }

@@ -26,6 +26,10 @@ class GrievanceApiServiceTest extends UnitTestCase {
   protected $csrfToken;
   protected $service;
 
+  /**
+   * {@inheritdoc}
+   * @covers ::__construct
+   */
   protected function setUp(): void {
     parent::setUp();
 
@@ -37,6 +41,11 @@ class GrievanceApiServiceTest extends UnitTestCase {
 
     $container = new ContainerBuilder();
     $container->set('csrf_token', $this->csrfToken);
+    
+    $logger_factory = $this->createMock(\Drupal\Core\Logger\LoggerChannelFactoryInterface::class);
+    $logger_factory->method('get')->willReturn($this->createMock(\Psr\Log\LoggerInterface::class));
+    $container->set('logger.factory', $logger_factory);
+    
     \Drupal::setContainer($container);
 
     $this->service = new GrievanceApiService(
@@ -109,7 +118,21 @@ class GrievanceApiServiceTest extends UnitTestCase {
   }
 
   /**
+   * @covers ::getIncidentSubTypes
+   */
+  public function testGetIncidentSubTypesNoToken() {
+    $apiman = $this->createMock(ApimanTokenService::class);
+    $apiman->method('getApimanAccessToken')->willReturn(NULL);
+    
+    $service = new GrievanceApiService($this->httpClient, $this->globalVariablesService, $this->vaultConfigService, $apiman);
+    $result = $service->getIncidentSubTypes(1);
+    $this->assertEquals([], $result);
+  }
+
+  /**
    * @covers ::sendGrievance
+   * @covers ::generateChecksum
+   * @covers ::getCsrfToken
    */
   public function testSendGrievanceSuccess() {
     $this->csrfToken->method('get')->willReturn('csrf123');
@@ -136,12 +159,6 @@ class GrievanceApiServiceTest extends UnitTestCase {
     $this->csrfToken->method('get')->willReturn('csrf123');
 
     $this->httpClient->method('request')->willThrowException(new \Exception('API Error'));
-
-    // Mock logger
-    $logger = $this->createMock(\Psr\Log\LoggerInterface::class);
-    $logger_factory = $this->createMock(\Drupal\Core\Logger\LoggerChannelFactoryInterface::class);
-    $logger_factory->method('get')->willReturn($logger);
-    \Drupal::getContainer()->set('logger.factory', $logger_factory);
 
     $result = $this->service->sendGrievance(['test' => 'data']);
     $this->assertFalse($result['success']);

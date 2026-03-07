@@ -20,6 +20,10 @@ class RequestDetailsControllerTest extends UnitTestCase {
   protected $session;
   protected $controller;
 
+  /**
+   * {@inheritdoc}
+   * @covers ::__construct
+   */
   protected function setUp(): void {
     parent::setUp();
 
@@ -33,6 +37,14 @@ class RequestDetailsControllerTest extends UnitTestCase {
     \Drupal::setContainer($container);
 
     $this->controller = new RequestDetailsController($this->apiService);
+  }
+
+  /**
+   * @covers ::__construct
+   */
+  public function testConstructor() {
+    $controller = new RequestDetailsController($this->apiService);
+    $this->assertInstanceOf(RequestDetailsController::class, $controller);
   }
 
   /**
@@ -69,6 +81,7 @@ class RequestDetailsControllerTest extends UnitTestCase {
     $api_data = [
       'data' => [
         'serviceRequestDetails' => ['userId' => 'me'],
+        'other' => 'info'
       ],
     ];
     $this->apiService->method('getServiceRequestDetails')->willReturn($api_data);
@@ -82,7 +95,7 @@ class RequestDetailsControllerTest extends UnitTestCase {
   /**
    * @covers ::view
    */
-  public function testViewEmptyData() {
+  public function testViewEmptyDataSuccess() {
     $request = new Request();
     $this->apiService->method('getServiceRequestDetails')->willReturn([
       'data' => [],
@@ -90,9 +103,16 @@ class RequestDetailsControllerTest extends UnitTestCase {
     $this->session->method('get')->with('api_redirect_result')->willReturn(['userId' => 'me']);
 
     $result = $this->controller->view('GV-123', $request);
-    // Since responseUserId is null, it should redirect if it doesn't match sessionUserId.
-    // In our case both are null/empty, let's see.
-    // The code says: if (!$sessionUserId || !$responseUserId || $sessionUserId !== $responseUserId)
     $this->assertInstanceOf(RedirectResponse::class, $result);
+  }
+
+  /**
+   * @covers ::view
+   */
+  public function testViewMissingSessionUser() {
+    $request = new Request();
+    $this->session->method('get')->willReturn([]);
+    $response = $this->controller->view('GV-123', $request);
+    $this->assertInstanceOf(RedirectResponse::class, $response);
   }
 }

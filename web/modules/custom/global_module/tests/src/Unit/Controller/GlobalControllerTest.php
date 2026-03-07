@@ -22,6 +22,10 @@ class GlobalControllerTest extends UnitTestCase {
   protected $apiGatewayService;
   protected $controller;
 
+  /**
+   * {@inheritdoc}
+   * @covers ::__construct
+   */
   protected function setUp(): void {
     parent::setUp();
 
@@ -62,9 +66,17 @@ class GlobalControllerTest extends UnitTestCase {
   }
 
   /**
+   * @covers ::detailsUpdate
+   */
+  public function testDetailsUpdate() {
+    $this->globalService->expects($this->once())->method('detailsUpdate')->willReturn(new JsonResponse());
+    $this->controller->detailsUpdate();
+  }
+
+  /**
    * @covers ::fileUploadAccess
    */
-  public function testFileUploadAccess() {
+  public function testFileUploadAccessAllowed() {
     $request = Request::create('/fileupload', 'POST');
     
     $container = new ContainerBuilder();
@@ -80,5 +92,66 @@ class GlobalControllerTest extends UnitTestCase {
 
     $result = GlobalController::fileUploadAccess($request);
     $this->assertTrue($result->isAllowed());
+  }
+
+  /**
+   * @covers ::fileUploadAccess
+   */
+  public function testFileUploadAccessForbiddenMethod() {
+    $request = Request::create('/fileupload', 'GET');
+    
+    $container = new ContainerBuilder();
+    $path_stack = $this->createMock(CurrentPathStack::class);
+    $path_stack->method('getPath')->willReturn('/fileupload');
+    $container->set('path.current', $path_stack);
+    
+    $current_user = $this->createMock(AccountProxyInterface::class);
+    $container->set('current_user', $current_user);
+    
+    \Drupal::setContainer($container);
+
+    $result = GlobalController::fileUploadAccess($request);
+    $this->assertTrue($result->isForbidden());
+  }
+
+  /**
+   * @covers ::fileUploadAccess
+   */
+  public function testFileUploadAccessForbiddenPath() {
+    $request = Request::create('/other-path', 'POST');
+    
+    $container = new ContainerBuilder();
+    $path_stack = $this->createMock(CurrentPathStack::class);
+    $path_stack->method('getPath')->willReturn('/other-path');
+    $container->set('path.current', $path_stack);
+    
+    $current_user = $this->createMock(AccountProxyInterface::class);
+    $container->set('current_user', $current_user);
+    
+    \Drupal::setContainer($container);
+
+    $result = GlobalController::fileUploadAccess($request);
+    $this->assertTrue($result->isForbidden());
+  }
+
+  /**
+   * @covers ::fileUploadAccess
+   */
+  public function testFileUploadAccessNoPermission() {
+    $request = Request::create('/fileupload', 'POST');
+    
+    $container = new ContainerBuilder();
+    $path_stack = $this->createMock(CurrentPathStack::class);
+    $path_stack->method('getPath')->willReturn('/fileupload');
+    $container->set('path.current', $path_stack);
+    
+    $current_user = $this->createMock(AccountProxyInterface::class);
+    $current_user->method('hasPermission')->with('access content')->willReturn(FALSE);
+    $container->set('current_user', $current_user);
+    
+    \Drupal::setContainer($container);
+
+    $result = GlobalController::fileUploadAccess($request);
+    $this->assertTrue($result->isForbidden());
   }
 }

@@ -8,6 +8,7 @@ use Drupal\Tests\UnitTestCase;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * @coversDefaultClass \Drupal\ideas\Controller\IdeasFileUploadController
@@ -18,11 +19,23 @@ class IdeasFileUploadControllerTest extends UnitTestCase {
   protected $fileUploadService;
   protected $controller;
 
+  /**
+   * {@inheritdoc}
+   * @covers ::__construct
+   */
   protected function setUp(): void {
     parent::setUp();
 
     $this->fileUploadService = $this->createMock(FileUploadService::class);
     $this->controller = new IdeasFileUploadController($this->fileUploadService);
+  }
+
+  /**
+   * @covers ::__construct
+   */
+  public function testConstructor() {
+    $controller = new IdeasFileUploadController($this->fileUploadService);
+    $this->assertInstanceOf(IdeasFileUploadController::class, $controller);
   }
 
   /**

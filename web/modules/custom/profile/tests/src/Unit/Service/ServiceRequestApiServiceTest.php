@@ -25,6 +25,10 @@ class ServiceRequestApiServiceTest extends UnitTestCase {
   protected $apimanTokenService;
   protected $service;
 
+  /**
+   * {@inheritdoc}
+   * @covers ::__construct
+   */
   protected function setUp(): void {
     parent::setUp();
 
@@ -57,6 +61,9 @@ class ServiceRequestApiServiceTest extends UnitTestCase {
 
   /**
    * @covers ::getServiceRequestDetails
+   * @covers ::getApiUrl
+   * @covers ::getHeaders
+   * @covers ::executeGetRequest
    */
   public function testGetServiceRequestDetailsSuccess() {
     $response = $this->createMock(ResponseInterface::class);
@@ -66,7 +73,13 @@ class ServiceRequestApiServiceTest extends UnitTestCase {
 
     $this->httpClient->expects($this->once())
       ->method('request')
-      ->with('GET', $this->stringContains('service-request-by-grievance'))
+      ->with('GET', 'https://api.example.com/trinityengage-casemanagementsystemv1/common/service-request-by-grievance?grievanceId=GV-123&requestTypeId=1', [
+        'headers' => [
+          'Authorization' => 'Bearer token',
+          'Content-Type' => 'application/json',
+          'Accept' => 'application/json',
+        ],
+      ])
       ->willReturn($response);
 
     $result = $this->service->getServiceRequestDetails('GV-123', 1);
@@ -75,6 +88,25 @@ class ServiceRequestApiServiceTest extends UnitTestCase {
 
   /**
    * @covers ::getServiceRequestDetails
+   * @covers ::executeGetRequest
+   */
+  public function testGetServiceRequestDetailsInvalidJson() {
+    $response = $this->createMock(ResponseInterface::class);
+    $body = $this->createMock(StreamInterface::class);
+    $body->method('__toString')->willReturn('invalid-json');
+    $response->method('getBody')->willReturn($body);
+
+    $this->httpClient->expects($this->once())
+      ->method('request')
+      ->willReturn($response);
+
+    $result = $this->service->getServiceRequestDetails('GV-123', 1);
+    $this->assertEquals([], $result);
+  }
+
+  /**
+   * @covers ::getServiceRequestDetails
+   * @covers ::executeGetRequest
    */
   public function testGetServiceRequestDetailsFailure() {
     $this->httpClient->method('request')->willThrowException(new \Exception('Network Error'));
@@ -86,30 +118,107 @@ class ServiceRequestApiServiceTest extends UnitTestCase {
 
   /**
    * @covers ::getServiceRequests
+   * @covers ::getApiUrl
+   * @covers ::getHeaders
+   * @covers ::executePostRequest
    */
   public function testGetServiceRequestsSuccess() {
     $response = $this->createMock(ResponseInterface::class);
     $body = $this->createMock(StreamInterface::class);
-    $body->method('__toString')->willReturn(json_encode(['items' => []]));
+    $body->method('__toString')->willReturn(json_encode(['items' => ['SR-1', 'SR-2']]));
     $response->method('getBody')->willReturn($body);
 
     $this->httpClient->expects($this->once())
       ->method('request')
-      ->with('POST', $this->stringContains('common/service-request'))
+      ->with('POST', $this->stringContains('common/service-request'), [
+        'headers' => [
+          'Authorization' => 'Bearer token',
+          'Content-Type' => 'application/json',
+          'Accept' => 'application/json',
+        ],
+        'json' => [
+          'tenantCode' => 'fireppr',
+          'search' => 'test-search',
+          'pageNumber' => 2,
+          'itemsPerPage' => 5,
+          'userId' => 123,
+          'requestTypeId' => 1,
+          'orderBy' => '1',
+          'orderByfield' => '1',
+        ],
+      ])
       ->willReturn($response);
 
-    $result = $this->service->getServiceRequests(123);
-    $this->assertEquals(['items' => []], $result);
+    $result = $this->service->getServiceRequests(123, 2, 5, 'test-search');
+    $this->assertEquals(['items' => ['SR-1', 'SR-2']], $result);
   }
 
   /**
    * @covers ::getServiceRequests
+   * @covers ::executePostRequest
    */
-  public function testGetServiceRequestsFailure() {
-    $this->httpClient->method('request')->willThrowException(new \Exception('Network Error'));
-    $this->logger->expects($this->once())->method('error');
+  public function testGetServiceRequestsInvalidJson() {
+    $response = $this->createMock(ResponseInterface::class);
+    $body = $this->createMock(StreamInterface::class);
+    $body->method('__toString')->willReturn('invalid-json');
+    $response->method('getBody')->willReturn($body);
+
+    $this->httpClient->expects($this->once())
+      ->method('request')
+      ->willReturn($response);
 
     $result = $this->service->getServiceRequests(123);
-    $this->assertEmpty($result);
+    $this->assertEquals([], $result);
+  }
+
+  /**
+   * @covers ::getServiceRequestDetails
+   * @covers ::executeGetRequest
+   */
+  public function testGetServiceRequestDetailsEmptyResponse() {
+    $response = $this->createMock(ResponseInterface::class);
+    $body = $this->createMock(StreamInterface::class);
+    $body->method('__toString')->willReturn('null');
+    $response->method('getBody')->willReturn($body);
+
+    $this->httpClient->expects($this->once())
+      ->method('request')
+      ->willReturn($response);
+
+    $result = $this->service->getServiceRequestDetails('GV-123', 1);
+    $this->assertEquals([], $result);
+  }
+
+  /**
+   * @covers ::getServiceRequests
+   * @covers ::executePostRequest
+   */
+  public function testGetServiceRequestsEmptyResponse() {
+    $response = $this->createMock(ResponseInterface::class);
+    $body = $this->createMock(StreamInterface::class);
+    $body->method('__toString')->willReturn('null');
+    $response->method('getBody')->willReturn($body);
+
+    $this->httpClient->expects($this->once())
+      ->method('request')
+      ->willReturn($response);
+
+    $result = $this->service->getServiceRequests(123);
+    $this->assertEquals([], $result);
+  }
+
+  /**
+   * @covers ::executePostRequest
+   */
+  public function testExecutePostRequestException() {
+    $this->httpClient->method('request')->willThrowException(new \Exception('POST Error'));
+    $this->logger->expects($this->once())->method('error')->with($this->stringContains('Exception while making POST request'));
+
+    $reflection = new \ReflectionClass(ServiceRequestApiService::class);
+    $method = $reflection->getMethod('executePostRequest');
+    $method->setAccessible(TRUE);
+
+    $result = $method->invoke($this->service, 'http://example.com', []);
+    $this->assertEquals([], $result);
   }
 }

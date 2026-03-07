@@ -24,6 +24,10 @@ class ApiGatewayServiceTest extends UnitTestCase {
   protected $apiHttpClientService;
   protected $service;
 
+  /**
+   * {@inheritdoc}
+   * @covers ::__construct
+   */
   protected function setUp(): void {
     parent::setUp();
 
@@ -71,6 +75,7 @@ class ApiGatewayServiceTest extends UnitTestCase {
   /**
    * @covers ::postData
    * @covers ::buildServiceUrl
+   * @covers ::handleRequestByType
    */
   public function testPostDataSuccess() {
     $request = Request::create('/post', 'POST', [], [], [], [], json_encode([
@@ -105,6 +110,20 @@ class ApiGatewayServiceTest extends UnitTestCase {
     $request = Request::create('/post', 'POST', [], [], [], [], json_encode(['foo' => 'bar']));
     $response = $this->service->postData($request);
     $this->assertEquals(400, $response->getStatusCode());
+  }
+
+  /**
+   * @covers ::handleRequestByType
+   */
+  public function testHandleRequestByTypeDefault() {
+    $request = new Request();
+    $session = $this->createMock(SessionInterface::class);
+    $request->setSession($session);
+
+    $this->apiHttpClientService->expects($this->once())->method('postApiman')->willReturn(['status' => TRUE]);
+
+    $result = $this->service->handleRequestByType(['type' => 'unknown', 'payloads' => []], 'http://url', $request);
+    $this->assertTrue($result['status']);
   }
 
   /**
@@ -145,11 +164,84 @@ class ApiGatewayServiceTest extends UnitTestCase {
    * @covers ::deleteFromCEP
    * @covers ::deleteDrupalAccount
    */
+  public function testUserDeleteSuccess() {
+    $this->apiHttpClientService->method('postApi')->willReturn(['status' => TRUE]);
+    $this->apiHttpClientService->method('postApiman')->willReturn(['status' => TRUE]);
+
+    $container = \Drupal::getContainer();
+    $current_user = $this->createMock(\Drupal\Core\Session\AccountProxyInterface::class);
+    $current_user->method('id')->willReturn(123);
+    $container->set('current_user', $current_user);
+    
+    $user_storage = $this->createMock(EntityStorageInterface::class);
+    $user = $this->getMockBuilder(User::class)->disableOriginalConstructor()->getMock();
+    $user->expects($this->once())->method('delete');
+    $user_storage->method('load')->willReturn($user);
+    
+    $entity_type_manager = $this->createMock(EntityTypeManagerInterface::class);
+    $entity_type_manager->method('getStorage')->with('user')->willReturn($user_storage);
+    $container->set('entity_type.manager', $entity_type_manager);
+    $entity_type_repository = $this->createMock(EntityTypeRepositoryInterface::class);
+    $entity_type_repository->method('getEntityTypeFromClass')->willReturn('user');
+    $container->set('entity_type.repository', $entity_type_repository);
+
+    $result = $this->service->userDelete(123, 'tenant');
+    $this->assertTrue($result['status']);
+    $this->assertEquals('User account deleted successfully!', $result['message']);
+  }
+
+  /**
+   * @covers ::userDelete
+   * @covers ::deleteFromCityApp
+   */
   public function testUserDeleteFailureCityApp() {
     $this->apiHttpClientService->method('postApi')->willReturn(['status' => FALSE]);
     
     $result = $this->service->userDelete(123, 'tenant');
     $this->assertFalse($result['status']);
     $this->assertEquals('Failed to delete user account.', $result['message']);
+  }
+
+  /**
+   * @covers ::userDelete
+   * @covers ::deleteFromCityApp
+   * @covers ::deleteFromCEP
+   */
+  public function testUserDeleteFailureCEP() {
+    $this->apiHttpClientService->method('postApi')->willReturn(['status' => TRUE]);
+    $this->apiHttpClientService->method('postApiman')->willReturn(['status' => FALSE]);
+    
+    $result = $this->service->userDelete(123, 'tenant');
+    $this->assertFalse($result['status']);
+    $this->assertEquals('Failed to delete user from case management system.', $result['message']);
+  }
+
+  /**
+   * @covers ::userDelete
+   * @covers ::deleteFromCityApp
+   * @covers ::deleteFromCEP
+   * @covers ::deleteDrupalAccount
+   */
+  public function testUserDeleteDrupalUserNotFound() {
+    $this->apiHttpClientService->method('postApi')->willReturn(['status' => TRUE]);
+    $this->apiHttpClientService->method('postApiman')->willReturn(['status' => TRUE]);
+
+    $container = \Drupal::getContainer();
+    $current_user = $this->createMock(\Drupal\Core\Session\AccountProxyInterface::class);
+    $current_user->method('id')->willReturn(123);
+    $container->set('current_user', $current_user);
+    
+    $user_storage = $this->createMock(EntityStorageInterface::class);
+    $user_storage->method('load')->willReturn(NULL);
+    
+    $entity_type_manager = $this->createMock(EntityTypeManagerInterface::class);
+    $entity_type_manager->method('getStorage')->with('user')->willReturn($user_storage);
+    $container->set('entity_type.manager', $entity_type_manager);
+    $entity_type_repository = $this->createMock(EntityTypeRepositoryInterface::class);
+    $entity_type_repository->method('getEntityTypeFromClass')->willReturn('user');
+    $container->set('entity_type.repository', $entity_type_repository);
+
+    $result = $this->service->userDelete(123, 'tenant');
+    $this->assertTrue($result['status']);
   }
 }

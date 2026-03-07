@@ -40,7 +40,9 @@ class ApiRedirectSubscriber implements EventSubscriberInterface
     }
 
     $result = $this->callYourApi();
-    $this->processApiResult($result, $session);
+    if ($result !== NULL) {
+      $this->processApiResult($result, $session);
+    }
 
     if ($this->shouldRedirect($result)) {
       $this->redirectToFront($event);
@@ -150,7 +152,7 @@ class ApiRedirectSubscriber implements EventSubscriberInterface
         ]
       );
 
-      $decoded = json_decode($response->getBody(), TRUE);
+      $decoded = json_decode((string) $response->getBody(), TRUE);
       return $decoded['data'] ?? NULL;
     } catch (\Exception $e) {
       $this->logError('API call failed: @msg', ['@msg' => $e->getMessage()]);

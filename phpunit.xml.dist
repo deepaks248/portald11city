@@ -6,7 +6,7 @@
     beStrictAboutTestsThatDoNotTestAnything="false"
     cacheResultFile=".phpunit.cache/test-results"
     executionOrder="depends,defects"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd">
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd">
 
     <testsuites>
         <testsuite name="unit">
@@ -15,15 +15,20 @@
         </testsuite>
     </testsuites>
 
-    <!-- REQUIRED for SonarQube -->
-    <coverage>
+    <source>
         <include>
             <directory>web/modules/custom</directory>
             <directory>web/themes/custom</directory>
         </include>
-        <report>
-            <clover outputFile="coverage/clover.xml" />
-        </report>
-    </coverage>
+        <exclude>
+            <directory suffix="Test.php">web/modules/custom</directory>
+            <directory>web/modules/custom/*/tests</directory>
+        </exclude>
+    </source>
+
+    <logging>
+        <junit outputFile="coverage/junit.xml"/>
+        <testdoxHtml outputFile="coverage/testdox.html"/>
+    </logging>
 
 </phpunit>

@@ -81,10 +81,10 @@ class ActiveSessionController extends ControllerBase
     private function deviceMap(): array
     {
         return [
-            'Desktop (Windows)' => ['Windows'],
-            'Desktop (Mac)'     => ['Macintosh', 'Mac OS X'],
             'Mobile (iPhone)'   => ['iPhone'],
             'Tablet (iPad)'     => ['iPad'],
+            'Desktop (Windows)' => ['Windows'],
+            'Desktop (Mac)'     => ['Macintosh', 'Mac OS X'],
             'Mobile (Android)'  => ['Android Mobile'],
             'Tablet (Android)'  => ['Android'],
             'Linux'             => ['Linux'],

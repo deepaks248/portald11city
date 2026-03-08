@@ -107,13 +107,20 @@ class FileUploadServiceTest extends UnitTestCase {
     $this->assertTrue($method->invoke($this->service, $tmpPdf));
     unlink($tmpPdf);
 
+    // Test Malicious PDF variants
+    $tmpPdf = tempnam(sys_get_temp_dir(), 'test.pdf');
+    file_put_contents($tmpPdf, "%PDF-1.4\n/JavaScript (alert(1))");
+    $this->assertFalse($method->invoke($this->service, $tmpPdf));
+    
+    file_put_contents($tmpPdf, "%PDF-1.4\n/AA (something)");
+    $this->assertFalse($method->invoke($this->service, $tmpPdf));
+    unlink($tmpPdf);
+
     // Test Safe Image
     $tmpImg = tempnam(sys_get_temp_dir(), 'test.jpg');
     // A tiny valid 1x1 black pixel JPEG
     $validJpg = base64_decode('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=');
     file_put_contents($tmpImg, $validJpg);
-    // Note: validateImage uses getimagesize and imagecreatefromstring
-    // This might still fail in some environments without GD but we try.
     if (function_exists('imagecreatefromstring')) {
         $this->assertTrue($method->invoke($this->service, $tmpImg));
     }
@@ -165,7 +172,6 @@ class FileUploadServiceTest extends UnitTestCase {
   public function testUploadFileMultipleExtensions() {
     $request = new Request();
     $tmpFile = tempnam(sys_get_temp_dir(), 'test.jpg');
-    // Minimal JPEG header
     file_put_contents($tmpFile, "\xFF\xD8\xFF\xE0\x00\x10\x4A\x46\x49\x46");
     
     $_FILES['files'] = [
@@ -175,35 +181,9 @@ class FileUploadServiceTest extends UnitTestCase {
 
     $response = $this->service->uploadFile($request);
     $data = json_decode($response->getContent(), TRUE);
-    // The mime check happens first. If it's a valid jpg header, it might pass mime check.
     if ($data['message'] === 'Multiple file extensions not allowed') {
         $this->assertEquals('Multiple file extensions not allowed', $data['message']);
     } else {
-        // If header too short for mime_content_type to be reliable
-        $this->assertEquals('File content not allowed!', $data['message']);
-    }
-    unlink($tmpFile);
-  }
-
-  /**
-   * @covers ::uploadFile
-   */
-  public function testUploadFileMaliciousPdf() {
-    $request = new Request();
-    $tmpFile = tempnam(sys_get_temp_dir(), 'test.pdf');
-    file_put_contents($tmpFile, "%PDF-1.4\n/JS (alert(1))");
-    
-    $_FILES['files'] = [
-      'tmp_name' => ['upload_file' => $tmpFile],
-      'name' => ['upload_file' => 'test.pdf'],
-    ];
-
-    $response = $this->service->uploadFile($request);
-    $data = json_decode($response->getContent(), TRUE);
-    if ($data['message'] === 'Malicious file detected!') {
-        $this->assertEquals('Malicious file detected!', $data['message']);
-    } else {
-        // Fallback if mime detection failed
         $this->assertEquals('File content not allowed!', $data['message']);
     }
     unlink($tmpFile);
@@ -222,5 +202,29 @@ class FileUploadServiceTest extends UnitTestCase {
     $response = $method->invoke($this->service, 'tmp.jpg', 'original.jpg', ['id' => 2, 'type' => 'image']);
     $data = json_decode($response->getContent(), TRUE);
     $this->assertEquals('Upload path not configured in Vault.', $data['message']);
+  }
+
+  /**
+   * @covers ::uploadToRemote
+   */
+  public function testUploadToRemoteFailure() {
+    $reflection = new \ReflectionClass(FileUploadService::class);
+    $method = $reflection->getMethod('uploadToRemote');
+    $method->setAccessible(TRUE);
+
+    $this->vaultConfigService->method('getGlobalVariables')->willReturn([
+      'applicationConfig' => ['config' => ['fileuploadPath' => 'http://invalid-url/']]
+    ]);
+    $this->uuidService->method('generate')->willReturn('uuid123');
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'test.jpg');
+    file_put_contents($tmpFile, "\xFF\xD8\xFF\xE0\x00\x10\x4A\x46\x49\x46");
+
+    $response = $method->invoke($this->service, $tmpFile, 'original.jpg', ['id' => 2, 'type' => 'image']);
+    $this->assertEquals(500, $response->getStatusCode());
+    $data = json_decode($response->getContent(), TRUE);
+    $this->assertEquals('Upload failed.', $data['message']);
+    
+    unlink($tmpFile);
   }
 }

@@ -19,7 +19,8 @@ class ForgotPasswordAccessCheck
     {
         if ($account->isAuthenticated()) {
             $response = new TrustedRedirectResponse(Url::fromRoute('<front>')->toString());
-            return AccessResult::forbidden()->setCacheMaxAge(0)->setAssociatedResponse($response);
+            $response->send();
+            return AccessResult::forbidden()->setCacheMaxAge(0);
         }
 
         return AccessResult::allowed();

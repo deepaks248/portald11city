@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1772954384">
-  <project timestamp="1772954384" name="Clover Coverage">
+<coverage generated="1772971338">
+  <project timestamp="1772971338" name="Clover Coverage">
     <package name="Drupal\active_sessions\Controller">
       <file name="/opt/drupal/web/modules/custom/active_sessions/src/Controller/ActiveSessionController.php">
         <class name="Drupal\active_sessions\Controller\ActiveSessionController" namespace="Drupal\active_sessions\Controller">

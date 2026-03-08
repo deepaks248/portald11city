@@ -15,7 +15,8 @@ docker-compose exec web drush <command>
 ```bash
 # Run all project unit tests and generate a code coverage report (clover.xml)
 # This is required for SonarQube to show accurate coverage metrics.
-docker compose exec -w /opt/drupal -e XDEBUG_MODE=coverage web ./vendor/bin/phpunit --coverage-clover coverage/clover.xml -c phpunit.xml.dist
+# Note: We use bash -c to ensure the working directory is handled correctly on all platforms (including Windows).
+docker compose exec web bash -c "cd /opt/drupal && XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-clover coverage/clover.xml -c phpunit.xml.dist"
 
 # Run the SonarQube scanner to analyze code quality and import the coverage report
 # Results will be available at http://localhost:9100 (or your configured SONAR_HOST_URL)

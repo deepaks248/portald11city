@@ -86,3 +86,17 @@ services:
       - '@http_client'
       - '@global_module.vault_config_service'
       - '@logger.channel.login_logout'
+
+  login_logout.login_submit_handler:
+    class: Drupal\login_logout\Service\LoginSubmitHandler
+    arguments:
+      - '@login_logout.oauth_login_service'
+      - '@active_sessions.session_service'
+      - '@global_module.vault_config_service'
+      - '@global_module.apiman_token_service'
+      - '@session'
+      - '@entity_type.manager'
+      - '@messenger'
+      - '@logger.factory'
+      - '@datetime.time'
+      - '@tempstore.private'

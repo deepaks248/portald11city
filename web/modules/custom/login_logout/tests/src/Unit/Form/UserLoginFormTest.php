@@ -15,6 +15,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @coversDefaultClass \Drupal\login_logout\Form\UserLoginForm
+ * @covers ::__construct
  * @group login_logout
  */
 class UserLoginFormTest extends UnitTestCase {
@@ -65,11 +66,28 @@ class UserLoginFormTest extends UnitTestCase {
     $form_state->method('isSubmitted')->willReturn(FALSE);
     $form_state->method('get')->with('email_validated')->willReturn(FALSE);
 
+    $form_state->expects($this->once())->method('set')->with('email_validated', FALSE);
+
     $built_form = $this->form->buildForm($form, $form_state);
 
     $this->assertArrayHasKey('email', $built_form);
     $this->assertArrayHasKey('check_email', $built_form);
     $this->assertArrayNotHasKey('password', $built_form);
+  }
+
+  /**
+   * @covers ::buildForm
+   */
+  public function testBuildFormRebuilding() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('isRebuilding')->willReturn(TRUE);
+    $form_state->method('isSubmitted')->willReturn(FALSE);
+    $form_state->method('get')->with('email_validated')->willReturn(FALSE);
+
+    $form_state->expects($this->never())->method('set')->with('email_validated', FALSE);
+
+    $this->form->buildForm($form, $form_state);
   }
 
   /**
@@ -98,13 +116,107 @@ class UserLoginFormTest extends UnitTestCase {
     $form_state->method('get')->with('email_validated')->willReturn(FALSE);
 
     $request = new Request();
-    // We need to set the request in the container for \Drupal::request()
     \Drupal::getContainer()->set('request_stack', new \Symfony\Component\HttpFoundation\RequestStack());
     \Drupal::service('request_stack')->push($request);
 
     $this->logger->expects($this->once())->method('warning')->with($this->stringContains('AE4'));
 
     $this->form->validateForm($form, $form_state);
+  }
+
+  /**
+   * @covers ::validateForm
+   */
+  public function testValidateFormInvalidEmailFormat() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('getValue')->with('email')->willReturn('invalid-email-but-long-enough');
+    $form_state->method('get')->with('email_validated')->willReturn(FALSE);
+
+    $request = new Request();
+    \Drupal::getContainer()->set('request_stack', new \Symfony\Component\HttpFoundation\RequestStack());
+    \Drupal::service('request_stack')->push($request);
+
+    $this->logger->expects($this->once())->method('warning')->with($this->stringContains('AE6'));
+
+    $this->form->validateForm($form, $form_state);
+  }
+
+  /**
+   * @covers ::validateForm
+   */
+  public function testValidateFormAbnormalPassword() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('getValue')->willReturnMap([
+      ['email', 'test@example.com'],
+      ['password', 'short'],
+    ]);
+    $form_state->method('get')->with('email_validated')->willReturn(TRUE);
+
+    $request = new Request();
+    \Drupal::getContainer()->set('request_stack', new \Symfony\Component\HttpFoundation\RequestStack());
+    \Drupal::service('request_stack')->push($request);
+
+    $this->logger->expects($this->once())->method('warning')->with($this->stringContains('AE5'));
+
+    $this->form->validateForm($form, $form_state);
+  }
+
+  /**
+   * @covers ::validateForm
+   */
+  public function testValidateFormControlCharsPassword() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('getValue')->willReturnMap([
+      ['email', 'test@example.com'],
+      ['password', "pass\0word-long-enough"],
+    ]);
+    $form_state->method('get')->with('email_validated')->willReturn(TRUE);
+
+    $request = new Request();
+    \Drupal::getContainer()->set('request_stack', new \Symfony\Component\HttpFoundation\RequestStack());
+    \Drupal::service('request_stack')->push($request);
+
+    $this->logger->expects($this->once())->method('warning')->with($this->stringContains('AE7'));
+
+    $this->form->validateForm($form, $form_state);
+  }
+
+  /**
+   * @covers ::validateForm
+   */
+  public function testValidateFormAlreadyLogged() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+
+    $request = new Request();
+    $request->attributes->set('_ae_logged', TRUE);
+    \Drupal::getContainer()->set('request_stack', new \Symfony\Component\HttpFoundation\RequestStack());
+    \Drupal::service('request_stack')->push($request);
+
+    $form_state->expects($this->never())->method('getValue');
+
+    $this->form->validateForm($form, $form_state);
+  }
+
+  /**
+   * @covers ::validateForm
+   */
+  public function testValidateFormWithHeaders() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('getValue')->with('email')->willReturn('valid@email.com');
+    $form_state->method('get')->with('email_validated')->willReturn(FALSE);
+
+    $request = new Request();
+    $request->headers->set('x-real-ip', '1.2.3.4');
+    \Drupal::getContainer()->set('request_stack', new \Symfony\Component\HttpFoundation\RequestStack());
+    \Drupal::service('request_stack')->push($request);
+
+    $this->form->validateForm($form, $form_state);
+    $this->assertTrue($request->attributes->get('_ae_logged'));
   }
 
   /**

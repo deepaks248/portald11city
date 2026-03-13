@@ -31,6 +31,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * @coversDefaultClass \Drupal\login_logout\Service\LoginSubmitHandler
+ * @covers ::__construct
  * @group login_logout
  */
 class LoginSubmitHandlerTest extends UnitTestCase {
@@ -82,6 +83,7 @@ class LoginSubmitHandlerTest extends UnitTestCase {
 
   /**
    * @covers ::handleFormSubmission
+   * @covers ::handleEmailStep
    */
   public function testHandleFormSubmissionEmailStep() {
     $form = [];
@@ -104,6 +106,7 @@ class LoginSubmitHandlerTest extends UnitTestCase {
 
   /**
    * @covers ::handleFormSubmission
+   * @covers ::handlePasswordStep
    */
   public function testHandleFormSubmissionPasswordStepSuccess() {
     $form = [];
@@ -124,6 +127,7 @@ class LoginSubmitHandlerTest extends UnitTestCase {
 
     $this->activeSessionService->method('fetchActiveSessions')->willReturn([
       'sessions' => [
+        ['id' => 's1', 'loginTime' => 990000],
         ['id' => 's2', 'loginTime' => 1000000],
       ]
     ]);
@@ -133,13 +137,14 @@ class LoginSubmitHandlerTest extends UnitTestCase {
     $this->entityTypeManager->method('getStorage')->with('user')->willReturn($storage);
     $storage->method('loadByProperties')->with(['mail' => 'test@example.com'])->willReturn([$user]);
 
+    $this->session->expects($this->exactly(4))->method('set');
     $form_state->expects($this->once())->method('setRedirect')->with('<front>');
 
     $this->handler->handleFormSubmission($form, $form_state);
   }
 
   /**
-   * @covers ::handleFormSubmission
+   * @covers ::handleEmailStep
    */
   public function testHandleFormSubmissionEmailNotFound() {
     $form = [];
@@ -156,6 +161,93 @@ class LoginSubmitHandlerTest extends UnitTestCase {
     $tempStore->expects($this->once())->method('set')->with('registration_email', 'new@example.com');
 
     $form_state->expects($this->once())->method('setRedirect')->with('login_logout.user_register_form');
+
+    $this->handler->handleFormSubmission($form, $form_state);
+  }
+
+  /**
+   * @covers ::handleEmailStep
+   */
+  public function testHandleEmailStepException() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('get')->with('email_validated')->willReturn(FALSE);
+    $form_state->method('getValue')->with('email')->willReturn('test@example.com');
+
+    $this->apimanTokenService->method('getApimanAccessToken')->willThrowException(new \Exception('API Error'));
+    $this->messenger->expects($this->once())->method('addError')->with($this->callback(function($markup) {
+        return $markup instanceof TranslatableMarkup && strpos($markup->getUntranslatedString(), 'Error checking email') !== false;
+    }));
+
+    $this->handler->handleFormSubmission($form, $form_state);
+  }
+
+  /**
+   * @covers ::handlePasswordStep
+   */
+  public function testHandlePasswordStepOAuthFailure() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('get')->with('email_validated')->willReturn(TRUE);
+    $form_state->method('getValue')->willReturnMap([
+      ['email', 'test@example.com'],
+      ['password', 'wrong'],
+    ]);
+
+    $this->oauthLoginService->method('performOAuthLogin')->willThrowException(new \Exception('OAuth Failed'));
+    $this->logger->expects($this->once())->method('error')->with($this->stringContains('AE2'));
+    $this->messenger->expects($this->once())->method('addError')->with($this->callback(function($markup) {
+        return $markup instanceof TranslatableMarkup && strpos($markup->getUntranslatedString(), 'Login failed') !== false;
+    }));
+
+    $this->handler->handleFormSubmission($form, $form_state);
+  }
+
+  /**
+   * @covers ::handlePasswordStep
+   */
+  public function testHandlePasswordStepJwtMissingSub() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('get')->with('email_validated')->willReturn(TRUE);
+    $form_state->method('getValue')->willReturnMap([
+      ['email', 'test@example.com'],
+      ['password', 'pass'],
+    ]);
+
+    $this->oauthLoginService->method('performOAuthLogin')->willReturn(['id_token' => 'it', 'access_token' => 'at']);
+    $this->oauthLoginService->method('decodeJwt')->willReturn([]); // Missing 'sub'
+
+    $this->logger->expects($this->once())->method('error');
+    $this->messenger->expects($this->once())->method('addError');
+
+    $this->handler->handleFormSubmission($form, $form_state);
+  }
+
+  /**
+   * @covers ::handlePasswordStep
+   */
+  public function testHandlePasswordStepNoDrupalUser() {
+    $form = [];
+    $form_state = $this->createMock(FormStateInterface::class);
+    $form_state->method('get')->with('email_validated')->willReturn(TRUE);
+    $form_state->method('getValue')->willReturnMap([
+      ['email', 'test@example.com'],
+      ['password', 'pass'],
+    ]);
+
+    $this->oauthLoginService->method('performOAuthLogin')->willReturn(['id_token' => 'it', 'access_token' => 'at']);
+    $this->oauthLoginService->method('decodeJwt')->willReturn(['sub' => 'test@example.com']);
+    $this->time->method('getRequestTime')->willReturn(1000);
+    $this->activeSessionService->method('fetchActiveSessions')->willReturn([]);
+
+    $storage = $this->createMock(EntityStorageInterface::class);
+    $this->entityTypeManager->method('getStorage')->with('user')->willReturn($storage);
+    $storage->method('loadByProperties')->willReturn([]); // No user found
+
+    $this->messenger->expects($this->once())->method('addError')->with($this->callback(function($markup) {
+        return $markup instanceof TranslatableMarkup && strpos($markup->getUntranslatedString(), 'No Drupal user found') !== false;
+    }));
 
     $this->handler->handleFormSubmission($form, $form_state);
   }

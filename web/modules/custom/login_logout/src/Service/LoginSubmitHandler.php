@@ -12,6 +12,7 @@ use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Drupal\Core\TempStore\PrivateTempStoreFactory;
 use Drupal\user\UserInterface;
+use Drupal\login_logout\Exception\JwtPayloadException;
 
 /**
  * Service to handle user login form submission.
@@ -121,6 +122,7 @@ class LoginSubmitHandler {
    * Handles the form submission.
    */
   public function handleFormSubmission(array &$form, FormStateInterface $form_state) {
+    unset($form);
     $email = $form_state->getValue('email');
     if ($form_state->get('email_validated')) {
       $this->handlePasswordStep($email, $form_state);
@@ -144,7 +146,7 @@ class LoginSubmitHandler {
       // Decode JWT safely
       $payload = $this->oauthLoginService->decodeJwt($tokenData['id_token']);
       if (empty($payload['sub'])) {
-        throw new \Exception('JWT payload missing "sub" claim.');
+        throw new JwtPayloadException('JWT payload missing "sub" claim.');
       }
       $jwtEmail = $payload['sub'];
 

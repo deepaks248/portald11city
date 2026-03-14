@@ -261,12 +261,17 @@ class UserRegistrationSubmitHandlerTest extends UnitTestCase
     $this->flood->expects($this->once())->method('register');
     $this->lock->expects($this->once())->method('release')->with('otp_lock:john@example.com');
     $this->messenger->expects($this->once())->method('addStatus');
-    $formState->expects($this->exactly(2))->method('set')->willReturnCallback(function ($key, $value) {
+    $formState->expects($this->exactly(3))->method('set')->willReturnCallback(function ($key, $value) {
       static $calls = [];
       $calls[] = [$key, $value];
       if (count($calls) === 1) {
         $this->assertSame('user_data', $key);
         $this->assertIsArray($value);
+        return NULL;
+      }
+      if (count($calls) === 2) {
+        $this->assertSame('otp_code', $key);
+        $this->assertMatchesRegularExpression('/^\d{6}$/', $value);
         return NULL;
       }
       $this->assertSame(['phase', 2], [$key, $value]);

@@ -160,7 +160,7 @@ class UserRegistrationSubmitHandler
     $response = NULL;
 
     try {
-      $response = $this->processOtpRequest($data);
+      $response = $this->processOtpRequest($data, $form_state);
     } catch (\Exception $e) {
       $this->loggerFactory->get('register_api')->error('OTP rate limit or lock error: @msg', ['@msg' => $e->getMessage()]);
       $this->messenger->addError($this->t('An unexpected error occurred. Please try again later.'));
@@ -181,7 +181,7 @@ class UserRegistrationSubmitHandler
   /**
    * Processes OTP throttling and delivery.
    */
-  protected function processOtpRequest(array $data): ?JsonResponse
+  protected function processOtpRequest(array $data, FormStateInterface $form_state): ?JsonResponse
   {
     $rateLimitResponse = $this->enforceOtpRateLimit((string) $data['mail']);
     if ($rateLimitResponse instanceof JsonResponse) {
@@ -189,6 +189,7 @@ class UserRegistrationSubmitHandler
     }
 
     $otp = $this->generateOtp();
+    $form_state->set('otp_code', $otp);
     $identifier = $this->buildOtpIdentifier((string) $data['mail']);
     return $this->sendOtpWithLock($data, $otp, $identifier);
   }

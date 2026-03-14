@@ -28,7 +28,7 @@ class FileUploadService
     public function uploadFile(Request $request): JsonResponse
     {
         define('UPLOAD_FILE', 'uploadedfile1');
-
+        unset($request);
         // Default error response
         $response = $this->errorResponse('No file uploaded.', 400);
 

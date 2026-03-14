@@ -28,6 +28,7 @@ class DeleteAddressController {
    * Deletes an address node.
    */
   public function delete($nid, Request $request) {
+    unset($request);
     $node = Node::load($nid);
 
     if (!$node || $node->bundle() !== 'add_address') {

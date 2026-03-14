@@ -212,6 +212,7 @@ class ActiveSessionController extends ControllerBase
         }
 
         [$id, $access_token] = explode('--', $session_id) + [NULL, NULL];
+        unset($access_token);
 
         try {
             $is_my_session = ($active_session_id_token == $id);

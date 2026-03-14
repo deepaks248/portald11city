@@ -78,18 +78,7 @@ class AddAddressForm extends FormBase
             '#attributes' => [
                 'maxlength' => 6,
                 'placeholder' => $this->t('Postal'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
+                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
             ],
             '#element_validate' => [[self::class, 'validatePostalCode']],
         ];
@@ -100,18 +89,7 @@ class AddAddressForm extends FormBase
             '#default_value' => $defaults['flat'],
             '#attributes' => [
                 'placeholder' => $this->t('Flat, House no., Building, Company, Apartment'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
+                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
             ],
             '#required' => TRUE,
             '#required_error' => $this->t('Flat is required'),
@@ -123,18 +101,7 @@ class AddAddressForm extends FormBase
             '#title' => $this->t('Area, Colony, Street Sector, Town/City'),
             '#attributes' => [
                 'placeholder' => $this->t('Area, Colony, Street Sector, Town/City'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
+                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
             ],
             '#required' => TRUE,
             '#required_error' => $this->t("Area is required"),
@@ -146,18 +113,7 @@ class AddAddressForm extends FormBase
             '#title' => $this->t('Landmark e.g. near Apollo Hospital'),
             '#attributes' => [
                 'placeholder' => $this->t('Landmark e.g. near Apollo Hospital'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
+                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
             ],
             '#required' => TRUE,
             '#required_error' => $this->t('Landmark is required')
@@ -169,18 +125,7 @@ class AddAddressForm extends FormBase
             '#title' => $this->t('Country'),
             '#attributes' => [
                 'placeholder' => $this->t('Country'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
+                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
             ],
             // '#default_value' => 'India',
             '#required' => TRUE,
@@ -201,18 +146,7 @@ class AddAddressForm extends FormBase
                 'other' => $this->t('Other'),
             ],
             '#attributes' => [
-                'class' => [
-                    'form-select',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
+                'class' => ['form-select', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
             ],
         ];
 
@@ -222,15 +156,7 @@ class AddAddressForm extends FormBase
             '#value' => $this->t('Submit'),
             '#button_type' => 'primary',
             '#attributes' => [
-                'class' => [
-                    'bg-yellow-500',
-                    'text-white',
-                    'rounded-full',
-                    'px-6',
-                    'py-2',
-                    'hover:bg-yellow-600',
-                    'transition'
-                ],
+                'class' => ['bg-yellow-500', 'text-white', 'rounded-full', 'px-6', 'py-2', 'hover:bg-yellow-600', 'transition'],
             ],
         ];
 

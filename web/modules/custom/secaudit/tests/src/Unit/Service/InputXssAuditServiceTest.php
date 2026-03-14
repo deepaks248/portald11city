@@ -5,6 +5,7 @@ namespace Drupal\Tests\secaudit\Unit\Service;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Logger\LoggerChannelInterface;
 use Drupal\secaudit\Service\InputXssAuditService;
+use Drupal\secaudit\Service\InputXssScanService;
 use Drupal\Tests\UnitTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -20,7 +21,7 @@ class InputXssAuditServiceTest extends UnitTestCase
     $loggerFactory = $this->createMock(LoggerChannelFactoryInterface::class);
     $logger = $this->createMock(LoggerChannelInterface::class);
     $loggerFactory->method('get')->with('secaudit')->willReturn($logger);
-    $service = new InputXssAuditService($requestStack, $loggerFactory);
+    $service = new InputXssAuditService($requestStack, $loggerFactory, new InputXssScanService());
 
     $this->assertSame([], $service->detectIE1());
 
@@ -33,7 +34,7 @@ class InputXssAuditServiceTest extends UnitTestCase
     $loggerFactory = $this->createMock(LoggerChannelFactoryInterface::class);
     $logger = $this->createMock(LoggerChannelInterface::class);
     $loggerFactory->method('get')->with('secaudit')->willReturn($logger);
-    $service = new InputXssAuditService($requestStack, $loggerFactory);
+    $service = new InputXssAuditService($requestStack, $loggerFactory, new InputXssScanService());
     $safe = Request::create('/safe', 'GET', ['value' => 'plain-text']);
     $requestStack->push($safe);
     $logger->expects($this->never())->method('warning');
@@ -46,7 +47,7 @@ class InputXssAuditServiceTest extends UnitTestCase
     $loggerFactory = $this->createMock(LoggerChannelFactoryInterface::class);
     $logger = $this->createMock(LoggerChannelInterface::class);
     $loggerFactory->method('get')->with('secaudit')->willReturn($logger);
-    $service = new InputXssAuditService($requestStack, $loggerFactory);
+    $service = new InputXssAuditService($requestStack, $loggerFactory, new InputXssScanService());
 
     $request = Request::create(
       '/safe',

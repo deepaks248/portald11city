@@ -3,6 +3,7 @@
 namespace Drupal\Tests\active_sessions\Unit\Controller;
 
 use Drupal\active_sessions\Controller\ActiveSessionController;
+use Drupal\active_sessions\Service\ActiveSessionPresenterService;
 use Drupal\login_logout\Service\OAuthLoginService;
 use Drupal\active_sessions\Service\ActiveSessionService;
 use Drupal\Core\Datetime\DateFormatterInterface;
@@ -34,6 +35,9 @@ class ActiveSessionControllerTest extends UnitTestCase
     /** @var DateFormatterInterface|MockObject */
     protected $mockDateFormatter;
 
+    /** @var ActiveSessionPresenterService */
+    protected $sessionPresenter;
+
     /** @var SessionInterface|MockObject */
     protected $mockSession;
 
@@ -54,6 +58,7 @@ class ActiveSessionControllerTest extends UnitTestCase
         $this->mockDateFormatter = $this->createMock(DateFormatterInterface::class);
         $this->mockSession = $this->createMock(SessionInterface::class);
         $this->mockMessenger = $this->createMock(MessengerInterface::class);
+        $this->sessionPresenter = new ActiveSessionPresenterService($this->mockDateFormatter);
 
         // Mock Drupal container services
         $container = new ContainerBuilder();
@@ -64,6 +69,7 @@ class ActiveSessionControllerTest extends UnitTestCase
         $container->set('request_stack', $this->mockRequestStack);
         $container->set('active_sessions.session_service', $this->mockSessionService);
         $container->set('date.formatter', $this->mockDateFormatter);
+        $container->set('active_sessions.presenter_service', $this->sessionPresenter);
 
         \Drupal::setContainer($container);
 
@@ -72,7 +78,8 @@ class ActiveSessionControllerTest extends UnitTestCase
             $this->mockOAuthLoginService,
             $this->mockRequestStack,
             $this->mockSessionService,
-            $this->mockDateFormatter
+            $this->mockDateFormatter,
+            $this->sessionPresenter
         );
     }
 

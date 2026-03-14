@@ -28,6 +28,15 @@ services:
     arguments:
       - '@request_stack'
       - '@logger.factory'
+      - '@secaudit.input_xss_scan_service'
+
+  secaudit.input_xss_scan_service:
+    class: Drupal\secaudit\Service\InputXssScanService
+    arguments:
+      - '@secaudit.input_xss_matcher_service'
+
+  secaudit.input_xss_matcher_service:
+    class: Drupal\secaudit\Service\InputXssMatcherService
 
   secaudit.audit_service:
     class: Drupal\secaudit\Service\AuditService

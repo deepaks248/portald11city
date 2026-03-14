@@ -7,9 +7,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\login_logout\Service\OAuthLoginService;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\active_sessions\Service\ActiveSessionService;
+use Drupal\active_sessions\Service\ActiveSessionPresenterService;
 use Drupal\Core\Datetime\DateFormatterInterface;
-use Drupal\user\Entity\User;
-use Drupal\user\UserInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class ActiveSessionController extends ControllerBase
@@ -19,18 +18,21 @@ class ActiveSessionController extends ControllerBase
     protected $requestStack;
     protected $sessionService;
     protected $dateFormatter;
+    protected $sessionPresenter;
     public const MY_ACCOUNT_PATH = '/my-account';
 
     public function __construct(
         OAuthLoginService $oauthLoginService,
         RequestStack $requestStack,
         ActiveSessionService $sessionService,
-        DateFormatterInterface $dateFormatter
+        DateFormatterInterface $dateFormatter,
+        ActiveSessionPresenterService $sessionPresenter
     ) {
         $this->oauthLoginService = $oauthLoginService;
         $this->requestStack = $requestStack;
         $this->sessionService = $sessionService;
         $this->dateFormatter = $dateFormatter;
+        $this->sessionPresenter = $sessionPresenter;
     }
 
     public static function create(ContainerInterface $container)
@@ -39,58 +41,10 @@ class ActiveSessionController extends ControllerBase
             $container->get('login_logout.oauth_login_service'),
             $container->get('request_stack'),
             $container->get('active_sessions.session_service'),
-            $container->get('date.formatter')
+            $container->get('date.formatter'),
+            $container->get('active_sessions.presenter_service')
         );
     }
-
-    private function format_user_agent(string $userAgent): string
-    {
-        $browser = $this->detectValue($userAgent, $this->browserMap(), 'Unknown Browser');
-        $device  = $this->detectValue($userAgent, $this->deviceMap(), 'Unknown Device/OS');
-
-        return ($browser === 'Unknown Browser' && $device === 'Unknown Device/OS')
-            ? $userAgent
-            : "{$browser}, {$device}";
-    }
-
-    private function detectValue(string $ua, array $map, string $default): string
-    {
-        foreach ($map as $label => $patterns) {
-            foreach ((array) $patterns as $pattern) {
-                if (stripos($ua, $pattern) !== FALSE) {
-                    return $label;
-                }
-            }
-        }
-
-        return $default;
-    }
-
-    private function browserMap(): array
-    {
-        return [
-            'Microsoft Edge' => ['Edg'],
-            'Chrome'         => ['Chrome'],
-            'Firefox'        => ['Firefox'],
-            'Safari'         => ['Safari'],
-            'Opera'          => ['Opera', 'OPR'],
-        ];
-    }
-
-
-    private function deviceMap(): array
-    {
-        return [
-            'Mobile (iPhone)'   => ['iPhone'],
-            'Tablet (iPad)'     => ['iPad'],
-            'Desktop (Windows)' => ['Windows'],
-            'Desktop (Mac)'     => ['Macintosh', 'Mac OS X'],
-            'Mobile (Android)'  => ['Android Mobile'],
-            'Tablet (Android)'  => ['Android'],
-            'Linux'             => ['Linux'],
-        ];
-    }
-
 
     public function activeSession(): array
     {
@@ -99,12 +53,10 @@ class ActiveSessionController extends ControllerBase
         $loginTime   = $session->get('login_logout.login_time');
 
         $apiSessions = $this->getApiSessions($accessToken);
-        $closestId   = $this->findClosestSessionId($apiSessions, $loginTime);
-
-        [$current, $others] = $this->prepareSessions(
+        [$current, $others] = $this->sessionPresenter->prepareSessions(
             $apiSessions,
-            $closestId,
-            $accessToken
+            $loginTime,
+            (string) $accessToken
         );
 
         return $this->buildResponse($current, $others);
@@ -113,79 +65,12 @@ class ActiveSessionController extends ControllerBase
 
     private function getApiSessions(?string $accessToken): array
     {
+        if ($accessToken === NULL || $accessToken === '') {
+            return [];
+        }
+
         $sessions = $this->sessionService->fetchActiveSessions($accessToken);
         return $sessions['sessions'] ?? [];
-    }
-
-    private function findClosestSessionId(array $sessions, ?int $loginTime): ?string
-    {
-        if (empty($loginTime) || empty($sessions)) {
-            return NULL;
-        }
-
-        $targetMs   = $loginTime * 1000;
-        $closestId  = NULL;
-        $closestDiff = PHP_INT_MAX;
-
-        foreach ($sessions as $session) {
-            if (empty($session['loginTime'])) {
-                continue;
-            }
-
-            $diff = abs($session['loginTime'] - $targetMs);
-
-            if ($diff < $closestDiff) {
-                $closestDiff = $diff;
-                $closestId   = $session['id'];
-            }
-
-            if ($diff === 0) {
-                break;
-            }
-        }
-
-        return $closestId;
-    }
-
-    private function prepareSessions(
-        array $sessions,
-        ?string $currentSessionId,
-        string $accessToken
-    ): array {
-        $current = [];
-        $others  = [];
-
-        foreach ($sessions as $session) {
-            $normalized = $this->normalizeSession(
-                $session,
-                $accessToken
-            );
-
-            if ($session['id'] === $currentSessionId) {
-                $current[] = $normalized;
-            } else {
-                $others[] = $normalized;
-            }
-        }
-
-        return [$current, $others];
-    }
-
-    private function normalizeSession(array $session, string $accessToken): array
-    {
-        $timestamp = (int) (($session['loginTime'] ?? 0) / 1000);
-
-        $session['accessToken']          = $accessToken;
-        $session['userAgentFormatted']   = $this->format_user_agent($session['userAgent'] ?? '');
-        $session['loginTimeSeconds']     = $timestamp;
-        $session['formattedLoginTime']   = $this->dateFormatter->format(
-            $timestamp,
-            'custom',
-            'd-m-Y, h:i:s',
-            'Asia/Kolkata'
-        );
-
-        return $session;
     }
 
     private function buildResponse(array $current, array $others): array

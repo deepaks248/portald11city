@@ -14,6 +14,8 @@ use Drupal\login_logout\Service\LoginSubmitHandler;
  */
 class UserLoginForm extends FormBase {
 
+  public const RETURN_FALSE = 'return false;';
+
   /**
    * The current user.
    *
@@ -69,9 +71,9 @@ class UserLoginForm extends FormBase {
       '#title' => $this->t('Email'),
       '#attributes' => [
         'placeholder' => $this->t('Email'),
-        'onpaste' => 'return false;',
-        'oncopy' => 'return false;',
-        'oncut' => 'return false;',
+        'onpaste' => self::RETURN_FALSE,
+        'oncopy' => self::RETURN_FALSE,
+        'oncut' => self::RETURN_FALSE,
         'autocomplete' => 'off',
       ],
       '#maxlength' => 254,
@@ -85,9 +87,9 @@ class UserLoginForm extends FormBase {
         '#title' => $this->t('Password'),
         '#attributes' => [
           'placeholder' => $this->t('Password'),
-          'onpaste' => 'return false;',
-          'oncopy' => 'return false;',
-          'oncut' => 'return false;',
+          'onpaste' => self::RETURN_FALSE,
+          'oncopy' => self::RETURN_FALSE,
+          'oncut' => self::RETURN_FALSE,
           'autocomplete' => 'new-password',
         ],
         '#required' => TRUE,

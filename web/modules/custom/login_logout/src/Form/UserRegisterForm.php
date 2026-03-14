@@ -9,6 +9,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class UserRegisterForm extends FormBase
 {
+  public const RETURN_FALSE = 'return false;';
   /**
    * Handles the registration submit workflow.
    *
@@ -110,9 +111,9 @@ class UserRegisterForm extends FormBase
           '#attributes' => [
             'maxlength' => 6,
             'class' => $input_classes,
-            'onpaste' => 'return false;',
-            'oncopy' => 'return false;',
-            'oncut' => 'return false;',
+            'onpaste' => self::RETURN_FALSE,
+            'oncopy' => self::RETURN_FALSE,
+            'oncut' => self::RETURN_FALSE,
             'autocomplete' => 'off',
             'inputmode' => 'numeric',
             'pattern' => '[0-9]*',
@@ -132,9 +133,9 @@ class UserRegisterForm extends FormBase
           '#required' => TRUE,
           '#attributes' => [
             'class' => $input_classes,
-            'onpaste' => 'return false;',
-            'oncopy' => 'return false;',
-            'oncut' => 'return false;',
+            'onpaste' => self::RETURN_FALSE,
+            'oncopy' => self::RETURN_FALSE,
+            'oncut' => self::RETURN_FALSE,
             'autocomplete' => 'new-password',
           ],
         ];
@@ -144,9 +145,9 @@ class UserRegisterForm extends FormBase
           '#required' => TRUE,
           '#attributes' => [
             'class' => $input_classes,
-            'onpaste' => 'return false;',
-            'oncopy' => 'return false;',
-            'oncut' => 'return false;',
+            'onpaste' => self::RETURN_FALSE,
+            'oncopy' => self::RETURN_FALSE,
+            'oncut' => self::RETURN_FALSE,
             'autocomplete' => 'new-password',
           ],
         ];

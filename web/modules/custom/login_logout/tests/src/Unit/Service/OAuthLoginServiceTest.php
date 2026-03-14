@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\login_logout\Unit\Service;
 
+use Drupal\login_logout\Exception\OAuthLoginException;
 use Drupal\login_logout\Service\OAuthLoginService;
 use Drupal\login_logout\Service\OAuthHelperService;
 use Drupal\global_module\Service\GlobalVariablesService;
@@ -337,7 +338,7 @@ class OAuthLoginServiceTest extends UnitTestCase {
     $response->method('getBody')->willReturn($body);
     $this->httpClient->method('request')->willReturn($response);
 
-    $this->expectException(\Exception::class);
+    $this->expectException(OAuthLoginException::class);
     $this->expectExceptionMessage('Flow ID not received');
     $this->service->performOAuthLogin('e', 'p');
   }
@@ -359,7 +360,7 @@ class OAuthLoginServiceTest extends UnitTestCase {
     $this->requestStack->method('getCurrentRequest')->willReturn(new Request());
     $this->oauthHelperService->method('handleErrorResponse')->willReturn(['success' => FALSE, 'message' => 'Auth fail']);
 
-    $this->expectException(\Exception::class);
+    $this->expectException(OAuthLoginException::class);
     $this->expectExceptionMessage('Auth fail');
     $this->service->performOAuthLogin('e', 'p');
   }
@@ -386,7 +387,7 @@ class OAuthLoginServiceTest extends UnitTestCase {
     $this->oauthHelperService->expects($this->exactly(2))->method('parseResponse')
       ->willReturnOnConsecutiveCalls(['authData' => ['code' => 'c']], ['access_token' => 'at']);
 
-    $this->expectException(\Exception::class);
+    $this->expectException(OAuthLoginException::class);
     $this->expectExceptionMessage('Failed to receive access or ID token');
     $this->service->performOAuthLogin('e', 'p');
   }

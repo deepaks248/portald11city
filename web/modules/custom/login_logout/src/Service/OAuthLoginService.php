@@ -2,6 +2,7 @@
 
 namespace Drupal\login_logout\Service;
 
+use Drupal\login_logout\Exception\OAuthLoginException;
 use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -245,20 +246,20 @@ class OAuthLoginService
         // Step 1: Get Flow ID
         $flowId = $this->getFlowId();
         if (!$flowId) {
-            throw new \Exception('Flow ID not received from OAuth server.');
+            throw new OAuthLoginException('Flow ID not received from OAuth server.');
         }
 
         // Step 2: Authenticate user with email & password
         $authResponse = $this->authenticateUser($flowId, $email, $password);
         if (empty($authResponse['success']) || empty($authResponse['code'])) {
             $msg = $authResponse['message'] ?? 'Authorization code not received.';
-            throw new \Exception($msg);
+            throw new OAuthLoginException($msg);
         }
 
         // Step 3: Exchange authorization code for token
         $tokenData = $this->exchangeCodeForToken($authResponse['code']);
         if (empty($tokenData['access_token']) || empty($tokenData['id_token'])) {
-            throw new \Exception('Failed to receive access or ID token.');
+            throw new OAuthLoginException('Failed to receive access or ID token.');
         }
 
         return $tokenData;

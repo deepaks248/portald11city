@@ -16,6 +16,7 @@ class PasswordRecoveryService
   public const APP_JSON = 'application/json';
   public const FORM_URLENCODED = 'application/x-www-form-urlencoded';
   public const SECURE_LINK = 'https://';
+  public const EMAIL_PLACEHOLDER = '@email';
   /**
    * HTTP client service.
    *
@@ -153,7 +154,8 @@ class PasswordRecoveryService
         return $decoded[0]['channelInfo']['recoveryCode'];
       }
 
-      $this->logger->warning('No recovery code returned for email: @email', ['@email' => $email]);
+      $this->logger->warning('No recovery code returned for email: @email', [self::EMAIL_PLACEHOLDER => $email]);
+      
       return NULL;
     } catch (RequestException $e) {
       $this->logger->error('Password recovery initiation failed: @error', ['@error' => $e->getMessage()]);

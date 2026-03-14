@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class CookieAuditService
 {
+  private const PATH_PLACEHOLDER = '@path';
   protected RequestStack $requestStack;
   protected LoggerChannelFactoryInterface $loggerFactory;
 
@@ -74,7 +75,7 @@ class CookieAuditService
 
     $logger->warning('SE2: New cookies added during session for IP: @ip and Path: @path Cookies added: @cookies_added', [
       '@ip' => $currentIp,
-      '@path' => $path,
+      self::PATH_PLACEHOLDER => $path,
       '@cookies_added' => implode(', ', array_keys($added)),
       '@uid' => \Drupal::currentUser()->id(),
     ]);
@@ -89,7 +90,7 @@ class CookieAuditService
 
     $logger->warning('SE3: Existing cookies deleted during session. IP Address: @ip, Path: @path, Cookies Deleted: @cookies_deleted', [
       '@ip' => $currentIp,
-      '@path' => $path,
+      self::PATH_PLACEHOLDER => $path,
       '@cookies_deleted' => implode(', ', array_keys($deleted)),
       '@uid' => \Drupal::currentUser()->id(),
     ]);
@@ -108,7 +109,7 @@ class CookieAuditService
 
       $logger->warning('SE1: Cookie value modified. IP Address: @ip, Path: @path, Cookie Name: @cookie_name', [
         '@ip' => $currentIp,
-        '@path' => $path,
+        self::PATH_PLACEHOLDER => $path,
         '@cookie_name' => $name,
         '@uid' => \Drupal::currentUser()->id(),
       ]);

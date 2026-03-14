@@ -15,6 +15,9 @@ use Drupal\login_logout\Service\LoginSubmitHandler;
 class UserLoginForm extends FormBase {
 
   public const RETURN_FALSE = 'return false;';
+  private const TYPE_KEY = '#type';
+  private const TITLE_KEY = '#title';
+  private const ATTRIBUTES_KEY = '#attributes';
 
   /**
    * The current user.
@@ -67,9 +70,9 @@ class UserLoginForm extends FormBase {
       $form_state->set('email_validated', FALSE);
     }
     $form['email'] = [
-      '#type' => 'email',
-      '#title' => $this->t('Email'),
-      '#attributes' => [
+      self::TYPE_KEY => 'email',
+      self::TITLE_KEY => $this->t('Email'),
+      self::ATTRIBUTES_KEY => [
         'placeholder' => $this->t('Email'),
         'onpaste' => self::RETURN_FALSE,
         'oncopy' => self::RETURN_FALSE,
@@ -83,9 +86,9 @@ class UserLoginForm extends FormBase {
 
     if ($form_state->get('email_validated')) {
       $form['password'] = [
-        '#type' => 'password',
-        '#title' => $this->t('Password'),
-        '#attributes' => [
+        self::TYPE_KEY => 'password',
+        self::TITLE_KEY => $this->t('Password'),
+        self::ATTRIBUTES_KEY => [
           'placeholder' => $this->t('Password'),
           'onpaste' => self::RETURN_FALSE,
           'oncopy' => self::RETURN_FALSE,
@@ -96,16 +99,16 @@ class UserLoginForm extends FormBase {
       ];
 
       $form['login'] = [
-        '#type' => 'submit',
+        self::TYPE_KEY => 'submit',
         '#value' => $this->t('Login'),
       ];
 
       $form['forgot_password'] = [
-        '#type' => 'link',
-        '#title' => $this->t('Forgot Password?'),
+        self::TYPE_KEY => 'link',
+        self::TITLE_KEY => $this->t('Forgot Password?'),
         '#name' => 'forgot_button',
         '#url' => Url::fromRoute('login_logout.forgot_password_form'),
-        '#attributes' => [
+        self::ATTRIBUTES_KEY => [
           'class' => ['text-sm', 'text-red-600', 'hover:underline', 'ml-2', 'cursor-pointer'],
           'style' => 'background:none;border:none;padding:0;',
         ],
@@ -115,7 +118,7 @@ class UserLoginForm extends FormBase {
       $form['login']['#attributes']['class'][] = 'bg-yellow-500 text-white rounded-xl px-6 py-2 cursor-pointer hover:bg-yellow-600 transition';
     } else {
       $form['check_email'] = [
-        '#type' => 'submit',
+        self::TYPE_KEY => 'submit',
         '#value' => $this->t('Submit'),
       ];
       $form['check_email']['#attributes']['class'][] = 'bg-yellow-500 text-white rounded-xl px-6 py-2 cursor-pointer hover:bg-yellow-600 transition';

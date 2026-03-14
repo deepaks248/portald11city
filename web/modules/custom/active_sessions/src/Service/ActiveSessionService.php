@@ -13,6 +13,7 @@ class ActiveSessionService
 {
     public const SECURE_URL = 'https://';
     public const BEARER = 'Bearer ';
+    public const MESSAGE_PLACEHOLDER = '@message';
 
     protected ClientInterface $httpClient;
     protected RequestStack $requestStack;
@@ -64,7 +65,7 @@ class ActiveSessionService
             $data = json_decode($response->getBody()->getContents(), TRUE);
             return $data ?? [];
         } catch (\Exception $e) {
-            $this->logger->error('Error fetching active sessions: @message', ['@message' => $e->getMessage()]);
+            $this->logger->error('Error fetching active sessions: @message', [self::MESSAGE_PLACEHOLDER => $e->getMessage()]);
             return NULL;
         }
     }
@@ -85,7 +86,7 @@ class ActiveSessionService
 
             return TRUE;
         } catch (RequestException $e) {
-            $this->logger->error('Failed to terminate session: @message', ['@message' => $e->getMessage()]);
+            $this->logger->error('Failed to terminate session: @message', [self::MESSAGE_PLACEHOLDER => $e->getMessage()]);
             return FALSE;
         }
     }
@@ -106,7 +107,7 @@ class ActiveSessionService
 
             return TRUE;
         } catch (RequestException $e) {
-            $this->logger->error('Failed to terminate all other sessions: @message', ['@message' => $e->getMessage()]);
+            $this->logger->error('Failed to terminate all other sessions: @message', [self::MESSAGE_PLACEHOLDER => $e->getMessage()]);
             return FALSE;
         }
     }

@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  */
 class LoggedInDetailsBlock extends BlockBase implements ContainerFactoryPluginInterface
 {
+    private const NULL_STRING = 'null';
 
     /**
      * Current user service.
@@ -66,7 +67,7 @@ class LoggedInDetailsBlock extends BlockBase implements ContainerFactoryPluginIn
 
         $profilePic = $user_data['profilePic'] ?? null;
 
-        $avatar_url = ($profilePic !== null && $profilePic !== "null" && $profilePic !== "")
+        $avatar_url = ($profilePic !== null && $profilePic !== self::NULL_STRING && $profilePic !== '')
             ? htmlspecialchars($profilePic, ENT_QUOTES, 'UTF-8')
             : '/themes/custom/engage_theme/images/Profile/profile_pic.png';
 

@@ -16,6 +16,13 @@ use Drupal\Core\Ajax\RedirectCommand;
 
 class AddAddressForm extends FormBase
 {
+    private const TYPE_KEY = '#type';
+    private const TITLE_KEY = '#title';
+    private const REQUIRED_KEY = '#required';
+    private const REQUIRED_ERROR_KEY = '#required_error';
+    private const DEFAULT_VALUE_KEY = '#default_value';
+    private const ATTRIBUTES_KEY = '#attributes';
+    private const INPUT_CLASSES = ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'];
     /**
      * The HTTP client.
      *
@@ -69,75 +76,73 @@ class AddAddressForm extends FormBase
         $form['#is_edit'] = $node instanceof \Drupal\node\Entity\Node;
 
         $form['postal_code'] = [
-            '#type' => 'textfield',
-            '#title' => $this->t('Postal'),
-            '#required' => TRUE,
-            '#required_error' => $this->t("Postal code is required"),
-            '#default_value' => $defaults['postal_code'],
+            self::TYPE_KEY => 'textfield',
+            self::TITLE_KEY => $this->t('Postal'),
+            self::REQUIRED_KEY => TRUE,
+            self::REQUIRED_ERROR_KEY => $this->t("Postal code is required"),
+            self::DEFAULT_VALUE_KEY => $defaults['postal_code'],
             '#maxlength' => 6,
-            '#attributes' => [
+            self::ATTRIBUTES_KEY => [
                 'maxlength' => 6,
                 'placeholder' => $this->t('Postal'),
-                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
+                'class' => self::INPUT_CLASSES,
             ],
             '#element_validate' => [[self::class, 'validatePostalCode']],
         ];
 
         $form['flat'] = [
-            '#type' => 'textfield',
-            '#title' => $this->t('Flat, House no., Building, Company, Apartment'),
-            '#default_value' => $defaults['flat'],
-            '#attributes' => [
+            self::TYPE_KEY => 'textfield',
+            self::TITLE_KEY => $this->t('Flat, House no., Building, Company, Apartment'),
+            self::DEFAULT_VALUE_KEY => $defaults['flat'],
+            self::ATTRIBUTES_KEY => [
                 'placeholder' => $this->t('Flat, House no., Building, Company, Apartment'),
-                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
+                'class' => self::INPUT_CLASSES,
             ],
-            '#required' => TRUE,
-            '#required_error' => $this->t('Flat is required'),
+            self::REQUIRED_KEY => TRUE,
+            self::REQUIRED_ERROR_KEY => $this->t('Flat is required'),
         ];
 
         $form['area'] = [
-            '#type' => 'textfield',
-            '#default_value' => $defaults['area'],
-            '#title' => $this->t('Area, Colony, Street Sector, Town/City'),
-            '#attributes' => [
+            self::TYPE_KEY => 'textfield',
+            self::DEFAULT_VALUE_KEY => $defaults['area'],
+            self::TITLE_KEY => $this->t('Area, Colony, Street Sector, Town/City'),
+            self::ATTRIBUTES_KEY => [
                 'placeholder' => $this->t('Area, Colony, Street Sector, Town/City'),
-                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
+                'class' => self::INPUT_CLASSES,
             ],
-            '#required' => TRUE,
-            '#required_error' => $this->t("Area is required"),
+            self::REQUIRED_KEY => TRUE,
+            self::REQUIRED_ERROR_KEY => $this->t("Area is required"),
         ];
 
         $form['landmark'] = [
-            '#type' => 'textfield',
-            '#default_value' => $defaults['landmark'],
-            '#title' => $this->t('Landmark e.g. near Apollo Hospital'),
-            '#attributes' => [
+            self::TYPE_KEY => 'textfield',
+            self::DEFAULT_VALUE_KEY => $defaults['landmark'],
+            self::TITLE_KEY => $this->t('Landmark e.g. near Apollo Hospital'),
+            self::ATTRIBUTES_KEY => [
                 'placeholder' => $this->t('Landmark e.g. near Apollo Hospital'),
-                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
+                'class' => self::INPUT_CLASSES,
             ],
-            '#required' => TRUE,
-            '#required_error' => $this->t('Landmark is required')
+            self::REQUIRED_KEY => TRUE,
+            self::REQUIRED_ERROR_KEY => $this->t('Landmark is required')
         ];
 
         $form['country'] = [
-            '#type' => 'textfield',
-            '#default_value' => $defaults['country'],
-            '#title' => $this->t('Country'),
-            '#attributes' => [
+            self::TYPE_KEY => 'textfield',
+            self::DEFAULT_VALUE_KEY => $defaults['country'],
+            self::TITLE_KEY => $this->t('Country'),
+            self::ATTRIBUTES_KEY => [
                 'placeholder' => $this->t('Country'),
-                'class' => ['form-input', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
+                'class' => self::INPUT_CLASSES,
             ],
-            // '#default_value' => 'India',
-            '#required' => TRUE,
-            '#required_error' => $this->t('Country is required.')
+            self::REQUIRED_KEY => TRUE,
+            self::REQUIRED_ERROR_KEY => $this->t('Country is required.')
         ];
 
         $form['address_type'] = [
-            '#type' => 'select',
-            // '#title' => $this->t('Select your Address Type'),
-            '#required' => TRUE,
-            '#required_error' => $this->t('Please select any address type'),
-            '#default_value' => $defaults['address_type'],
+            self::TYPE_KEY => 'select',
+            self::REQUIRED_KEY => TRUE,
+            self::REQUIRED_ERROR_KEY => $this->t('Please select any address type'),
+            self::DEFAULT_VALUE_KEY => $defaults['address_type'],
             '#empty_option' => $this->t('Select your Address Type'),
             '#options' => [
                 // '' => $this->t('- Select -'),
@@ -145,7 +150,7 @@ class AddAddressForm extends FormBase
                 'office' => $this->t('Office'),
                 'other' => $this->t('Other'),
             ],
-            '#attributes' => [
+            self::ATTRIBUTES_KEY => [
                 'class' => ['form-select', 'w-full', 'rounded-md', 'border', 'border-gray-300', 'focus:border-yellow-500', 'focus:ring-yellow-500', 'text-gray-700', 'text-base', 'p-2.5'],
             ],
         ];

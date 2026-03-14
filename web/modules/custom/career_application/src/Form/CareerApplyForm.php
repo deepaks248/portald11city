@@ -9,6 +9,23 @@ use Symfony\Component\Validator\Constraints\File as FileConstraint;
 
 class CareerApplyForm extends FormBase
 {
+    private const THEME_KEY = '#theme';
+    private const TYPE_KEY = '#type';
+    private const TITLE_KEY = '#title';
+    private const ATTRIBUTES_KEY = '#attributes';
+    private const REQUIRED_KEY = '#required';
+    private const INPUT_CLASSES = [
+        'form-input',
+        'w-full',
+        'rounded-md',
+        'border',
+        'border-gray-300',
+        'focus:border-yellow-500',
+        'focus:ring-yellow-500',
+        'text-gray-700',
+        'text-base',
+        'p-2.5',
+    ];
 
     public function getFormId()
     {
@@ -18,104 +35,27 @@ class CareerApplyForm extends FormBase
     public function buildForm(array $form, FormStateInterface $form_state, $nid = NULL)
     {
 
-        $form['#theme'] = 'career_apply_form';
+        $form[self::THEME_KEY] = 'career_apply_form';
 
         $form['nid'] = [
-            '#type' => 'hidden',
+            self::TYPE_KEY => 'hidden',
             '#value' => $nid,
         ];
 
-        $form['first_name'] = [
-            '#type' => 'textfield',
-            '#title' => $this->t('First Name'),
-            '#attributes' => [
-                'placeholder' => $this->t('First Name'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
-            ],
-            '#required' => TRUE,
-        ];
+        $form['first_name'] = $this->buildInputField('textfield', 'First Name');
 
-        $form['last_name'] = [
-            '#type' => 'textfield',
-            '#title' => $this->t('Last Name'),
-            '#attributes' => [
-                'placeholder' => $this->t('Last Name'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
-            ],
-            '#required' => TRUE,
-        ];
+        $form['last_name'] = $this->buildInputField('textfield', 'Last Name');
 
-        $form['email'] = [
-            '#type' => 'email',
-            '#title' => $this->t('Email'),
-            '#attributes' => [
-                'placeholder' => $this->t('Email'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
-            ],
-            '#required' => TRUE,
-        ];
+        $form['email'] = $this->buildInputField('email', 'Email');
 
-        $form['mobile'] = [
-            '#type' => 'tel',
-            '#title' => $this->t('Mobile Number'),
-            '#attributes' => [
-                'placeholder' => $this->t('Mobile Number'),
-                'class' => [
-                    'form-input',
-                    'w-full',
-                    'rounded-md',
-                    'border',
-                    'border-gray-300',
-                    'focus:border-yellow-500',
-                    'focus:ring-yellow-500',
-                    'text-gray-700',
-                    'text-base',
-                    'p-2.5'
-                ],
-            ],
-            '#required' => TRUE,
-        ];
+        $form['mobile'] = $this->buildInputField('tel', 'Mobile Number');
 
         $form['gender'] = [
-            '#type' => 'select',
-            '#title' => $this->t('Gender'),
-            '#attributes' => [
+            self::TYPE_KEY => 'select',
+            self::TITLE_KEY => $this->t('Gender'),
+            self::ATTRIBUTES_KEY => [
                 'class' => [
                     'form-select',
-                    // 'w-auto',
                     'rounded-md',
                     'border',
                     'border-gray-300',
@@ -131,13 +71,13 @@ class CareerApplyForm extends FormBase
                 'female' => $this->t('Female'),
                 'other' => $this->t('Other'),
             ],
-            '#required' => TRUE,
+            self::REQUIRED_KEY => TRUE,
         ];
 
         $form['resume'] = [
-            '#type' => 'managed_file',
-            '#title' => $this->t('Upload your CV*'),
-            '#required' => TRUE,
+            self::TYPE_KEY => 'managed_file',
+            self::TITLE_KEY => $this->t('Upload your CV*'),
+            self::REQUIRED_KEY => TRUE,
             '#upload_location' => 'public://resumes/',
             '#constraints' => [
                 new \Symfony\Component\Validator\Constraints\File([
@@ -154,7 +94,7 @@ class CareerApplyForm extends FormBase
 
 
         $form['submit'] = [
-            '#type' => 'submit',
+            self::TYPE_KEY => 'submit',
             '#value' => $this->t('Apply Now'),
         ];
 
@@ -190,5 +130,18 @@ class CareerApplyForm extends FormBase
         ])->execute();
 
         $form_state->setRedirect('career_application.success_page');
+    }
+
+    private function buildInputField(string $type, string $title): array
+    {
+        return [
+            self::TYPE_KEY => $type,
+            self::TITLE_KEY => $this->t($title),
+            self::ATTRIBUTES_KEY => [
+                'placeholder' => $this->t($title),
+                'class' => self::INPUT_CLASSES,
+            ],
+            self::REQUIRED_KEY => TRUE,
+        ];
     }
 }

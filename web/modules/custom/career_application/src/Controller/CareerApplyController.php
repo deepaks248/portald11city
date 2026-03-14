@@ -12,6 +12,7 @@ use Drupal\Core\File\FileUrlGeneratorInterface;
  */
 class CareerApplyController extends ControllerBase
 {
+    private const THEME_KEY = '#theme';
 
     /**
      * Show list of jobs the user applied for.
@@ -41,7 +42,7 @@ class CareerApplyController extends ControllerBase
         }
 
         return [
-            '#theme' => 'career_applications_list',
+            self::THEME_KEY => 'career_applications_list',
             '#applications' => $applications,
             // '#attached' => ['library' => ['career_application/your-custom-styles']],
         ];
@@ -51,7 +52,7 @@ class CareerApplyController extends ControllerBase
     public function success()
     {
         return [
-            '#theme' => 'career_application_success',
+            self::THEME_KEY => 'career_application_success',
             '#title' => $this->t('Application Submitted'),
         ];
     }
@@ -85,7 +86,7 @@ class CareerApplyController extends ControllerBase
 
 
         return [
-            '#theme' => 'career_application_detail',
+            self::THEME_KEY => 'career_application_detail',
             '#node' => $node,
             '#application' => $record,
             '#resume_url' => $resume_url,

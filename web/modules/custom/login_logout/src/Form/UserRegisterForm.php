@@ -10,6 +10,12 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class UserRegisterForm extends FormBase
 {
   public const RETURN_FALSE = 'return false;';
+  private const TYPE_KEY = '#type';
+  private const TITLE_KEY = '#title';
+  private const REQUIRED_KEY = '#required';
+  private const MAXLENGTH_KEY = '#maxlength';
+  private const ATTRIBUTES_KEY = '#attributes';
+  private const VALUE_KEY = '#value';
   /**
    * Handles the registration submit workflow.
    *
@@ -48,48 +54,48 @@ class UserRegisterForm extends FormBase
     switch ($phase) {
       case 1:
         $form['first_name'] = [
-          '#type' => 'textfield',
-          '#title' => $this->t('First Name'),
-          '#required' => TRUE,
-          '#maxlength' => 255,
-          '#attributes' => ['class' => $input_classes],
+          self::TYPE_KEY => 'textfield',
+          self::TITLE_KEY => $this->t('First Name'),
+          self::REQUIRED_KEY => TRUE,
+          self::MAXLENGTH_KEY => 255,
+          self::ATTRIBUTES_KEY => ['class' => $input_classes],
         ];
         $form['last_name'] = [
-          '#type' => 'textfield',
-          '#title' => $this->t('Last Name'),
-          '#required' => TRUE,
-          '#maxlength' => 255,
-          '#attributes' => ['class' => $input_classes],
+          self::TYPE_KEY => 'textfield',
+          self::TITLE_KEY => $this->t('Last Name'),
+          self::REQUIRED_KEY => TRUE,
+          self::MAXLENGTH_KEY => 255,
+          self::ATTRIBUTES_KEY => ['class' => $input_classes],
         ];
         $form['mail'] = [
-          '#type' => 'email',
-          '#title' => $this->t('Email'),
+          self::TYPE_KEY => 'email',
+          self::TITLE_KEY => $this->t('Email'),
           '#default_value' => $email,
-          '#required' => TRUE,
-          '#maxlength' => 254,
-          '#attributes' => ['class' => $input_classes],
+          self::REQUIRED_KEY => TRUE,
+          self::MAXLENGTH_KEY => 254,
+          self::ATTRIBUTES_KEY => ['class' => $input_classes],
         ];
         $form['country_code'] = [
-          '#type' => 'select',
-          '#title' => $this->t('Country Code'),
-          '#required' => TRUE,
+          self::TYPE_KEY => 'select',
+          self::TITLE_KEY => $this->t('Country Code'),
+          self::REQUIRED_KEY => TRUE,
           '#options' => [
             '+91' => '+91 (India)',
             '+1' => '+1 (USA)',
             '+44' => '+44 (UK)',
           ],
           '#default_value' => '+91',
-          '#attributes' => [
+          self::ATTRIBUTES_KEY => [
             'class' => $select_classes,
             'autocomplete' => 'off',
           ],
         ];
         $form['mobile'] = [
-          '#type' => 'tel',
-          '#title' => $this->t('Mobile Number'),
-          '#required' => TRUE,
-          '#maxlength' => 10,
-          '#attributes' => [
+          self::TYPE_KEY => 'tel',
+          self::TITLE_KEY => $this->t('Mobile Number'),
+          self::REQUIRED_KEY => TRUE,
+          self::MAXLENGTH_KEY => 10,
+          self::ATTRIBUTES_KEY => [
             'class' => $input_classes,
             'pattern' => '[0-9]{10}',
             'title' => $this->t('Enter a valid mobile number'),
@@ -97,18 +103,18 @@ class UserRegisterForm extends FormBase
           ],
         ];
         $form['submit'] = [
-          '#type' => 'submit',
-          '#value' => $this->t('Send OTP'),
-          '#attributes' => ['class' => $button_classes],
+          self::TYPE_KEY => 'submit',
+          self::VALUE_KEY => $this->t('Send OTP'),
+          self::ATTRIBUTES_KEY => ['class' => $button_classes],
         ];
         break;
 
       case 2:
         $form['otp'] = [
-          '#type' => 'textfield',
-          '#title' => $this->t('Enter OTP'),
-          '#required' => TRUE,
-          '#attributes' => [
+          self::TYPE_KEY => 'textfield',
+          self::TITLE_KEY => $this->t('Enter OTP'),
+          self::REQUIRED_KEY => TRUE,
+          self::ATTRIBUTES_KEY => [
             'maxlength' => 6,
             'class' => $input_classes,
             'onpaste' => self::RETURN_FALSE,
@@ -120,18 +126,18 @@ class UserRegisterForm extends FormBase
           ],
         ];
         $form['submit'] = [
-          '#type' => 'submit',
-          '#value' => $this->t('Verify OTP'),
-          '#attributes' => ['class' => $button_classes],
+          self::TYPE_KEY => 'submit',
+          self::VALUE_KEY => $this->t('Verify OTP'),
+          self::ATTRIBUTES_KEY => ['class' => $button_classes],
         ];
         break;
 
       case 3:
         $form['password'] = [
-          '#type' => 'password',
-          '#title' => $this->t('Password'),
-          '#required' => TRUE,
-          '#attributes' => [
+          self::TYPE_KEY => 'password',
+          self::TITLE_KEY => $this->t('Password'),
+          self::REQUIRED_KEY => TRUE,
+          self::ATTRIBUTES_KEY => [
             'class' => $input_classes,
             'onpaste' => self::RETURN_FALSE,
             'oncopy' => self::RETURN_FALSE,
@@ -140,10 +146,10 @@ class UserRegisterForm extends FormBase
           ],
         ];
         $form['confirm_password'] = [
-          '#type' => 'password',
-          '#title' => $this->t('Confirm Password'),
-          '#required' => TRUE,
-          '#attributes' => [
+          self::TYPE_KEY => 'password',
+          self::TITLE_KEY => $this->t('Confirm Password'),
+          self::REQUIRED_KEY => TRUE,
+          self::ATTRIBUTES_KEY => [
             'class' => $input_classes,
             'onpaste' => self::RETURN_FALSE,
             'oncopy' => self::RETURN_FALSE,
@@ -152,9 +158,9 @@ class UserRegisterForm extends FormBase
           ],
         ];
         $form['submit'] = [
-          '#type' => 'submit',
-          '#value' => $this->t('Register'),
-          '#attributes' => ['class' => $button_classes],
+          self::TYPE_KEY => 'submit',
+          self::VALUE_KEY => $this->t('Register'),
+          self::ATTRIBUTES_KEY => ['class' => $button_classes],
         ];
         break;
 

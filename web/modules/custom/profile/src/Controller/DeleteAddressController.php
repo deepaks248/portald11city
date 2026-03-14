@@ -15,25 +15,13 @@ class DeleteAddressController {
    */
   public function access($nid, AccountInterface $account) {
     $node = Node::load($nid);
+    $result = AccessResult::forbidden();
 
-    if (!$node || $node->bundle() !== 'add_address') {
-      return AccessResult::forbidden();
+    if ($this->isAddressNode($node) && $this->canDeleteAddress($node, $account)) {
+      $result = AccessResult::allowed();
     }
 
-    // Allow if user has "delete any".
-    if ($account->hasPermission('delete any add_address content')) {
-      return AccessResult::allowed();
-    }
-
-    // Allow if user has "delete own" and owns this node.
-    if (
-      $account->hasPermission('delete own add_address content') &&
-      $account->id() === $node->getOwnerId()
-    ) {
-      return AccessResult::allowed();
-    }
-
-    return AccessResult::forbidden();
+    return $result;
   }
 
   /**
@@ -48,5 +36,16 @@ class DeleteAddressController {
 
     $node->delete();
     return new JsonResponse(['status' => 'success'], 200);
+  }
+
+  protected function isAddressNode(?Node $node): bool {
+    return $node !== NULL && $node->bundle() === 'add_address';
+  }
+
+  protected function canDeleteAddress(Node $node, AccountInterface $account): bool {
+    return $account->hasPermission('delete any add_address content') || (
+      $account->hasPermission('delete own add_address content') &&
+      $account->id() === $node->getOwnerId()
+    );
   }
 }

@@ -58,323 +58,13 @@ class AddFamilyMemberForm extends FormBase
 
   public function buildForm(array $form, FormStateInterface $form_state)
   {
-    $form['#prefix'] = '<div id="add-family-member-form-wrapper">';
-    $form['#suffix'] = '</div>';
-
-    $form['#attributes']['class'][] = 'form-sec p-4 lg:px-10 lg:py-12 bg-white text-center lg:text-start s:mb-24 xs:mb-20';
-
-    $form['user_id'] = [
-      '#type' => 'hidden',
-      '#attributes' => ['id' => 'user_id'],
-    ];
-
-    $form['first_name'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Name'),
-      '#required' => TRUE,
-      '#attributes' => [
-        'class' => [
-          'peer',
-          'w-full',
-          'lg:max-w-lg',
-          'px-2.5',
-          'pb-2.5',
-          'pt-4',
-          'text-sm',
-          'text-medium_dark',
-          'bg-transparent',
-          'rounded-lg',
-          'border',
-          'border-gray-300',
-          'appearance-none',
-          'text-base',
-          's:text-sm',
-          'xs:text-sm'
-        ],
-        'placeholder' => ' ',
-        'autocomplete' => 'off',
-        'id' => 'first_name',
-      ],
-      '#prefix' => '<div class="errors-first_name"><div class="relative">',
-      '#suffix' => '</div></div>',
-    ];
-
-    $form['calendar'] = [
-      '#type' => 'date',
-      '#title' => $this->t('Date of Birth'),
-      '#required' => TRUE,
-      '#attributes' => [
-        'class' => [
-          'peer',
-          'w-full',
-          'lg:max-w-lg',
-          'px-2.5',
-          'pb-2.5',
-          'pt-4',
-          'text-sm',
-          'text-medium_dark',
-          'bg-transparent',
-          'rounded-lg',
-          'border',
-          'border-gray-300',
-          'text-base',
-          's:text-sm',
-          'xs:text-sm'
-        ],
-        'placeholder' => 'DD-MM-YYYY',
-        'id' => 'calendar',
-        'max' => date('Y-m-d'),
-      ],
-      '#prefix' => '<div class="errors-calendar"><div class="relative">',
-      '#suffix' => $this->getDateErrorMarkup($form_state, 'calendar') . '</div></div>',
-    ];
-
-
-    $form['gender'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Gender'),
-      '#required' => TRUE,
-      '#options' => [
-        // '' => $this->t('Gender'),
-        "Male" => $this->t('Male'),
-        "Female" => $this->t('Female'),
-        "Others" => $this->t('Others'),
-      ],
-      '#attributes' => [
-        'class' => [
-          'peer',
-          'w-full',
-          'lg:max-w-lg',
-          'text-base',
-          's:text-sm',
-          'xs:text-sm',
-          'font-medium',
-          'select',
-          'rounded-lg',
-          'border',
-          'border-gray-300',
-          'px-2.5',
-          'pb-2.5',
-          'pt-4'
-        ],
-        'id' => 'gender',
-      ],
-      '#prefix' => '<div class="errors-gender"><div class="relative">',
-      '#suffix' => '</div></div>',
-    ];
-
-    $form['relations'] = [
-      '#type' => 'select',
-      '#title' => $this->t('Relationship'),
-      '#required' => TRUE,
-      '#options' => [
-        '' => $this->t('Relationship*'),
-        "Mother" => $this->t('Mother'),
-        "Father" => $this->t('Father'),
-        "Sister" => $this->t('Sister'),
-        "Brother" => $this->t('Brother'),
-        "Wife" => $this->t('Wife'),
-        "Husband" => $this->t('Husband'),
-        "Daughter" => $this->t('Daughter'),
-        "Son" => $this->t('Son'),
-      ],
-      '#attributes' => [
-        'class' => [
-          'peer',
-          'w-full',
-          'lg:max-w-lg',
-          'text-base',
-          's:text-sm',
-          'xs:text-sm',
-          'font-medium',
-          'select',
-          'rounded-lg',
-          'border',
-          'border-gray-300',
-          'px-2.5',
-          'pb-2.5',
-          'pt-4'
-        ],
-        'id' => 'relations',
-      ],
-      '#prefix' => '<div class="errors-relations"><div class="relative">',
-      '#suffix' => '</div></div>',
-    ];
-
-    $form['phone_number'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Mobile Number'),
-      '#required' => TRUE,
-      '#attributes' => [
-        'class' => [
-          'peer',
-          'w-full',
-          'lg:max-w-lg',
-          'text-base',
-          's:text-sm',
-          'xs:text-sm',
-          'rounded-lg',
-          'border',
-          'border-gray-300',
-          'px-2.5',
-          'pb-2.5',
-          'pt-4'
-        ],
-        'maxlength' => 10,
-        'minlength' => 10,
-        'id' => 'phone_number',
-        // 'onkeypress' => 'return validateNumber(event)',
-        'placeholder' => ' ',
-      ],
-      '#prefix' => '<div class="errors-phone_number"><div class="relative">',
-      '#suffix' => '</div></div>',
-    ];
-
-    $form['email'] = [
-      '#type' => 'email',
-      '#title' => $this->t('Email ID'),
-      '#required' => TRUE,
-      '#attributes' => [
-        'class' => [
-          'peer',
-          'w-full',
-          'lg:max-w-lg',
-          'text-base',
-          's:text-sm',
-          'xs:text-sm',
-          'rounded-lg',
-          'border',
-          'border-gray-300',
-          'px-2.5',
-          'pb-2.5',
-          'pt-4'
-        ],
-        'placeholder' => ' ',
-        'id' => 'email',
-      ],
-      '#prefix' => '<div class="errors-email"><div class="relative">',
-      '#suffix' => '</div></div>',
-    ];
-
-    $form['upload_file'] = [
-      '#type' => 'file',
-      '#title' => $this->t('<span class="font-nevis">Upload Picture</span>'),
-      '#description' => $this->t('<span class="text-xs">(Supported file types: JPG, JPEG & PNG, 2MB max)</span>'),
-      '#required' => TRUE,
-      '#required_error' => $this->t('Please upload a file'),
-      '#upload_validators' => [
-        'file_validate_extensions' => ['jpg', 'jpeg', 'png'],
-        'file_validate_size' => [2 * 1024 * 1024],  // 2MB max
-      ],
-      '#attributes' => [
-        'class' => [
-          'peer',
-          'w-1/2',
-          'lg:max-w-lg',
-          'px-2.5',
-          'pb-2.5',
-          'pt-4',
-          'text-sm',
-          'text-medium_dark',
-          'bg-transparent',
-          'rounded-lg',
-          'text-base',
-          's:text-sm',
-          'xs:text-sm',
-          'rounded-lg',
-          'border',
-          'border-gray-300 '
-        ]
-      ],
-      '#prefix' => '<div class="file-upload-wrapper file-upload-container no-float-label">',
-      '#suffix' => '<div class="upload-file-error"></div></div>',
-    ];
-
-
-
-    $form['terms'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('<span>I agree to the <a href="" class="link link-primary text-blue-600 underline hover:text-blue-900" target="_blank">Terms and Conditions</a></span>'),
-      '#required' => TRUE,
-      '#required_error' => $this->t('You must agree to the Terms and Conditions'),
-      '#attributes' => [
-        'class' => ['checkbox','w-6', 'h-6', 'rounded', 'cursor-pointer', 'border', 'border-gray-400'],
-        'id' => 'terms',
-      ],
-      '#prefix' => '<div class="terms-container flex items-center space-x-2 no-float-label relative">',
-      '#suffix' => '</div><div class="error-message-wrapper"></div>',
-    ];
-
-
-
-
-    $form['actions']['submit'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Submit'),
-      '#attributes' => [
-        'class' => [
-          'btn',
-          'btn-warning',
-          'lg:h-14',        // height ~56px (close to 50px you had)
-          'lg:w-44',        // width ~176px (close to 180px)
-          'xs:h-10',        // smaller height on extra-small
-          'text-white',     // white text
-          'capitalize',
-          'text-lg',        // ~18px (close to your 20px)
-          'font-semibold',  // font-weight: 600
-          'cursor-pointer', // pointer cursor
-          'rounded-[10px]', // border-radius 10px
-          'bg-[#ffcc00]',   // background color
-          'px-[2px]',       // padding left/right 2px
-          'pt-[2px]',       // padding top 2px
-          'pb-[4px]',       // padding bottom 4px
-          'submitBtn',
-          'engage-btn',
-        ],
-
-      ],
-      // '#ajax' => [
-      //   'callback' => '::ajaxCallback',
-      //   'wrapper' => 'add-family-member-form-wrapper',
-      //   'effect' => 'fade',
-      // ],
-    ];
-    $form['actions']['cancel'] = [
-      '#type' => 'button',
-      '#value' => $this->t('Cancel'),
-      '#attributes' => [
-        'onclick' => 'window.location.reload()',
-        'class' => [
-          'btn',
-          'bg-transparent',
-          'text-black/75',
-          'px-14',
-          'text-[1.125rem]',
-          "font-['Open_Sans']",
-          'rounded-[10px]',
-          'transition-colors',
-          'duration-200',
-          'ease-in-out',
-          'border',
-          'border-black/25',
-          'cursor-pointer',
-          'inline',
-          'font-bold',
-          'btn-outline',
-          'lg:h-14',
-          'lg:w-44',
-          'xs:h-10',
-          'capitalize',
-          'text-medium_dark',
-          'button',
-          'rounded-lg'
-        ],
-      ],
-    ];
-    $form['#theme'] = 'add-family-member';
-    $form['#attached']['library'][] = 'profile/add-family-member-library';
-    $form['#attached']['library'][] = 'global_module/ajax_loader';
-    return $form;
+    $form = $this->buildFormContainer($form);
+    $form = $this->addIdentityFields($form, $form_state);
+    $form = $this->addRelationshipFields($form);
+    $form = $this->addContactFields($form);
+    $form = $this->addUploadAndTermsFields($form);
+    $form = $this->addActionFields($form);
+    return $this->finalizeForm($form);
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state)
@@ -456,6 +146,231 @@ class AddFamilyMemberForm extends FormBase
       \Drupal::logger('profile')->error('API error: @message', ['@message' => $e->getMessage()]);
       $form_state->setRedirect('profile.family_failure');
     }
+  }
+
+  protected function buildFormContainer(array $form): array
+  {
+    $form['#prefix'] = '<div id="add-family-member-form-wrapper">';
+    $form['#suffix'] = '</div>';
+    $form['#attributes']['class'][] = 'form-sec p-4 lg:px-10 lg:py-12 bg-white text-center lg:text-start s:mb-24 xs:mb-20';
+    $form['user_id'] = [
+      '#type' => 'hidden',
+      '#attributes' => ['id' => 'user_id'],
+    ];
+
+    return $form;
+  }
+
+  protected function addIdentityFields(array $form, FormStateInterface $form_state): array
+  {
+    $form['first_name'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Name'),
+      '#required' => TRUE,
+      '#attributes' => [
+        'class' => [
+          'peer', 'w-full', 'lg:max-w-lg', 'px-2.5', 'pb-2.5', 'pt-4', 'text-sm',
+          'text-medium_dark', 'bg-transparent', 'rounded-lg', 'border', 'border-gray-300',
+          'appearance-none', 'text-base', 's:text-sm', 'xs:text-sm',
+        ],
+        'placeholder' => ' ',
+        'autocomplete' => 'off',
+        'id' => 'first_name',
+      ],
+      '#prefix' => '<div class="errors-first_name"><div class="relative">',
+      '#suffix' => '</div></div>',
+    ];
+
+    $form['calendar'] = [
+      '#type' => 'date',
+      '#title' => $this->t('Date of Birth'),
+      '#required' => TRUE,
+      '#attributes' => [
+        'class' => [
+          'peer', 'w-full', 'lg:max-w-lg', 'px-2.5', 'pb-2.5', 'pt-4', 'text-sm',
+          'text-medium_dark', 'bg-transparent', 'rounded-lg', 'border', 'border-gray-300',
+          'text-base', 's:text-sm', 'xs:text-sm',
+        ],
+        'placeholder' => 'DD-MM-YYYY',
+        'id' => 'calendar',
+        'max' => date('Y-m-d'),
+      ],
+      '#prefix' => '<div class="errors-calendar"><div class="relative">',
+      '#suffix' => $this->getDateErrorMarkup($form_state, 'calendar') . '</div></div>',
+    ];
+
+    return $form;
+  }
+
+  protected function addRelationshipFields(array $form): array
+  {
+    $form['gender'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Gender'),
+      '#required' => TRUE,
+      '#options' => [
+        'Male' => $this->t('Male'),
+        'Female' => $this->t('Female'),
+        'Others' => $this->t('Others'),
+      ],
+      '#attributes' => [
+        'class' => [
+          'peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm',
+          'font-medium', 'select', 'rounded-lg', 'border', 'border-gray-300',
+          'px-2.5', 'pb-2.5', 'pt-4',
+        ],
+        'id' => 'gender',
+      ],
+      '#prefix' => '<div class="errors-gender"><div class="relative">',
+      '#suffix' => '</div></div>',
+    ];
+
+    $form['relations'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Relationship'),
+      '#required' => TRUE,
+      '#options' => [
+        '' => $this->t('Relationship*'),
+        'Mother' => $this->t('Mother'),
+        'Father' => $this->t('Father'),
+        'Sister' => $this->t('Sister'),
+        'Brother' => $this->t('Brother'),
+        'Wife' => $this->t('Wife'),
+        'Husband' => $this->t('Husband'),
+        'Daughter' => $this->t('Daughter'),
+        'Son' => $this->t('Son'),
+      ],
+      '#attributes' => [
+        'class' => [
+          'peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm',
+          'font-medium', 'select', 'rounded-lg', 'border', 'border-gray-300',
+          'px-2.5', 'pb-2.5', 'pt-4',
+        ],
+        'id' => 'relations',
+      ],
+      '#prefix' => '<div class="errors-relations"><div class="relative">',
+      '#suffix' => '</div></div>',
+    ];
+
+    return $form;
+  }
+
+  protected function addContactFields(array $form): array
+  {
+    $form['phone_number'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Mobile Number'),
+      '#required' => TRUE,
+      '#attributes' => [
+        'class' => [
+          'peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm',
+          'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4',
+        ],
+        'maxlength' => 10,
+        'minlength' => 10,
+        'id' => 'phone_number',
+        'placeholder' => ' ',
+      ],
+      '#prefix' => '<div class="errors-phone_number"><div class="relative">',
+      '#suffix' => '</div></div>',
+    ];
+
+    $form['email'] = [
+      '#type' => 'email',
+      '#title' => $this->t('Email ID'),
+      '#required' => TRUE,
+      '#attributes' => [
+        'class' => [
+          'peer', 'w-full', 'lg:max-w-lg', 'text-base', 's:text-sm', 'xs:text-sm',
+          'rounded-lg', 'border', 'border-gray-300', 'px-2.5', 'pb-2.5', 'pt-4',
+        ],
+        'placeholder' => ' ',
+        'id' => 'email',
+      ],
+      '#prefix' => '<div class="errors-email"><div class="relative">',
+      '#suffix' => '</div></div>',
+    ];
+
+    return $form;
+  }
+
+  protected function addUploadAndTermsFields(array $form): array
+  {
+    $form['upload_file'] = [
+      '#type' => 'file',
+      '#title' => $this->t('<span class="font-nevis">Upload Picture</span>'),
+      '#description' => $this->t('<span class="text-xs">(Supported file types: JPG, JPEG & PNG, 2MB max)</span>'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('Please upload a file'),
+      '#upload_validators' => [
+        'file_validate_extensions' => ['jpg', 'jpeg', 'png'],
+        'file_validate_size' => [2 * 1024 * 1024],
+      ],
+      '#attributes' => [
+        'class' => [
+          'peer', 'w-1/2', 'lg:max-w-lg', 'px-2.5', 'pb-2.5', 'pt-4', 'text-sm',
+          'text-medium_dark', 'bg-transparent', 'rounded-lg', 'text-base', 's:text-sm',
+          'xs:text-sm', 'rounded-lg', 'border', 'border-gray-300 ',
+        ]
+      ],
+      '#prefix' => '<div class="file-upload-wrapper file-upload-container no-float-label">',
+      '#suffix' => '<div class="upload-file-error"></div></div>',
+    ];
+
+    $form['terms'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('<span>I agree to the <a href="" class="link link-primary text-blue-600 underline hover:text-blue-900" target="_blank">Terms and Conditions</a></span>'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('You must agree to the Terms and Conditions'),
+      '#attributes' => [
+        'class' => ['checkbox', 'w-6', 'h-6', 'rounded', 'cursor-pointer', 'border', 'border-gray-400'],
+        'id' => 'terms',
+      ],
+      '#prefix' => '<div class="terms-container flex items-center space-x-2 no-float-label relative">',
+      '#suffix' => '</div><div class="error-message-wrapper"></div>',
+    ];
+
+    return $form;
+  }
+
+  protected function addActionFields(array $form): array
+  {
+    $form['actions']['submit'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Submit'),
+      '#attributes' => [
+        'class' => [
+          'btn', 'btn-warning', 'lg:h-14', 'lg:w-44', 'xs:h-10', 'text-white',
+          'capitalize', 'text-lg', 'font-semibold', 'cursor-pointer', 'rounded-[10px]',
+          'bg-[#ffcc00]', 'px-[2px]', 'pt-[2px]', 'pb-[4px]', 'submitBtn', 'engage-btn',
+        ],
+      ],
+    ];
+
+    $form['actions']['cancel'] = [
+      '#type' => 'button',
+      '#value' => $this->t('Cancel'),
+      '#attributes' => [
+        'onclick' => 'window.location.reload()',
+        'class' => [
+          'btn', 'bg-transparent', 'text-black/75', 'px-14', 'text-[1.125rem]',
+          "font-['Open_Sans']", 'rounded-[10px]', 'transition-colors', 'duration-200',
+          'ease-in-out', 'border', 'border-black/25', 'cursor-pointer', 'inline',
+          'font-bold', 'btn-outline', 'lg:h-14', 'lg:w-44', 'xs:h-10', 'capitalize',
+          'text-medium_dark', 'button', 'rounded-lg'
+        ],
+      ],
+    ];
+
+    return $form;
+  }
+
+  protected function finalizeForm(array $form): array
+  {
+    $form['#theme'] = 'add-family-member';
+    $form['#attached']['library'][] = 'profile/add-family-member-library';
+    $form['#attached']['library'][] = 'global_module/ajax_loader';
+    return $form;
   }
 
 

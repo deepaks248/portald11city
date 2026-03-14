@@ -40,14 +40,38 @@ class PasswordChangeServiceTest extends UnitTestCase {
     $this->vaultConfigService = $this->createMock(VaultConfigService::class);
     $this->apiHttpClientService = $this->createMock(ApiHttpClientService::class);
 
-    $this->service = new PasswordChangeService(
+    $this->service = new class(
       $this->globalVariables,
       $this->loggerFactory,
       $this->currentUser,
       $this->session,
       $this->vaultConfigService,
       $this->apiHttpClientService
-    );
+    ) extends PasswordChangeService {
+      public function mismatchMessage(string $newPass, string $confirmPass): ?string {
+        return $this->getPasswordMismatchMessage($newPass, $confirmPass);
+      }
+
+      public function idamConfig(): string {
+        return $this->getIdamConfig();
+      }
+
+      public function scimUserId(string $email, string $idamconfig): ?string {
+        return $this->getScimUserId($email, $idamconfig);
+      }
+
+      public function oldPasswordValid(string $email, string $oldPass, string $idamconfig): bool {
+        return $this->isOldPasswordValid($email, $oldPass, $idamconfig);
+      }
+
+      public function passwordPayload(string $newPass): array {
+        return $this->buildPasswordUpdatePayload($newPass);
+      }
+
+      public function changeMessage(array $response, string $email, string $defaultMessage): string {
+        return $this->resolvePasswordChangeMessage($response, $email, $defaultMessage);
+      }
+    };
 
     $this->vaultConfigService->method('getGlobalVariables')->willReturn([
       'applicationConfig' => [
@@ -142,5 +166,75 @@ class PasswordChangeServiceTest extends UnitTestCase {
     $result = $this->service->changePassword('old', 'new', 'new');
     $this->assertFalse($result['status']);
     $this->assertEquals('Unexpected error occurred.', $result['message']);
+  }
+
+  /**
+   * @covers ::getPasswordMismatchMessage
+   * @covers ::getIdamConfig
+   * @covers ::buildPasswordUpdatePayload
+   */
+  public function testPasswordChangeHelpers(): void {
+    $this->assertSame('New password and confirm password do not match.', $this->service->mismatchMessage('new', 'different'));
+    $this->assertNull($this->service->mismatchMessage('same', 'same'));
+    $this->assertSame('idam.example.com', $this->service->idamConfig());
+
+    $payload = $this->service->passwordPayload('Secret123!');
+    $this->assertSame('replace', $payload['Operations'][0]['op']);
+    $this->assertSame('password', $payload['Operations'][0]['path']);
+    $this->assertSame('Secret123!', $payload['Operations'][0]['value']);
+  }
+
+  /**
+   * @covers ::getScimUserId
+   * @covers ::isOldPasswordValid
+   */
+  public function testScimAndOldPasswordHelpers(): void {
+    $this->apiHttpClientService->expects($this->once())
+      ->method('getApi')
+      ->willReturn(['Resources' => [['id' => 'abc123']]]);
+    $this->assertSame('abc123', $this->service->scimUserId('test@example.com', 'idam.example.com'));
+
+    $this->apiHttpClientService = $this->createMock(ApiHttpClientService::class);
+    $service = new class(
+      $this->globalVariables,
+      $this->loggerFactory,
+      $this->currentUser,
+      $this->session,
+      $this->vaultConfigService,
+      $this->apiHttpClientService
+    ) extends PasswordChangeService {
+      public function oldPasswordValid(string $email, string $oldPass, string $idamconfig): bool {
+        return $this->isOldPasswordValid($email, $oldPass, $idamconfig);
+      }
+    };
+
+    $this->apiHttpClientService->method('postIdam')->willReturn(['access_token' => 'token']);
+    $this->assertTrue($service->oldPasswordValid('test@example.com', 'old', 'idam.example.com'));
+  }
+
+  /**
+   * @covers ::resolvePasswordChangeMessage
+   */
+  public function testResolvePasswordChangeMessageBranches(): void {
+    $this->assertSame(
+      'Password update failed',
+      $this->service->changeMessage(['error' => 'fail'], 'test@example.com', 'default')
+    );
+    $this->assertSame(
+      'Password changed successfully. Please log in again.',
+      $this->service->changeMessage(['emails' => ['test@example.com']], 'test@example.com', 'default')
+    );
+    $this->assertStringContainsString(
+      'already used in your last 3 password changes',
+      $this->service->changeMessage(['detail' => 'Password history violation'], 'test@example.com', 'default')
+    );
+    $this->assertSame(
+      'Specific detail',
+      $this->service->changeMessage(['detail' => 'Specific detail'], 'test@example.com', 'default')
+    );
+    $this->assertSame(
+      'default',
+      $this->service->changeMessage([], 'test@example.com', 'default')
+    );
   }
 }

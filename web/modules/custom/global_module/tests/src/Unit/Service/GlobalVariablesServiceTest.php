@@ -54,14 +54,30 @@ class GlobalVariablesServiceTest extends UnitTestCase {
     $container->set('logger.factory', $this->loggerFactory);
     \Drupal::setContainer($container);
 
-    $this->service = new GlobalVariablesService(
+    $this->service = new class(
       $this->httpClient,
       $this->loggerFactory,
       $this->cache,
       $this->apimanTokenService,
       $this->vaultConfigService,
       $this->apiHttpClientService
-    );
+    ) extends GlobalVariablesService {
+      public function validateUploadedFileProxy(): ?JsonResponse {
+        return $this->validateUploadedFile();
+      }
+
+      public function detectUploadedFileTypeProxy(string $extension): ?array {
+        return $this->detectUploadedFileType($extension);
+      }
+
+      public function buildFileUploadResponseProxy(Request $request, ?array $globalVariables): JsonResponse {
+        return $this->buildFileUploadResponse($request, $globalVariables);
+      }
+
+      public function uploadProcessedFileProxy(Request $request, array $globalVariables, string $extension, array $fileType): JsonResponse {
+        return $this->uploadProcessedFile($request, $globalVariables, $extension, $fileType);
+      }
+    };
   }
 
   /**
@@ -227,6 +243,83 @@ class GlobalVariablesServiceTest extends UnitTestCase {
     // If mime detection still fails, it might return 200 with "File content not allowed!"
     // But we want to reach 500.
     $this->assertTrue(in_array($result->getStatusCode(), [200, 500]));
+    unlink($tmpFile);
+  }
+
+  /**
+   * @covers ::validateUploadedFile
+   * @covers ::detectUploadedFileType
+   */
+  public function testFileUploadHelpers() {
+    $_FILES = [];
+    $result = $this->service->validateUploadedFileProxy();
+    $data = json_decode($result->getContent(), TRUE);
+    $this->assertFalse($data['status']);
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'test.jpg');
+    file_put_contents($tmpFile, "\xFF\xD8\xFF\xE0\x00\x10\x4A\x46\x49\x46");
+    $_FILES['uploadedfile1'] = [
+      'name' => 'test.jpg',
+      'tmp_name' => $tmpFile,
+    ];
+
+    $this->assertNull($this->service->validateUploadedFileProxy());
+    $this->assertSame(['id' => 2, 'type' => 'image'], $this->service->detectUploadedFileTypeProxy('jpg'));
+    $this->assertSame(['id' => 4, 'type' => 'file'], $this->service->detectUploadedFileTypeProxy('pdf'));
+    $this->assertSame(['id' => 1, 'type' => 'video'], $this->service->detectUploadedFileTypeProxy('mp4'));
+    $this->assertNull($this->service->detectUploadedFileTypeProxy('exe'));
+
+    unlink($tmpFile);
+  }
+
+  /**
+   * @covers ::buildFileUploadResponse
+   * @covers ::uploadProcessedFile
+   */
+  public function testBuildAndUploadProcessedFileHelpers() {
+    $request = Request::create('/fileupload', 'POST');
+    $globalVariables = [
+      'applicationConfig' => ['config' => ['fileuploadPath' => '/upload/']]
+    ];
+
+    $_FILES['uploadedfile1'] = [
+      'name' => 'bad.php.jpg',
+      'tmp_name' => tempnam(sys_get_temp_dir(), 'bad.jpg'),
+    ];
+    file_put_contents($_FILES['uploadedfile1']['tmp_name'], "\xFF\xD8\xFF\xE0\x00\x10\x4A\x46\x49\x46");
+    $multipleExt = $this->service->buildFileUploadResponseProxy($request, NULL);
+    $this->assertStringContainsString('Multiple file extensions not allowed', $multipleExt->getContent());
+    unlink($_FILES['uploadedfile1']['tmp_name']);
+
+    $_FILES['uploadedfile1'] = [
+      'name' => 'bad.exe',
+      'tmp_name' => tempnam(sys_get_temp_dir(), 'bad.exe'),
+    ];
+    file_put_contents($_FILES['uploadedfile1']['tmp_name'], "%PDF-1.4");
+    $unsupported = $this->service->buildFileUploadResponseProxy($request, NULL);
+    $this->assertStringContainsString('Unsupported file type.', $unsupported->getContent());
+    unlink($_FILES['uploadedfile1']['tmp_name']);
+
+    $uuid = $this->createMock(UuidInterface::class);
+    $uuid->method('generate')->willReturn('helperuuid');
+    \Drupal::getContainer()->set('uuid', $uuid);
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'good.jpg');
+    file_put_contents($tmpFile, "\xFF\xD8\xFF\xE0\x00\x10\x4A\x46\x49\x46");
+    $_FILES['uploadedfile1'] = [
+      'name' => 'good.jpg',
+      'tmp_name' => $tmpFile,
+    ];
+
+    $response = $this->createMock(ResponseInterface::class);
+    $body = $this->createMock(StreamInterface::class);
+    $body->method('getContents')->willReturn('uploaded');
+    $response->method('getBody')->willReturn($body);
+    $this->httpClient->method('request')->willReturn($response);
+
+    $result = $this->service->uploadProcessedFileProxy($request, $globalVariables, 'jpg', ['id' => 2, 'type' => 'image']);
+    $data = json_decode($result->getContent(), TRUE);
+    $this->assertSame('/upload/helperuuid.jpg', $data['fileName']);
     unlink($tmpFile);
   }
 

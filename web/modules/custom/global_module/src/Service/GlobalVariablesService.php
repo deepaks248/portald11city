@@ -91,16 +91,21 @@ class GlobalVariablesService
     define('UPLOAD_FILE', 'uploadedfile1');
     $globalVariables = $this->vaultConfigService->getGlobalVariables();
 
+    $result = $this->validateUploadedFile();
+    if (!$result instanceof JsonResponse) {
+      $result = $this->buildFileUploadResponse($request, $globalVariables);
+    }
+
+    return $result;
+  }
+
+  protected function validateUploadedFile(): ?JsonResponse
+  {
     if (!isset($_FILES[UPLOAD_FILE])) {
       return new JsonResponse(['status' => FALSE, 'message' => 'No file uploaded.']);
     }
 
-    $originalName = $_FILES[UPLOAD_FILE]['name'];
-    $tmpName = $_FILES[UPLOAD_FILE]['tmp_name'];
-    $mimeType = mime_content_type($tmpName);
-    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-    $extnParts = explode(".", $originalName);
-
+    $mimeType = mime_content_type($_FILES[UPLOAD_FILE]['tmp_name']);
     $allowedTypes = [
       'image/jpeg',
       'image/png',
@@ -113,34 +118,58 @@ class GlobalVariablesService
       return new JsonResponse(['status' => FALSE, 'message' => 'File content not allowed!']);
     }
 
+    return NULL;
+  }
+
+  protected function detectUploadedFileType(string $extension): ?array
+  {
+    $extensionLower = strtolower($extension);
+    $fileType = NULL;
+
+    if (in_array($extensionLower, ['jpg', 'jpeg', 'png'])) {
+      $fileType = ['id' => 2, 'type' => 'image'];
+    }
+    elseif (in_array($extensionLower, ['pdf', 'doc', 'docx', 'mp3', 'xlsx'])) {
+      $fileType = ['id' => 4, 'type' => 'file'];
+    }
+    elseif ($extensionLower === 'mp4') {
+      $fileType = ['id' => 1, 'type' => 'video'];
+    }
+
+    return $fileType;
+  }
+
+  protected function buildFileUploadResponse(Request $request, ?array $globalVariables): JsonResponse
+  {
+    $originalName = $_FILES[UPLOAD_FILE]['name'];
+    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+    $extnParts = explode(".", $originalName);
+
     if (count($extnParts) > 2) {
       return new JsonResponse(['message' => 'Multiple file extensions not allowed', self::STR_STS => FALSE]);
     }
 
-    // Detect file type
-    $fileTypeVal = NULL;
-    $fileTypeType = NULL;
-    $extensionLower = strtolower($extension);
-    if (in_array($extensionLower, ['jpg', 'jpeg', 'png'])) {
-      $fileTypeVal = 2;
-      $fileTypeType = "image";
-    } elseif (in_array($extensionLower, ['pdf', 'doc', 'docx', 'mp3', 'xlsx'])) {
-      $fileTypeVal = 4;
-      $fileTypeType = "file";
-    } elseif ($extensionLower === 'mp4') {
-      $fileTypeVal = 1;
-      $fileTypeType = "video";
-    }
-
-    if (!$fileTypeVal) {
+    $fileType = $this->detectUploadedFileType($extension);
+    if ($fileType === NULL) {
       return new JsonResponse(['message' => 'Unsupported file type.', self::STR_STS => FALSE]);
     }
 
+    return $this->uploadProcessedFile($request, $globalVariables, $extension, $fileType);
+  }
+
+  protected function uploadProcessedFile(Request $request, array $globalVariables, string $extension, array $fileType): JsonResponse
+  {
+    $tmpName = $_FILES[UPLOAD_FILE]['tmp_name'];
     $uuidFilename = \Drupal::service('uuid')->generate() . '.' . $extension;
     $fileUplPath = $globalVariables['applicationConfig']['config']['fileuploadPath'];
+    $mimeType = mime_content_type($tmpName);
+    $result = new JsonResponse([
+      'fileName' => $fileUplPath . $uuidFilename,
+      'fileTypeId' => $fileType['id'],
+      'fileTypeVal' => $fileType['type'],
+    ]);
 
     try {
-      // Upload using HTTP client with multipart
       $response = $this->httpClient->request('POST', $fileUplPath . 'upload_media_test1.php', [
         'verify' => FALSE,
         'multipart' => [
@@ -161,21 +190,16 @@ class GlobalVariablesService
 
       $responseBody = $response->getBody()->getContents();
       $this->logger->debug('Upload raw response: ' . $responseBody);
-      // Optional profilePic update
-      if ($request->request->get('userPic') === 'profilePic') {
-        $profilePic = $fileUplPath . $uuidFilename;
-        return $this->updateUserProfilePic($profilePic);
-      }
 
-      return new JsonResponse([
-        'fileName' => $fileUplPath . $uuidFilename,
-        'fileTypeId' => $fileTypeVal,
-        'fileTypeVal' => $fileTypeType,
-      ]);
+      if ($request->request->get('userPic') === 'profilePic') {
+        $result = $this->updateUserProfilePic($fileUplPath . $uuidFilename);
+      }
     } catch (\Exception $e) {
       $this->logger->error('File upload failed: @error', ['@error' => $e->getMessage()]);
-      return new JsonResponse(['status' => FALSE, 'message' => 'Upload error'], 500);
+      $result = new JsonResponse(['status' => FALSE, 'message' => 'Upload error'], 500);
     }
+
+    return $result;
   }
 
 

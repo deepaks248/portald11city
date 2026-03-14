@@ -35,10 +35,11 @@ class UserInfoValidator
   public function validate()
   {
     $accessToken = $this->session->get('login_logout.access_token');
+    $result = NULL;
 
     if (!$accessToken) {
       $this->logger->notice('No access token found in session.');
-      return NULL;
+      return $result;
     }
 
     try {
@@ -54,14 +55,15 @@ class UserInfoValidator
       $data = json_decode($response->getBody()->getContents(), TRUE);
 
       if (!empty($data['sub'])) {
-        return $data;
-      } else {
+        $result = $data;
+      }
+      else {
         $this->logger->warning('UserInfo check failed: no sub returned.');
-        return NULL;
       }
     } catch (\Exception $e) {
       $this->logger->error('UserInfo validation error: @msg', ['@msg' => $e->getMessage()]);
-      return NULL;
     }
+
+    return $result;
   }
 }

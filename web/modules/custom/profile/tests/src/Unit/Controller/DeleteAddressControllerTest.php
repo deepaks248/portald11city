@@ -40,7 +40,15 @@ class DeleteAddressControllerTest extends UnitTestCase {
     $container->set('entity_type.repository', $this->entityTypeRepository);
     \Drupal::setContainer($container);
 
-    $this->controller = new DeleteAddressController();
+    $this->controller = new class extends DeleteAddressController {
+      public function isAddressNodeProxy(?Node $node): bool {
+        return $this->isAddressNode($node);
+      }
+
+      public function canDeleteAddressProxy(Node $node, AccountInterface $account): bool {
+        return $this->canDeleteAddress($node, $account);
+      }
+    };
   }
 
   /**
@@ -116,5 +124,26 @@ class DeleteAddressControllerTest extends UnitTestCase {
     $this->assertInstanceOf(JsonResponse::class, $response);
     $this->assertEquals(200, $response->getStatusCode());
     $this->assertEquals(json_encode(['status' => 'success']), $response->getContent());
+  }
+
+  /**
+   * @covers ::isAddressNode
+   * @covers ::canDeleteAddress
+   */
+  public function testAccessHelpers() {
+    $node = $this->getMockBuilder(Node::class)->disableOriginalConstructor()->getMock();
+    $node->method('bundle')->willReturn('add_address');
+    $node->method('getOwnerId')->willReturn(7);
+
+    $account = $this->createMock(AccountInterface::class);
+    $account->method('hasPermission')->willReturnMap([
+      ['delete any add_address content', FALSE],
+      ['delete own add_address content', TRUE],
+    ]);
+    $account->method('id')->willReturn(7);
+
+    $this->assertTrue($this->controller->isAddressNodeProxy($node));
+    $this->assertFalse($this->controller->isAddressNodeProxy(NULL));
+    $this->assertTrue($this->controller->canDeleteAddressProxy($node, $account));
   }
 }

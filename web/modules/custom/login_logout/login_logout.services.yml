@@ -23,6 +23,7 @@ services:
     arguments:
       - '@http_client'
       - '@logger.channel.login_logout'
+      - '@global_module.vault_config_service'
 
   login_logout.no_cache_subscriber:
     class: Drupal\login_logout\EventSubscriber\NoCacheSubscriber

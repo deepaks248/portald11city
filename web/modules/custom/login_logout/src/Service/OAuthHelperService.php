@@ -5,6 +5,7 @@ namespace Drupal\login_logout\Service;
 use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
 use Drupal\Core\Site\Settings;
+use Drupal\global_module\Service\VaultConfigService;
 
 class OAuthHelperService
 {
@@ -13,13 +14,16 @@ class OAuthHelperService
     public const APP_JSON = 'application/json';
     protected $logger;
     protected $httpClient;
+    protected $vaultConfigService;
 
     public function __construct(
         ClientInterface $http_client,
         LoggerInterface $logger,
+        VaultConfigService $vaultConfigService
     ) {
         $this->httpClient = $http_client;
         $this->logger = $logger;
+        $this->vaultConfigService = $vaultConfigService;
     }
 
     public function detectFromRules(string $agent, array $rules, string $default): string
@@ -55,10 +59,11 @@ class OAuthHelperService
 
     public function prepareAuthPayload($flow_id, $email, $password)
     {
+        $authenticatorId = $this->vaultConfigService->getGlobalVariables()['applicationConfig']['config']['authenticatorId'];
         return [
             "flowId" => $flow_id,
             "selectedAuthenticator" => [
-                "authenticatorId" => Settings::get('idam_local_authenticator_id'),
+                "authenticatorId" => $authenticatorId,
                 "params" => ["username" => $email, "password" => $password],
             ],
         ];

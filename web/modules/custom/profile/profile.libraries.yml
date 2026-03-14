@@ -7,6 +7,7 @@ profile_assets:
     js/profile-upload.js: {}
     js/profile-ui.js: {}
     js/profile-drupal-behaviors.js: {}
+    https://unpkg.com/flowbite@1.8.1/dist/flowbite.min.js: { type: external }
   dependencies:
     - core/jquery
     - core/drupal

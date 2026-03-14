@@ -3,9 +3,9 @@
 namespace Drupal\Tests\login_logout\Unit\Service;
 
 use Drupal\login_logout\Service\OAuthHelperService;
+use Drupal\global_module\Service\VaultConfigService;
 use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
-use Drupal\Core\Site\Settings;
 use Drupal\Tests\UnitTestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
@@ -18,6 +18,7 @@ class OAuthHelperServiceTest extends UnitTestCase {
 
   protected $httpClient;
   protected $logger;
+  protected $vaultConfigService;
   protected $service;
 
   protected function setUp(): void {
@@ -25,12 +26,21 @@ class OAuthHelperServiceTest extends UnitTestCase {
 
     $this->httpClient = $this->createMock(ClientInterface::class);
     $this->logger = $this->createMock(LoggerInterface::class);
+    $this->vaultConfigService = $this->createMock(VaultConfigService::class);
 
-    new Settings([
-      'idam_local_authenticator_id' => 'local_auth_id',
+    $this->vaultConfigService->method('getGlobalVariables')->willReturn([
+      'applicationConfig' => [
+        'config' => [
+          'authenticatorId' => 'local_auth_id',
+        ],
+      ],
     ]);
 
-    $this->service = new OAuthHelperService($this->httpClient, $this->logger);
+    $this->service = new OAuthHelperService(
+      $this->httpClient,
+      $this->logger,
+      $this->vaultConfigService
+    );
   }
 
   /**

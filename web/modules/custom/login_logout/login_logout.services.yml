@@ -100,3 +100,31 @@ services:
       - '@logger.factory'
       - '@datetime.time'
       - '@tempstore.private'
+
+  login_logout.user_registration_submit_handler:
+    class: Drupal\login_logout\Service\UserRegistrationSubmitHandler
+    arguments:
+      - '@http_client'
+      - '@global_module.vault_config_service'
+      - '@global_module.apiman_token_service'
+      - '@messenger'
+      - '@entity_type.manager'
+      - '@current_user'
+      - '@request_stack'
+      - '@session'
+      - '@flood'
+      - '@lock'
+      - '@database'
+      - '@logger.factory'
+      - '@login_logout.user_registration_account_manager'
+
+  login_logout.user_registration_account_manager:
+    class: Drupal\login_logout\Service\UserRegistrationAccountManager
+    arguments:
+      - '@login_logout.oauth_login_service'
+      - '@active_sessions.session_service'
+      - '@session'
+      - '@datetime.time'
+      - '@messenger'
+      - '@module_handler'
+      - '@entity_type.manager'

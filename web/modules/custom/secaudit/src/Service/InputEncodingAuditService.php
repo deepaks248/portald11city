@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\secaudit\Service;
 
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
@@ -14,11 +15,16 @@ class InputEncodingAuditService
 {
   protected RequestStack $requestStack;
   protected LoggerChannelFactoryInterface $loggerFactory;
+  protected EncodingDetectorService $detector;
 
-  public function __construct(RequestStack $request_stack, LoggerChannelFactoryInterface $logger_factory)
-  {
+  public function __construct(
+    RequestStack $request_stack,
+    LoggerChannelFactoryInterface $logger_factory,
+    EncodingDetectorService $detector
+  ) {
     $this->requestStack = $request_stack;
     $this->loggerFactory = $logger_factory;
+    $this->detector = $detector;
   }
 
   public function detectEE1(): void
@@ -28,35 +34,25 @@ class InputEncodingAuditService
       return;
     }
 
-    $inputs = array_merge(
-      $request->query->all(),
-      $request->request->all(),
-      $request->cookies->all()
-    );
-
-    foreach ($inputs as $value) {
-      if (!is_scalar($value)) {
-        continue;
-      }
-
-      $value = (string) $value;
-      $once = rawurldecode($value);
-      $twice = rawurldecode($once);
-
-      if ($twice !== $once || $this->containsHTMLEntity($twice)) {
-        $this->logEE1($request, $value, 'double_url_encoding');
-        $request->attributes->set('_secaudit_ee1_detected', TRUE);
-        return;
-      }
-
-      $once = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-      $twice = html_entity_decode($once, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-      if ($twice !== $once) {
-        $this->logEE1($request, $value, 'double_html_encoding');
+    foreach ($this->getScalarInputs($request) as $value) {
+      $reason = $this->getEE1Reason($value);
+      if ($reason !== NULL) {
+        $this->logAnomaly($request, 'EE1', 'Double Encoded Characters detected.', $value, $reason);
         $request->attributes->set('_secaudit_ee1_detected', TRUE);
         return;
       }
     }
+  }
+
+  protected function getEE1Reason(string $value): ?string
+  {
+    if ($this->detector->hasDoubleEncoding($value)) {
+      return 'double_url_encoding';
+    }
+    if ($this->detector->hasHtmlDoubleEncoding($value)) {
+      return 'double_html_encoding';
+    }
+    return NULL;
   }
 
   public function detectEE2(): void
@@ -66,6 +62,18 @@ class InputEncodingAuditService
       return;
     }
 
+    foreach ($this->getScalarInputs($request) as $value) {
+      $reason = $this->detector->detectUnexpectedEncodingReason($value);
+      if ($reason !== NULL) {
+        $this->logAnomaly($request, 'EE2', 'Unexpected encoding used.', $value, $reason);
+        $request->attributes->set('_secaudit_ee2_detected', TRUE);
+        break;
+      }
+    }
+  }
+
+  protected function getScalarInputs(Request $request): \Generator
+  {
     $inputs = array_merge(
       $request->query->all(),
       $request->request->all(),
@@ -73,74 +81,23 @@ class InputEncodingAuditService
     );
 
     foreach ($inputs as $value) {
-      if (!is_scalar($value)) {
-        continue;
-      }
-
-      $value = (string) $value;
-      $reason = $this->detectUnexpectedEncodingReason($value);
-      if ($reason !== NULL) {
-        $this->logEE2($request, $value, $reason);
-        break;
+      if (is_scalar($value)) {
+        yield (string) $value;
       }
     }
   }
 
-  /**
-   * Returns the first matching unexpected encoding reason.
-   */
-  protected function detectUnexpectedEncodingReason(string $value): ?string
+  protected function logAnomaly(Request $request, string $code, string $message, string $value, string $reason): void
   {
-    $checks = [
-      'mixed_encoding_styles' => fn(string $candidate): bool => preg_match('/%[0-9a-fA-F]{2}/', $candidate)
-        && (preg_match('/\\\\x[0-9a-fA-F]{2}/', $candidate) || preg_match('/\\\\u[0-9a-fA-F]{4}/', $candidate)),
-      'hex_encoding' => fn(string $candidate): bool => preg_match('/\\\\x[0-9a-fA-F]{2}/', $candidate) === 1,
-      'unicode_escape_encoding' => fn(string $candidate): bool => preg_match('/\\\\u[0-9a-fA-F]{4}/', $candidate) === 1,
-      'octal_encoding' => fn(string $candidate): bool => preg_match('/\\\\[0-7]{2,3}/', $candidate) === 1,
-      'multi_byte_null_padding' => fn(string $candidate): bool => preg_match('/\x00.\x00/', $candidate) === 1
-        || preg_match('/.\x00.\x00/', $candidate) === 1,
-      'binary_or_control_characters' => fn(string $candidate): bool => preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', $candidate) === 1,
-    ];
-
-    foreach ($checks as $reason => $matcher) {
-      if ($matcher($value)) {
-        return $reason;
-      }
-    }
-
-    return NULL;
-  }
-
-  protected function containsHTMLEntity(string $value): bool
-  {
-    return preg_match('/&(lt|gt|amp|quot|apos|#\d+);/', $value) === 1;
-  }
-
-  protected function logEE1($request, string $value, string $reason): void
-  {
+    $headers = $request->headers->all();
     $this->loggerFactory->get('secaudit')->warning(
-      'EE1: Double Encoded Characters detected. IP: @ip, Path: @path, Reason: @reason, Sample Value: @sample',
+      $code . ': ' . $message . ' IP: @ip, Path: @path, Reason: @reason, Sample: @sample',
       [
-        '@ip' => $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp(),
+        '@ip' => $headers['x-real-ip'][0] ?? $request->getClientIp(),
         '@path' => $request->getPathInfo(),
         '@reason' => $reason,
         '@sample' => substr($value, 0, 200),
       ]
     );
-  }
-
-  protected function logEE2($request, string $value, string $reason): void
-  {
-    $this->loggerFactory->get('secaudit')->warning(
-      'EE2: Unexpected encoding used. IP: @ip, Path: @path, Reason: @reason, Sample: @sample',
-      [
-        '@ip' => $request->headers->all()['x-real-ip'][0] ?? $request->getClientIp(),
-        '@path' => $request->getPathInfo(),
-        '@reason' => $reason,
-        '@sample' => substr($value, 0, 200),
-      ]
-    );
-
-    $request->attributes->set('_secaudit_ee2_detected', TRUE);
   }
 }

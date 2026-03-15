@@ -4,7 +4,6 @@ namespace Drupal\login_logout\Service;
 
 use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
-use Drupal\Core\Site\Settings;
 use Drupal\global_module\Service\VaultConfigService;
 
 class OAuthHelperService
@@ -15,15 +14,21 @@ class OAuthHelperService
     protected $logger;
     protected $httpClient;
     protected $vaultConfigService;
+    protected $jwtService;
+    protected $sessionFormatter;
 
     public function __construct(
         ClientInterface $http_client,
         LoggerInterface $logger,
-        VaultConfigService $vaultConfigService
+        VaultConfigService $vaultConfigService,
+        OAuthJwtService $jwt_service,
+        OAuthSessionFormatterService $session_formatter
     ) {
         $this->httpClient = $http_client;
         $this->logger = $logger;
         $this->vaultConfigService = $vaultConfigService;
+        $this->jwtService = $jwt_service;
+        $this->sessionFormatter = $session_formatter;
     }
 
     public function detectFromRules(string $agent, array $rules, string $default): string
@@ -40,21 +45,20 @@ class OAuthHelperService
     public function matchesConditions(string $agent, array $conditions): bool
     {
         foreach ($conditions as $condition) {
-            $negate = $condition[0] === '!';
-            $token  = ltrim($condition, '!');
-
-            $found = stripos($agent, $token) !== FALSE;
-
-            if ($negate && $found) {
-                return FALSE;
-            }
-
-            if (!$negate && !$found) {
+            if (!$this->matchesCondition($agent, $condition)) {
                 return FALSE;
             }
         }
 
         return TRUE;
+    }
+
+    protected function matchesCondition(string $agent, string $condition): bool
+    {
+        $negate = $condition[0] === '!';
+        $token  = ltrim($condition, '!');
+        $found = stripos($agent, $token) !== FALSE;
+        return $negate ? !$found : $found;
     }
 
     public function prepareAuthPayload($flow_id, $email, $password)
@@ -99,20 +103,17 @@ class OAuthHelperService
 
     public function isActiveSessionLimitReached($result)
     {
-        return !empty($result['nextStep']['authenticators'][0]['authenticator']) &&
-            $result['nextStep']['authenticators'][0]['authenticator'] === 'Active Sessions Limit';
+        $authenticator = $result['nextStep']['authenticators'][0]['authenticator'] ?? '';
+        return $authenticator === 'Active Sessions Limit';
     }
 
     public function handleSessionLimit($result, $email)
     {
-        $maxSessions = $result['nextStep']['authenticators'][0]['metadata']['additionalData']['MaxSessionCount'] ?? 'unknown';
-        $sessions = json_decode($result['nextStep']['authenticators'][0]['metadata']['additionalData']['sessions'] ?? '[]', TRUE);
-        $sessionList = $this->formatSessions($sessions);
-
-        $this->logger->notice('Active sessions for user @email: @sessions', [
-            '@email' => $email,
-            '@sessions' => $sessionList,
-        ]);
+        $metadata = $result['nextStep']['authenticators'][0]['metadata']['additionalData'] ?? [];
+        $maxSessions = $metadata['MaxSessionCount'] ?? 'unknown';
+        $sessions = json_decode($metadata['sessions'] ?? '[]', TRUE);
+        
+        $this->logActiveSessions($email, $sessions);
 
         return [
             'success' => FALSE,
@@ -121,26 +122,22 @@ class OAuthHelperService
         ];
     }
 
-    public function formatSessions($sessions)
+    protected function logActiveSessions(string $email, array $sessions): void
     {
-        $sessionList = '';
-        foreach ($sessions as $s) {
-            $sessionList .= "- Browser: {$s['browser']}, Device: {$s['device']}, Last Active: " .
-                date('Y-m-d H:i:s', $s['lastAccessTime'] / 1000) . "\n";
-        }
-        return $sessionList;
+        $this->logger->notice('Active sessions for user @email: @sessions', [
+            '@email' => $email,
+            '@sessions' => $this->sessionFormatter->formatSessions($sessions),
+        ]);
     }
 
     public function handleErrorResponse($result)
     {
-        if (!empty($result['nextStep']['messages'][0]['message'])) {
-            return [
-                'success' => FALSE,
-                'code' => NULL,
-                'message' => $result['nextStep']['messages'][0]['message'],
-            ];
-        }
-        return ['success' => FALSE, 'code' => NULL, 'message' => 'Authentication failed. Please try again.'];
+        $message = $result['nextStep']['messages'][0]['message'] ?? 'Authentication failed. Please try again.';
+        return [
+            'success' => FALSE,
+            'code' => NULL,
+            'message' => $message,
+        ];
     }
 
     public function logError($message)
@@ -159,23 +156,16 @@ class OAuthHelperService
 
     public function isValidJwtFormat($jwt)
     {
-        return count(explode('.', $jwt)) === 3;
+        return $this->jwtService->isValidJwtFormat($jwt);
     }
 
     public function extractPayloadFromJwt($jwt)
     {
-        return explode('.', $jwt)[1];
+        return $this->jwtService->extractPayloadFromJwt($jwt);
     }
 
     public function decodeBase64Url($payload)
     {
-        // Decode Base64Url (replace -_ with +/ and pad with =)
-        $payload = strtr($payload, '-_', '+/');
-        $mod4 = strlen($payload) % 4;
-        if ($mod4) {
-            $payload .= str_repeat('=', 4 - $mod4);
-        }
-
-        return json_decode(base64_decode($payload), TRUE);
+        return $this->jwtService->decodeBase64Url($payload);
     }
 }

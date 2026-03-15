@@ -17,11 +17,15 @@ services:
       - '@request_stack'
       - '@logger.factory'
 
+  secaudit.encoding_detector_service:
+    class: Drupal\secaudit\Service\EncodingDetectorService
+
   secaudit.input_encoding_audit_service:
     class: Drupal\secaudit\Service\InputEncodingAuditService
     arguments:
       - '@request_stack'
       - '@logger.factory'
+      - '@secaudit.encoding_detector_service'
 
   secaudit.input_xss_audit_service:
     class: Drupal\secaudit\Service\InputXssAuditService

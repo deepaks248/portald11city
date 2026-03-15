@@ -18,12 +18,20 @@ services:
       - '@global_module.apiman_token_service'
       - '@login_logout.oauth_helper_service'
 
+  login_logout.oauth_jwt_service:
+    class: Drupal\login_logout\Service\OAuthJwtService
+
+  login_logout.oauth_session_formatter_service:
+    class: Drupal\login_logout\Service\OAuthSessionFormatterService
+
   login_logout.oauth_helper_service:
     class: Drupal\login_logout\Service\OAuthHelperService
     arguments:
       - '@http_client'
       - '@logger.channel.login_logout'
       - '@global_module.vault_config_service'
+      - '@login_logout.oauth_jwt_service'
+      - '@login_logout.oauth_session_formatter_service'
 
   login_logout.no_cache_subscriber:
     class: Drupal\login_logout\EventSubscriber\NoCacheSubscriber
@@ -102,22 +110,44 @@ services:
       - '@datetime.time'
       - '@tempstore.private'
 
-  login_logout.user_registration_submit_handler:
-    class: Drupal\login_logout\Service\UserRegistrationSubmitHandler
+  login_logout.user_registration_external_service:
+    class: Drupal\login_logout\Service\UserRegistrationExternalService
     arguments:
       - '@http_client'
       - '@global_module.vault_config_service'
       - '@global_module.apiman_token_service'
+      - '@logger.factory'
       - '@messenger'
-      - '@entity_type.manager'
-      - '@current_user'
-      - '@request_stack'
+
+  login_logout.otp_service:
+    class: Drupal\login_logout\Service\OtpService
+    arguments:
+      - '@http_client'
+      - '@global_module.vault_config_service'
+      - '@messenger'
       - '@session'
       - '@flood'
       - '@lock'
       - '@database'
       - '@logger.factory'
+      - '@datetime.time'
+
+  login_logout.registration_audit_service:
+    class: Drupal\login_logout\Service\RegistrationAuditService
+    arguments:
+      - '@logger.factory'
+      - '@current_user'
+      - '@request_stack'
+
+  login_logout.user_registration_submit_handler:
+    class: Drupal\login_logout\Service\UserRegistrationSubmitHandler
+    arguments:
+      - '@messenger'
+      - '@entity_type.manager'
       - '@login_logout.user_registration_account_manager'
+      - '@login_logout.user_registration_external_service'
+      - '@login_logout.otp_service'
+      - '@login_logout.registration_audit_service'
 
   login_logout.user_registration_account_manager:
     class: Drupal\login_logout\Service\UserRegistrationAccountManager

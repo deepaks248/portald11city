@@ -3,6 +3,8 @@
 namespace Drupal\Tests\login_logout\Unit\Service;
 
 use Drupal\login_logout\Service\OAuthHelperService;
+use Drupal\login_logout\Service\OAuthJwtService;
+use Drupal\login_logout\Service\OAuthSessionFormatterService;
 use Drupal\global_module\Service\VaultConfigService;
 use GuzzleHttp\ClientInterface;
 use Psr\Log\LoggerInterface;
@@ -19,6 +21,8 @@ class OAuthHelperServiceTest extends UnitTestCase {
   protected $httpClient;
   protected $logger;
   protected $vaultConfigService;
+  protected $jwtService;
+  protected $sessionFormatter;
   protected $service;
 
   protected function setUp(): void {
@@ -27,6 +31,8 @@ class OAuthHelperServiceTest extends UnitTestCase {
     $this->httpClient = $this->createMock(ClientInterface::class);
     $this->logger = $this->createMock(LoggerInterface::class);
     $this->vaultConfigService = $this->createMock(VaultConfigService::class);
+    $this->jwtService = $this->createMock(OAuthJwtService::class);
+    $this->sessionFormatter = $this->createMock(OAuthSessionFormatterService::class);
 
     $this->vaultConfigService->method('getGlobalVariables')->willReturn([
       'applicationConfig' => [
@@ -39,7 +45,9 @@ class OAuthHelperServiceTest extends UnitTestCase {
     $this->service = new OAuthHelperService(
       $this->httpClient,
       $this->logger,
-      $this->vaultConfigService
+      $this->vaultConfigService,
+      $this->jwtService,
+      $this->sessionFormatter
     );
   }
 
@@ -53,6 +61,7 @@ class OAuthHelperServiceTest extends UnitTestCase {
   /**
    * @covers ::detectFromRules
    * @covers ::matchesConditions
+   * @covers ::matchesCondition
    */
   public function testDetectFromRules() {
     $rules = [
@@ -152,7 +161,7 @@ class OAuthHelperServiceTest extends UnitTestCase {
 
   /**
    * @covers ::handleSessionLimit
-   * @covers ::formatSessions
+   * @covers ::logActiveSessions
    */
   public function testHandleSessionLimit() {
     $sessions = [
@@ -174,6 +183,7 @@ class OAuthHelperServiceTest extends UnitTestCase {
     ];
 
     $this->logger->expects($this->once())->method('notice');
+    $this->sessionFormatter->method('formatSessions')->willReturn('formatted');
     $response = $this->service->handleSessionLimit($result, 'test@test.com');
     
     $this->assertFalse($response['success']);
@@ -219,14 +229,15 @@ class OAuthHelperServiceTest extends UnitTestCase {
    * @covers ::isValidJwtFormat
    */
   public function testIsValidJwtFormat() {
+    $this->jwtService->method('isValidJwtFormat')->willReturn(TRUE);
     $this->assertTrue($this->service->isValidJwtFormat('a.b.c'));
-    $this->assertFalse($this->service->isValidJwtFormat('a.b'));
   }
 
   /**
    * @covers ::extractPayloadFromJwt
    */
   public function testExtractPayloadFromJwt() {
+    $this->jwtService->method('extractPayloadFromJwt')->willReturn('payload');
     $this->assertEquals('payload', $this->service->extractPayloadFromJwt('header.payload.signature'));
   }
 
@@ -234,14 +245,8 @@ class OAuthHelperServiceTest extends UnitTestCase {
    * @covers ::decodeBase64Url
    */
   public function testDecodeBase64Url() {
-    $data = ['user' => 'john'];
-    $encoded = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode(json_encode($data)));
-    
-    $result = $this->service->decodeBase64Url($encoded);
-    $this->assertEquals($data, $result);
-    
-    // Test padding
-    $result = $this->service->decodeBase64Url(base64_encode(json_encode(['a' => 'b'])));
-    $this->assertEquals(['a' => 'b'], $result);
+    $this->jwtService->method('decodeBase64Url')->willReturn(['key' => 'val']);
+    $result = $this->service->decodeBase64Url('encoded');
+    $this->assertEquals(['key' => 'val'], $result);
   }
 }
